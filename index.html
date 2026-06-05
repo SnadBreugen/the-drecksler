@@ -1505,10 +1505,36 @@
     setStatus("EXPORT COMPLETE // "+rendered.duration.toFixed(1)+"S");
   });
   async function sendToAudiotool(){
-    setStatus("RENDERING // UPLINK"); const rendered=await renderProcessed(); const wavBlob=encodeWav(rendered);
-    console.log("Uplink payload ready:", wavBlob.size, "bytes");
-    setStatus("UPLINK PENDING // CHANNEL NOT YET ESTABLISHED");
-    alert("TRANSMISSION CHANNEL NOT YET ESTABLISHED.\nAudiotool-Uplink folgt ueber @audiotool/nexus. Der Signal wartet.");
+    if (!buffer) return;
+    if (!atSession){
+      const at=await atConnect(true);   // bei Redirect laedt die Seite neu — danach TRANSMIT erneut druecken
+      if (!at) return;
+    }
+    try {
+      setStatus("RENDERING // TRANSMIT");
+      const rendered=await renderProcessed();
+      const wavBlob=encodeWav(rendered);
+      const name="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+      const file=new File([wavBlob], name+".wav", { type:"audio/wav" });
+      const c=atSession.client||atSession;
+      if (!(c.samples && c.samples.upload)){
+        try { console.error("[UPLINK] samples-API nicht gefunden. keys:", Object.keys(c)); } catch{}
+        setStatus("TRANSMIT FAILED // SAMPLES API"); return;
+      }
+      setStatus("TRANSMITTING // "+Math.round(wavBlob.size/1024)+" KB");
+      const up=await c.samples.upload({ file, displayName:name });
+      if (up instanceof Error) throw up;
+      const onServer=await up.uploaded;
+      if (onServer instanceof Error) throw onServer;
+      setStatus("TRANSMIT // PROCESSING ON SERVER");
+      const meta=await up.ready;
+      if (meta instanceof Error) throw meta;
+      console.log("[UPLINK] sample ready:", meta);
+      setStatus("TRANSMIT COMPLETE // "+name.toUpperCase());
+    } catch(e){
+      console.error("[UPLINK] transmit:", e);
+      setStatus("TRANSMIT FAILED // SIEHE KONSOLE (F12)");
+    }
   }
   atBtn.addEventListener("click", sendToAudiotool);
 
