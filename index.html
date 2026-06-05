@@ -431,7 +431,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.26</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.28</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -537,7 +537,7 @@
 (() => {
   "use strict";
 
-  const REV="2.26";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.28";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -678,8 +678,7 @@
     buffer=buf; bufferBpm=(srcBpm>=30&&srcBpm<=300)?srcBpm:P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear();
-    autoDetect();                                          // Slices liegen ab Sekunde 1 bereit
-    fillOrdered();
+    fillOrdered();                                         // Laden = klassisches Raster; Onset-Slicing ist Opt-in (SENS-Regler)
     undoStack=[]; redoStack=[];
     drawEditWave();                                   // Editor-Ansicht haelt Schritt
   }
@@ -1978,6 +1977,7 @@
   const ectx=editCanvas.getContext("2d");
   let editSel=null, editUndoStack=[];                 // Mehrstufen-Undo mit Speicher-Budget
   let editView=null;                                   // {t0,t1} Zoom-Fenster, null = ganzes Material
+  let editPeakBuf=null, editPeakVal=1;                 // Anzeige-Normalisierung (selbstheilender Cache)
   const evT0=()=>editView?editView.t0:0;
   const evT1=()=>editView?editView.t1:(buffer?buffer.duration:0);
   const evDur=()=>Math.max(0.001, evT1()-evT0());
@@ -1992,6 +1992,12 @@
     syncEditTools();
     if (!buffer) return;
     const data=buffer.getChannelData(0), dur=buffer.duration, mid=h/2, sr=buffer.sampleRate;
+    if (editPeakBuf!==buffer){                            // Anzeige-Normalisierung: Wave fuellt die Box immer satt
+      let pk=0;
+      for (let i=0;i<data.length;i+=64){ const v=Math.abs(data[i]); if (v>pk) pk=v; }
+      editPeakVal=Math.max(0.05, pk); editPeakBuf=buffer;
+    }
+    const norm=1/editPeakVal;
     const v0=evT0(), vd=evDur();
     const hg=ectx.createLinearGradient(0,0,0,h);
     hg.addColorStop(0,"#bdfaff"); hg.addColorStop(0.5,"#3fc9e0"); hg.addColorStop(1,"#062831");
@@ -2004,7 +2010,7 @@
       const lim=Math.min(i0+Math.max(1,Math.floor(sppx)), data.length);
       const stp=Math.max(1, Math.floor(sppx/24));
       for (let i=i0;i<lim;i+=stp){ const v=Math.abs(data[i]); if (v>pk) pk=v; }
-      const bh=Math.max(1, pk*(h*0.92));
+      const bh=Math.max(1, Math.min(1, pk*norm)*(h*0.92));
       ectx.fillRect(x, mid-bh/2, 1, bh);
     }
     // Slice-Zebra: die Schnittstuecke sichtbar machen (nur auf Abruf via SHOW)
