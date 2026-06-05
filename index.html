@@ -324,7 +324,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.7</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.8</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -412,7 +412,7 @@
 (() => {
   "use strict";
 
-  const REV="1.7";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.8";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1432,6 +1432,13 @@
       const url=proj.url || ("https://beta.audiotool.com/studio?project="+(proj.id||proj.projectId||proj.name||""));
       nexus=await at.open(url);
       if (nexus && nexus.start) await nexus.start();
+      // Projekt-Tempo aus der config-Entity — der Import uebernimmt es 1:1 statt zu schaetzen.
+      let projBpm=0;
+      try {
+        const cfgs=nexus.queryEntities.ofTypes("config").get()||[];
+        if (cfgs.length && cfgs[0].fields && cfgs[0].fields.tempoBpm) projBpm=Number(cfgs[0].fields.tempoBpm.value)||0;
+      } catch(err){}
+      console.log("[UPLINK] project tempo:", projBpm);
       // Timeline-Audio liegt als Entity-Typ "sample" im Dokument; fields.sampleName ist der API-Name.
       let regions=[];
       try { regions=nexus.queryEntities.ofTypes("sample").get()||[]; }
@@ -1451,18 +1458,28 @@
         try { const m=await c.samples.get(nm); if (!(m instanceof Error)) meta=m; } catch(err){}
         items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:(meta&&meta.name)||nm });
       }
-      showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample));
+      showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample, projBpm));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
     finally { try { if (nexus && nexus.stop) nexus.stop(); } catch(err){} }
   }
-  async function atDownloadSample(c, sample){
+  async function atDownloadSample(c, sample, projBpm){
     try {
       const nm=String(sample.displayName||sample.name||"AUDIOTOOL SAMPLE").toUpperCase();
       setStatus("DOWNLOADING // "+nm);
       const blob=await c.samples.download(sample, { format:"wav" });
       if (blob instanceof Error) throw blob;
-      const buf=await ctxGet().decodeAudioData(await blob.arrayBuffer());
-      ingestDecoded(buf, nm, "audiotool");                 // Lizenzregel: nur Transmit zurueck, kein WAV-Export
+      let buf=await ctxGet().decodeAudioData(await blob.arrayBuffer());
+      if (projBpm>=30 && projBpm<=300){
+        const bpm=Math.round(projBpm);                     // Projekt-Tempo 1:1 uebernehmen
+        P.chop.bpm=bpm; syncChopBtns();
+        const barDur=4*60/bpm;
+        const bars=Math.max(1, Math.round(buf.duration/barDur));
+        buf=fitBufferToBeats(buf, bars*4, bpm);            // aufs Taktraster des Projekts schneiden/padden
+        if (bars===1) buf=doubleBuffer(buf);
+        loadDecodedBuffer(buf, "TEMPO SYNCED // "+bpm+" BPM // "+nm, "audiotool");
+      } else {
+        ingestDecoded(buf, nm, "audiotool");               // kein Tempo lesbar -> Laengen-Erkennung
+      }
     } catch(e){ console.error("[UPLINK]", e); setStatus("DOWNLOAD FAILED // SEE CONSOLE (F12)"); }
   }
 
