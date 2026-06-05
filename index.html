@@ -86,6 +86,10 @@
   .island-fx .fx-panel { border:none; background:transparent; padding:0; flex:1; }
   .pop { position:fixed; z-index:60; padding:8px 14px 9px; background:linear-gradient(180deg, var(--panel) 0%, var(--bg2) 100%); border:1px solid rgba(255,234,0,.7); border-radius:var(--radius); box-shadow:0 0 26px rgba(0,0,0,.6), 0 0 22px rgba(255,234,0,.45); pointer-events:none; }
   .pop-val { font-family:"VT323",monospace; font-size:24px; color:var(--info); letter-spacing:.04em; line-height:1; text-shadow:0 0 12px rgba(255,234,0,.7); }
+  .src-pop { display:flex; flex-direction:column; gap:6px; padding:10px; min-width:210px; }
+  .list-pop { width:330px; display:flex; flex-direction:column; gap:6px; padding:14px; }
+  .list-pop-body { display:flex; flex-direction:column; gap:5px; max-height:300px; overflow-y:auto; }
+  .list-pop-body button { text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tx-pop { width:330px; display:flex; flex-direction:column; gap:6px; padding:14px; }
   .tx-pop .tx-title { font-family:"VT323",monospace; font-weight:400; font-size:18px; letter-spacing:.04em; color:#6bff8c; text-shadow:0 0 6px rgba(107,255,140,.35); text-transform:uppercase; margin:0 0 4px; }
   .tx-pop .tx-l { font-size:9px; letter-spacing:.34em; color:rgba(255,234,0,.85); text-transform:uppercase; margin-top:5px; }
@@ -311,7 +315,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.1</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.2</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -329,6 +333,16 @@
   <div class="np-oct">
     <button data-o="3">OCT 3</button><button data-o="4">OCT 4</button><button data-o="5">OCT 5</button>
   </div>
+</div>
+
+<div class="note-pop src-pop hidden" id="srcPop">
+  <button id="srcFile" title="Load an audio file from disk">FILE</button>
+  <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
+</div>
+
+<div class="note-pop list-pop hidden" id="listPop">
+  <p class="tx-title" id="listPopTitle">SELECT</p>
+  <div class="list-pop-body" id="listPopBody"></div>
 </div>
 
 <div class="note-pop tx-pop hidden" id="txPop">
@@ -379,7 +393,7 @@
 (() => {
   "use strict";
 
-  const REV="1.1";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.2";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -495,8 +509,9 @@
     editBtns.forEach((b)=>(b.disabled=!on));
     [playBtn, stopPlayBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
   }
-  function loadDecodedBuffer(buf, msg){
-    buffer=buf; bufferBpm=P.chop.bpm; selection=null; setEditingEnabled(true);
+  let bufferSource="file";                                   // Herkunft: mic | file | audiotool (Lizenzregel)
+  function loadDecodedBuffer(buf, msg, source){
+    buffer=buf; bufferBpm=P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear(); fillOrdered();
     undoStack=[]; redoStack=[];
@@ -1276,12 +1291,40 @@
     try {
       const raw=await ctxGet().decodeAudioData(await blob.arrayBuffer());
       const fitted=fitToLength(raw, recLenCaptured);
-      loadDecodedBuffer(fitted, "CAPTURED // 2 BARS @ "+Math.round(P.chop.bpm)+" BPM");
+      loadDecodedBuffer(fitted, "CAPTURED // 2 BARS @ "+Math.round(P.chop.bpm)+" BPM", "mic");
     } catch(e){ banner.classList.add("show"); banner.textContent="DECODE FAILED: "+e.message.toUpperCase(); }
   }
 
   // ---------- Import ----------
-  importBtn.addEventListener("click", ()=>fileInput.click());
+  const srcPop=$("#srcPop"), listPop=$("#listPop"), listPopTitle=$("#listPopTitle"), listPopBody=$("#listPopBody");
+  function placePop(pop, anchor){
+    pop.classList.remove("hidden");
+    const r=anchor.getBoundingClientRect(), pw=pop.offsetWidth, ph=pop.offsetHeight;
+    pop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
+    pop.style.top=Math.max(8, Math.min(window.innerHeight-ph-8, r.bottom+8))+"px";
+  }
+  importBtn.addEventListener("click", ()=>{
+    if (!srcPop.classList.contains("hidden")){ srcPop.classList.add("hidden"); return; }
+    placePop(srcPop, importBtn);
+  });
+  $("#srcFile").addEventListener("click", ()=>{ srcPop.classList.add("hidden"); fileInput.click(); });
+  $("#srcAt").addEventListener("click", ()=>{ srcPop.classList.add("hidden"); atImportFlow(); });
+  function showListPop(title, items, onPick){
+    listPopTitle.textContent=title;
+    listPopBody.innerHTML="";
+    items.forEach((it)=>{
+      const b=document.createElement("button");
+      b.textContent=it.label; b.title=it.label;
+      b.addEventListener("click", ()=>{ listPop.classList.add("hidden"); onPick(it.value); });
+      listPopBody.appendChild(b);
+    });
+    placePop(listPop, importBtn);
+  }
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); } });
+  document.addEventListener("pointerdown",(e)=>{
+    if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
+    if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
+  });
   fileInput.addEventListener("change", (e)=>{ if (e.target.files[0]) ingestFile(e.target.files[0]); });
   ["dragenter","dragover"].forEach((ev)=>waveWrap.addEventListener(ev, (e)=>{ e.preventDefault(); waveWrap.classList.add("drop"); }));
   ["dragleave","drop"].forEach((ev)=>waveWrap.addEventListener(ev, (e)=>{ e.preventDefault(); waveWrap.classList.remove("drop"); }));
@@ -1308,20 +1351,83 @@
     }
     return out;
   }
+  function ingestDecoded(buf, label, source){
+    const det=detectImportBPM(buf.duration);
+    if (det){
+      P.chop.bpm=det.bpm; syncChopBtns();
+      if (det.bars===1) buf=doubleBuffer(buf);     // 1 Takt -> verdoppeln, beide Hecksler-Takte voll
+      loadDecodedBuffer(buf, "TEMPO LOCKED // "+det.bpm+" BPM // "+label, source);
+    } else {
+      loadDecodedBuffer(buf, "TEMPO UNCLEAR // "+label, source);
+    }
+  }
   async function ingestFile(file){
     setStatus("INGESTING // "+file.name.toUpperCase());
     try {
-      let buf=await ctxGet().decodeAudioData(await file.arrayBuffer());
-      const det=detectImportBPM(buf.duration);
-      if (det){
-        P.chop.bpm=det.bpm; syncChopBtns();
-        if (det.bars===1) buf=doubleBuffer(buf);   // 1 Takt -> verdoppeln, beide Hecksler-Takte voll
-        loadDecodedBuffer(buf, "TEMPO LOCKED // "+det.bpm+" BPM"+(det.bars===1?" // LOOPED":""));
-      } else {
-        loadDecodedBuffer(buf, "TEMPO UNCLEAR // "+file.name.toUpperCase());
-      }
+      const buf=await ctxGet().decodeAudioData(await file.arrayBuffer());
+      ingestDecoded(buf, file.name.toUpperCase(), "file");
     }
     catch(e){ banner.classList.add("show"); banner.textContent="INGEST FAILED — UNSUPPORTED OR CORRUPT FILE."; setStatus("INGEST FAILED"); }
+  }
+
+  // ---------- Audiotool Timeline Import ----------
+  // Modell: Auswahl passiert in Audiotool — was in der Projekt-Timeline liegt (auch Bounces),
+  // kann hier importiert werden. Entity-Typ defensiv, Strukturen werden geloggt.
+  async function atImportFlow(){
+    const at=atSession || await atConnect(true);
+    if (!at) return;
+    const c=at.client||at;
+    try {
+      setStatus("FETCHING PROJECTS");
+      const resp=await c.projects.listProjects({});
+      if (resp instanceof Error) throw resp;
+      const projects=resp.projects||resp.items||(Array.isArray(resp)?resp:[]);
+      console.log("[UPLINK] projects:", resp);
+      if (!projects.length){ setStatus("NO PROJECTS FOUND"); return; }
+      showListPop("SELECT PROJECT", projects.map((p)=>({ label:String(p.displayName||p.name||"UNNAMED").toUpperCase(), value:p })), atOpenProject);
+    } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
+  }
+  async function atOpenProject(proj){
+    const at=atSession, c=at.client||at;
+    let nexus=null;
+    try {
+      setStatus("OPENING PROJECT");
+      const url=proj.url || ("https://beta.audiotool.com/studio?project="+(proj.id||proj.projectId||proj.name||""));
+      nexus=await at.open(url);
+      if (nexus && nexus.start) await nexus.start();
+      let regions=[];
+      for (const tn of ["audioRegion","audioTrackRegion","sampleRegion","audioClip"]){
+        try { const r=nexus.queryEntities.ofTypes(tn).get(); if (r && r.length){ regions=r; console.log("[UPLINK] region type:", tn, r); break; } } catch(err){}
+      }
+      const seen=new Map();
+      for (const r of regions){
+        const f=r.fields||{};
+        const sref=(f.sample&&f.sample.value)||(f.sampleName&&f.sampleName.value)||null;
+        if (sref){ const k=JSON.stringify(sref); if (!seen.has(k)) seen.set(k, sref); }
+      }
+      console.log("[UPLINK] timeline sample refs:", [...seen.values()]);
+      if (!seen.size){ setStatus("NO SAMPLES IN TIMELINE"); return; }
+      setStatus("READING SAMPLE INFO");
+      const items=[];
+      for (const sref of seen.values()){
+        let meta=null;
+        try { const m=await c.samples.get(sref); if (!(m instanceof Error)) meta=m; } catch(err){}
+        const lab=String((meta&&(meta.displayName||meta.name))||sref).toUpperCase().slice(0,46);
+        items.push({ label:lab, value:meta||sref });
+      }
+      showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample));
+    } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
+    finally { try { if (nexus && nexus.stop) nexus.stop(); } catch(err){} }
+  }
+  async function atDownloadSample(c, sample){
+    try {
+      const nm=String(sample.displayName||sample.name||"AUDIOTOOL SAMPLE").toUpperCase();
+      setStatus("DOWNLOADING // "+nm);
+      const blob=await c.samples.download(sample, { format:"wav" });
+      if (blob instanceof Error) throw blob;
+      const buf=await ctxGet().decodeAudioData(await blob.arrayBuffer());
+      ingestDecoded(buf, nm, "audiotool");                 // Lizenzregel: nur Transmit zurueck, kein WAV-Export
+    } catch(e){ console.error("[UPLINK]", e); setStatus("DOWNLOAD FAILED // SEE CONSOLE (F12)"); }
   }
 
   // ---------- Waveform + selection ----------
@@ -1549,6 +1655,7 @@
   if (/[?&#](code|state)=/.test(location.search+location.hash)) atConnect(false);
 
   wavBtn.addEventListener("click", async ()=>{
+    if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
     if (!buffer) return; setStatus("RENDERING // EXPORT");
     const rendered=await renderProcessed();
     const url=URL.createObjectURL(encodeWav(rendered));
