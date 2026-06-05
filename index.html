@@ -69,7 +69,7 @@
   .scat-grp::before { content:"RANDOMIZER"; position:absolute; top:-11px; left:0; right:0; font-size:8px; letter-spacing:.3em; text-indent:.3em; color:#fff; pointer-events:none; text-align:center; }
   .scat-grp #densBtn { border-radius:var(--radius) 0 0 var(--radius); }
   .scat-grp #scatterBtn { border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
-  .metro-grp::before { content:"M E T R O N O M"; position:absolute; top:-11px; left:1px; right:1px; font-size:8px; color:#fff; pointer-events:none; text-align:justify; text-align-last:justify; }
+  .metro-grp::before { content:"M E T R O N O M E"; position:absolute; top:-11px; left:1px; right:1px; font-size:8px; color:#fff; pointer-events:none; text-align:justify; text-align-last:justify; }
   .tbtn { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
   #metroBtn { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; color:#fff; border-radius:var(--radius) 0 0 var(--radius); }
   #metroNote { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-family:"VT323",monospace; font-weight:400; font-size:21px; line-height:1; letter-spacing:0; color:rgba(255,255,255,.28); border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
@@ -245,14 +245,14 @@
     <section class="stage island-wave" data-tag="CAPTURE">
       <div class="cap-head">
         <div class="transport">
-          <button class="danger tbtn" id="recBtn" title="ARM REC — 1 Takt Count-in, 2 Takte Aufnahme"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
+          <button class="danger tbtn" id="recBtn" title="ARM REC — 1 bar count-in, 2 bars recording"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
           <div class="metro-grp">
-            <button id="metroBtn" title="Metronom an/aus"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
-            <button id="metroNote" title="Wurzelnote — Klick aufwärts, Rechtsklick abwärts">A4</button>
+            <button id="metroBtn" title="Metronome on/off"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
+            <button id="metroNote" title="Root note — click to pick">A4</button>
           </div>
-          <button class="tbtn" id="playBtn" disabled title="PLAY"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
-          <button class="tbtn" id="stopPlayBtn" disabled title="STOP"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
-          <button id="importBtn" title="Audio-Datei laden (WAV/MP3)">&#10515; IMPORT WAV</button>
+          <button class="tbtn" id="playBtn" disabled title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
+          <button class="tbtn" id="stopPlayBtn" disabled title="Stop (reset position)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
+          <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
       </div>
@@ -266,19 +266,19 @@
     <aside class="stage island-fx" id="islandFx" data-tag="CHOP FX">
       <div class="fx-panel disabled" id="fxPanel">
         <p class="fxp-title" id="fxpTitle">CHOP FX // &mdash;</p>
-        <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Tonhöhe ±12 Halbtöne"></div>
-        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><input type="range" id="fxStut" min="0" max="3" step="1" value="0" disabled title="Re-Trigger im Notenraster (Trap-Stutter)"></div>
-        <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Röhren-Sättigung"></div>
+        <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Pitch ±12 semitones"></div>
+        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><input type="range" id="fxStut" min="0" max="3" step="1" value="0" disabled title="Re-trigger on the note grid (trap stutter)"></div>
+        <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube saturation"></div>
         <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bitcrusher"></div>
         <div class="fx-filters">
         <p class="fx-filters-h">FILTER</p>
         <div class="fx-duo">
-          <div class="ctl"><label>HP CUT <span class="v" id="vFxHp">&mdash;</span></label><input type="range" id="fxHp" min="0" max="1" step="0.01" value="0" disabled title="Hochpass — schneidet Bässe"></div>
-          <div class="ctl"><label>RES <span class="v" id="vFxHpQ">&mdash;</span></label><input type="range" id="fxHpQ" min="0" max="1" step="0.01" value="0" disabled title="Hochpass-Resonanz"></div>
+          <div class="ctl"><label>HP CUT <span class="v" id="vFxHp">&mdash;</span></label><input type="range" id="fxHp" min="0" max="1" step="0.01" value="0" disabled title="High-pass — cuts the lows"></div>
+          <div class="ctl"><label>RES <span class="v" id="vFxHpQ">&mdash;</span></label><input type="range" id="fxHpQ" min="0" max="1" step="0.01" value="0" disabled title="High-pass resonance"></div>
         </div>
         <div class="fx-duo">
-          <div class="ctl"><label>LP CUT <span class="v" id="vFxLp">&mdash;</span></label><input type="range" id="fxLp" min="0" max="1" step="0.01" value="1" disabled title="Tiefpass — schneidet Höhen"></div>
-          <div class="ctl"><label>RES <span class="v" id="vFxLpQ">&mdash;</span></label><input type="range" id="fxLpQ" min="0" max="1" step="0.01" value="0" disabled title="Tiefpass-Resonanz"></div>
+          <div class="ctl"><label>LP CUT <span class="v" id="vFxLp">&mdash;</span></label><input type="range" id="fxLp" min="0" max="1" step="0.01" value="1" disabled title="Low-pass — cuts the highs"></div>
+          <div class="ctl"><label>RES <span class="v" id="vFxLpQ">&mdash;</span></label><input type="range" id="fxLpQ" min="0" max="1" step="0.01" value="0" disabled title="Low-pass resonance"></div>
         </div>
         </div>
       </div>
@@ -287,25 +287,25 @@
     <section class="stage fxstage island-chop" id="stageChop" data-tag="HECKSLER">
       <div class="chopbar">
         <div class="res">
-          <button class="res-btn active" data-res="0.5" title="Raster: 8 Slots pro Takt">1/8</button>
-          <button class="res-btn" data-res="0.25" title="Raster: 16 Slots pro Takt">1/16</button>
+          <button class="res-btn active" data-res="0.5" title="Grid: 8 slots per bar">1/8</button>
+          <button class="res-btn" data-res="0.25" title="Grid: 16 slots per bar">1/16</button>
         </div>
-        <button class="pbtn" id="bpmBtn" title="Tempo — vertikal ziehen wie ein Regler">120 BPM</button>
+        <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically like a knob">120 BPM</button>
         <span class="cb-flex"></span>
         <div class="scat-grp">
-          <button class="pbtn" id="densBtn" disabled title="Scatter-Dichte: Trefferchance pro Slot — vertikal ziehen">DENS 60%</button>
-          <button id="scatterBtn" disabled title="Zufalls-Arrangement würfeln (Slices + FX)">&#10227; SCATTER</button>
+          <button class="pbtn" id="densBtn" disabled title="Scatter density: hit chance per slot — drag vertically">DENS 60%</button>
+          <button id="scatterBtn" disabled title="Roll a random arrangement (slices + FX)">&#10227; SCATTER</button>
         </div>
-        <button id="resetBtn" disabled title="Alle Chops zurück in Original-Anordnung">RESET</button>
-        <button id="clearChopBtn" disabled title="Alle Steps leeren">CLEAR</button>
+        <button id="resetBtn" disabled title="Reset all chops to their original order">RESET</button>
+        <button id="clearChopBtn" disabled title="Clear all steps">CLEAR</button>
       </div>
       <div class="grid-wrap"><canvas class="grid" id="grid"></canvas></div>
     </section>
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
-      <button id="uplinkBtn" title="Mit Audiotool verbinden (Login)">UPLINK</button>
-      <button class="primary" id="wavBtn" disabled title="Arrangement als WAV-Datei rendern">EXPORT // WAV</button>
-      <button id="atBtn" disabled title="Direkt in die Audiotool-Library senden (in Arbeit)">TRANSMIT TO AUDIOTOOL</button>
+      <button id="uplinkBtn" title="Connect to Audiotool (login)">UPLINK</button>
+      <button class="primary" id="wavBtn" disabled title="Render the arrangement as a WAV file">EXPORT // WAV</button>
+      <button id="atBtn" disabled title="Send straight to your Audiotool library">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
@@ -332,44 +332,44 @@
 <div class="note-pop tx-pop hidden" id="txPop">
   <p class="tx-title">TRANSMIT // METADATA</p>
   <label class="tx-l">TITLE</label>
-  <input type="text" id="txName" maxlength="80" spellcheck="false">
+  <input type="text" id="txName" maxlength="80" spellcheck="false" title="Sample title in your Audiotool library">
   <label class="tx-l">KIND</label>
   <div class="tx-kind">
-    <button id="txLoop" class="active" title="Loop — Projekt-BPM wird mitgesendet">LOOP</button><button id="txShot" title="One-Shot — ohne Tempo">ONE-SHOT</button>
+    <button id="txLoop" class="active" title="Loop — project BPM is sent along">LOOP</button><button id="txShot" title="One-shot — no tempo">ONE-SHOT</button>
   </div>
   <label class="tx-l" id="txBpmL">BPM</label>
-  <input type="text" id="txBpm" maxlength="6" inputmode="numeric" spellcheck="false">
+  <input type="text" id="txBpm" maxlength="6" inputmode="numeric" spellcheck="false" title="Tempo of the loop">
   <label class="tx-l">VISIBILITY</label>
   <div class="tx-kind">
-    <button id="txHidden" class="active" title="Unlisted — nur f&uuml;r dich, nicht in der Community-Suche">HIDDEN</button><button id="txPublic" title="Public — f&uuml;r alle in Suche und Listings sichtbar">PUBLIC</button>
+    <button id="txHidden" class="active" title="Unlisted — only you, hidden from community search">HIDDEN</button><button id="txPublic" title="Public — visible to everyone in search and listings">PUBLIC</button>
   </div>
   <label class="tx-l">DESCRIPTION <span class="tx-opt">OPTIONAL</span></label>
-  <input type="text" id="txDesc" maxlength="200" spellcheck="false">
-  <label class="tx-l">TAGS <span class="tx-opt">KOMMA-GETRENNT</span></label>
-  <input type="text" id="txTags" maxlength="120" spellcheck="false" value="drecksler">
+  <input type="text" id="txDesc" maxlength="200" spellcheck="false" title="Optional description">
+  <label class="tx-l">TAGS <span class="tx-opt">COMMA-SEPARATED</span></label>
+  <input type="text" id="txTags" maxlength="120" spellcheck="false" value="drecksler" title="Comma-separated tags">
   <div class="tx-row">
-    <button id="txCancel">CANCEL</button>
-    <button id="txSend" class="primary">TRANSMIT</button>
+    <button id="txCancel" title="Close without sending">CANCEL</button>
+    <button id="txSend" class="primary" title="Render and upload to Audiotool">TRANSMIT</button>
   </div>
 </div>
 
 <div class="modal hidden" id="helpModal">
   <div class="stage modal-box" data-tag="MANUAL">
-    <p class="panel-title">MANUAL // BEDIENUNG</p>
-    <p class="help-intro">DRECKSLER &mdash; FROM GERMAN &bdquo;DRECHSELN&ldquo;: TO TURN RAW MATERIAL ON A LATHE, SHAPING IT. PLUS &bdquo;DRECK&ldquo; &mdash; DIRT. HECKSLER &mdash; FROM &bdquo;H&Auml;CKSELN&ldquo;: TO SHRED WHATEVER GETS THROWN IN.</p>
+    <p class="panel-title">MANUAL // OPERATION</p>
+    <p class="help-intro">DRECKSLER &mdash; FROM GERMAN 'DRECHSELN': TO TURN RAW MATERIAL ON A LATHE, SHAPING IT. PLUS 'DRECK' &mdash; DIRT. HECKSLER &mdash; FROM 'H&Auml;CKSELN': TO SHRED WHATEVER GETS THROWN IN.</p>
     <div class="help-cols">
       <div>
-        <p class="help-h">MAUS</p>
-        <p>KLICK ausw&auml;hlen<br>STRG/CMD+KLICK mehrfach<br>SHIFT+KLICK bereich<br>ZIEHEN verschieben<br>STRG/CMD+ZIEHEN kopieren<br>VERTIKAL ZIEHEN volume<br>SHIFT+VERTIKAL pitch<br>KANTEN ZIEHEN l&auml;nge (beidseitig)<br>MAUSRAD pitch &plusmn;12<br>RECHTSKLICK reverse<br>DOPPELKLICK l&ouml;schen / wiederherstellen</p>
+        <p class="help-h">MOUSE</p>
+        <p>CLICK select<br>CTRL/CMD+CLICK multi<br>SHIFT+CLICK range<br>DRAG move<br>CTRL/CMD+DRAG copy<br>DRAG VERTICALLY volume<br>SHIFT+VERTICAL pitch<br>DRAG EDGES length (both sides)<br>MOUSE WHEEL pitch &plusmn;12<br>RIGHT-CLICK reverse<br>DOUBLE-CLICK delete / restore</p>
       </div>
       <div>
-        <p class="help-h">TASTATUR</p>
-        <p>SPACE start/stop<br>&#8593;/&#8595; pitch<br>ENTF/&#9003; l&ouml;schen<br>STRG+Z undo<br>STRG+SHIFT+Z redo</p>
-        <p class="help-h">FARBEN</p>
-        <p>FARBE = LETZTE AKTION<br>ORANGE original<br>MAGENTA pitch<br>BLAU reverse<br>CYAN volume<br>GR&Uuml;N verschoben<br>VIOLETT dupliziert<br>KORALL verk&uuml;rzt<br>PUNKT fx aktiv &middot; BREITE = l&auml;nge</p>
+        <p class="help-h">KEYBOARD</p>
+        <p>SPACE play/pause<br>&#8593;/&#8595; pitch<br>DEL/&#9003; delete<br>CTRL+Z undo<br>CTRL+SHIFT+Z redo</p>
+        <p class="help-h">COLORS</p>
+        <p>COLOR = LAST ACTION<br>YELLOW original<br>MAGENTA pitch<br>BLUE reverse<br>CYAN volume<br>GREEN moved<br>PURPLE duplicated<br>CORAL shortened<br>DOT fx active &middot; WIDTH = length</p>
       </div>
     </div>
-    <button id="helpClose">SCHLIESSEN</button>
+    <button id="helpClose" title="Close manual">CLOSE</button>
   </div>
 </div>
 
@@ -797,7 +797,7 @@
   }
   function chopColor(ch, i){
     // Farbe = zuletzt ausgeführte Aktion (lastOp); kräftige Signalfarben.
-    let col="rgba(255,154,0,1)";                                          // Original: Orange-Gold (wie Waveform)
+    let col="rgba(255,234,0,1)";                                          // Original: Snad-Anzeigegelb (#ffea00)
     if (ch.op==="mov" || (!ch.op && ch.slice!==i)) col="rgba(107,255,140,1)"; // verschoben: Phosphor-Gruen
     else if (ch.op==="dup")   col="rgba(191,91,255,1)";                   // dupliziert: Neon-Violett
     else if (ch.op==="len")   col="rgba(255,84,98,1)";                    // verkürzt: Neon-Korall
@@ -1057,7 +1057,7 @@
     e.preventDefault();
     const step=stepFromX(e.clientX);
     const ch=(step!=null)?arrangement[step]:null;
-    if (!ch){ wheelAcc=0; wheelStep=null; setStatus("MAUSRAD OK // LEERER STEP \u2014 AUF EINEN CHOP ZEIGEN"); return; }
+    if (!ch){ wheelAcc=0; wheelStep=null; setStatus("WHEEL OK // EMPTY STEP \u2014 POINT AT A CHOP"); return; }
     if (step!==wheelStep){ wheelAcc=0; wheelStep=step; }
     const dy = e.deltaMode===1 ? e.deltaY*33 : (e.deltaMode===2 ? e.deltaY*120 : e.deltaY);
     let steps=0;
@@ -1239,7 +1239,7 @@
     const startDelay=Math.max(0,(recStartT-ac.currentTime)*1000);
     recTimers.push(setTimeout(()=>{ if (recState==="countin"){ try{recorder.start();}catch{} recState="recording"; } }, startDelay));
     recTimers.push(setTimeout(()=>{ if (recState==="recording"){ try{recorder.stop();}catch{} } }, startDelay+recLenCaptured*1000+80));
-    recBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg>'; recBtn.title="STOP"; recBtn.classList.add("armed"); recDot.classList.add("live"); hint.style.display="none";
+    recBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg>'; recBtn.title="Stop (reset position)"; recBtn.classList.add("armed"); recDot.classList.add("live"); hint.style.display="none";
     recLoop();
   }
   function recLoop(){
@@ -1261,7 +1261,7 @@
     recState="idle"; recTimers.forEach(clearTimeout); recTimers=[];
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
     recorder=null; analyser=null;
-    recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 Takt Count-in, 2 Takte Aufnahme"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
+    recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 bar count-in, 2 bars recording"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
     cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%";
   }
   async function handleStop(){
@@ -1313,7 +1313,7 @@
         if (det.bars===1) buf=doubleBuffer(buf);   // 1 Takt -> verdoppeln, beide Hecksler-Takte voll
         loadDecodedBuffer(buf, "TEMPO LOCKED // "+det.bpm+" BPM"+(det.bars===1?" // LOOPED":""));
       } else {
-        loadDecodedBuffer(buf, "TEMPO UNKLAR // "+file.name.toUpperCase());
+        loadDecodedBuffer(buf, "TEMPO UNCLEAR // "+file.name.toUpperCase());
       }
     }
     catch(e){ banner.classList.add("show"); banner.textContent="INGEST FAILED — UNSUPPORTED OR CORRUPT FILE."; setStatus("INGEST FAILED"); }
@@ -1348,8 +1348,7 @@
       const hx1=(Math.max(0,dot.start)/vd)*w, hx2=(Math.min(dot.end,vd)/vd)*w;
       if (hx2>hx1){
         const base=dot.col||"rgba(255,233,160,1)";
-        // Leuchtfeld in Chop-Farbe hinter den Balken — macht den Bereich auch dann sichtbar,
-        // wenn die Chop-Farbe (Gold/Orange) der Waveform-Grundfarbe ähnelt.
+        // Leuchtfeld in Chop-Farbe hinter den Balken.
         ctx.fillStyle=base.replace(/,[\d.]+\)$/, ",0.28)");
         ctx.fillRect(hx1, 0, hx2-hx1, h);
         const hg=ctx.createLinearGradient(0,0,0,h); hg.addColorStop(0,"#ffffff"); hg.addColorStop(0.28,base); hg.addColorStop(1,base);
@@ -1513,7 +1512,7 @@
     return atSdkPromise;
   }
   async function atConnect(interactive){
-    if (location.protocol==="file:"){ setStatus("UPLINK NUR AUF DER LIVE-URL"); return null; }
+    if (location.protocol==="file:"){ setStatus("UPLINK REQUIRES THE LIVE URL"); return null; }
     try {
       const sdk=await loadAtSdk();
       const at=await sdk.audiotool({ clientId:AT_CLIENT_ID, redirectUrl:AT_REDIRECT, scope:AT_SCOPE });
@@ -1533,12 +1532,12 @@
         }
       } catch(e){ console.warn("[UPLINK] whoami:", e); }
       uplinkBtn.textContent="UPLINK \u2713";
-      uplinkBtn.title="Verbunden mit Audiotool";
+      uplinkBtn.title="Connected to Audiotool";
       setStatus("UPLINK ESTABLISHED"+(who?" // "+String(who).toUpperCase():""));
       return at;
     } catch(e){
       console.error("[UPLINK]", e);
-      setStatus("UPLINK FAILED // SIEHE KONSOLE (F12)");
+      setStatus("UPLINK FAILED // SEE CONSOLE (F12)");
       return null;
     }
   }
@@ -1563,8 +1562,10 @@
     const loop=k==="loop";
     txBpm.disabled=!loop;
     txBpm.style.opacity=txBpmL.style.opacity=loop?"1":".35";
-    txBpm.title=loop?"Tempo des Loops":"One-Shot — ohne Tempo";
+    txBpm.title=loop?"Tempo of the loop":"One-shot — no tempo";
   }
+  notePop.querySelectorAll("[data-n]").forEach((b)=>{ b.title="Set root note to "+b.textContent.trim(); });
+  notePop.querySelectorAll("[data-o]").forEach((b)=>{ b.title="Octave "+b.dataset.o; });
   txLoop.addEventListener("click",()=>setTxKind("loop"));
   txShot.addEventListener("click",()=>setTxKind("one-shot"));
   function setTxVis(v){ txVis=v; txHidden.classList.toggle("active",v==="unlisted"); txPublic.classList.toggle("active",v==="public"); }
@@ -1629,7 +1630,7 @@
       setStatus("TRANSMIT COMPLETE // "+name.toUpperCase());
     } catch(e){
       console.error("[UPLINK] transmit:", e);
-      setStatus("TRANSMIT FAILED // SIEHE KONSOLE (F12)");
+      setStatus("TRANSMIT FAILED // SEE CONSOLE (F12)");
     }
   }
   atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
