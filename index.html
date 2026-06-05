@@ -73,6 +73,10 @@
   .edit-tools { display:flex; gap:8px; align-items:center; margin-top:12px; }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
   #edSens { width:90px; }
+  .edit-tools2 { margin-top:8px; }
+  .etool { display:flex; flex-direction:column; gap:2px; flex:none; }
+  .etool i { font-style:normal; font-size:8px; letter-spacing:.2em; color:rgba(255,148,136,.75); }
+  .etool input { width:72px; }
   .edit-selinfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); letter-spacing:.06em; }
   .island-fin { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; align-items:center; justify-content:center; min-height:430px; }
   .fin-note { text-align:center; font-size:11px; letter-spacing:.3em; line-height:2.4; color:rgba(255,148,136,.75); text-transform:uppercase; }
@@ -283,10 +287,10 @@
   <div class="banner" id="banner"></div>
 
   <div class="station-tabs">
-    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">PREPPER</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">HECKSLER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
+    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">EDITOR</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">CHOPPER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
   </div>
   <div class="deck-grid">
-    <section class="stage island-editor" data-tag="PREPPER">
+    <section class="stage island-editor" data-tag="EDITOR">
       <div class="cap-head">
         <div class="transport">
           <button class="danger tbtn" id="recBtn" title="ARM REC — 1 bar count-in, 2 bars recording"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
@@ -307,15 +311,30 @@
       <div class="edit-tools">
         <button id="edTrim" disabled title="Keep only the selection">TRIM</button>
         <button id="edCut" disabled title="Remove the selection">CUT</button>
+        <button id="edHalfA" disabled title="Keep the first half of the material">&#189; A</button>
+        <button id="edHalfB" disabled title="Keep the second half (tails with built-up delay/reverb)">&#189; B</button>
+        <button id="edSil" disabled title="Silence the selection (length unchanged)">SILENCE</button>
+        <button id="edGainM" disabled title="-2 dB (selection or whole file)">GAIN &minus;</button>
+        <button id="edGainP" disabled title="+2 dB (selection or whole file)">GAIN +</button>
         <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
         <button id="edUndo" disabled title="Undo the last edit (one step)">UNDO</button>
-        <span class="edit-sep"></span>
+        <span class="edit-selinfo" id="editSelInfo"></span>
+      </div>
+      <div class="edit-tools edit-tools2">
         <button id="edDetect" disabled title="Detect onsets and set REX slice markers">DETECT</button>
         <input type="range" id="edSens" min="0" max="100" value="50" title="Detection sensitivity (right = more markers)">
         <button id="edClrMk" disabled title="Clear all markers (back to grid slicing)">CLR MK</button>
-        <span class="edit-selinfo" id="editSelInfo"></span>
+        <span class="edit-sep"></span>
+        <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosive thumps (0 = off, right = up to 150 Hz)"></span>
+        <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz (right = stronger cut)"></span>
+        <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral, left = cut, right = boost)"></span>
+        <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz (right = more air)"></span>
+        <button id="edEqApply" disabled title="Render the EQ settings into the material (selection or whole file)">EQ APPLY</button>
+        <span class="edit-sep"></span>
+        <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz (right = stronger)"></span>
+        <button id="edDeEssApply" disabled title="Render the de-esser into the material (selection or whole file)">DE-ESS APPLY</button>
       </div>
     </section>
 
@@ -323,7 +342,7 @@
       <p class="fin-note">STATION UNDER CONSTRUCTION<br>PRESETS // CRACKLE // POST-CHOP WAVE PENDING<br><span>THE SIGNAL CONTINUES</span></p>
     </section>
 
-    <section class="stage island-wave" data-tag="HECKSLER VIEW">
+    <section class="stage island-wave" data-tag="CHOPPER VIEW">
       <div class="cap-head">
         <div class="transport">
           <button class="tbtn" id="playBtn" disabled title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
@@ -332,7 +351,7 @@
       </div>
       <div class="wave-wrap" id="waveWrap">
         <canvas class="wave" id="wave"></canvas>
-        <div class="hint" id="hint">NO MATERIAL &mdash; CAPTURE OR IMPORT IN THE PREPPER</div>
+        <div class="hint" id="hint">NO MATERIAL &mdash; CAPTURE OR IMPORT IN THE EDITOR</div>
       </div>
       <input type="file" id="fileInput" accept="audio/*" class="hidden" />
     </section>
@@ -358,7 +377,7 @@
       </div>
     </aside>
 
-    <section class="stage fxstage island-chop" id="stageChop" data-tag="HECKSLER">
+    <section class="stage fxstage island-chop" id="stageChop" data-tag="CHOPPER">
       <div class="chopbar">
         <div class="res">
           <button class="res-btn active" data-res="0.5" title="Grid: 8 slots per bar">1/8</button>
@@ -383,7 +402,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.14</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.16</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -450,7 +469,7 @@
 <div class="modal hidden" id="helpModal">
   <div class="stage modal-box" data-tag="MANUAL">
     <p class="panel-title">MANUAL // OPERATION</p>
-    <p class="help-intro">DRECKSLER &mdash; FROM GERMAN 'DRECHSELN': TO TURN RAW MATERIAL ON A LATHE, SHAPING IT. PLUS 'DRECK' &mdash; DIRT. HECKSLER &mdash; FROM 'H&Auml;CKSELN': TO SHRED WHATEVER GETS THROWN IN.</p>
+    <p class="help-intro">DRECKSLER &mdash; FROM GERMAN 'DRECHSELN': TO TURN RAW MATERIAL ON A LATHE, SHAPING IT. PLUS 'DRECK' &mdash; DIRT. ONE MACHINE. THREE STATIONS. THE SIGNAL CONTINUES.</p>
     <div class="help-cols">
       <div>
         <p class="help-h">MOUSE</p>
@@ -471,7 +490,7 @@
 (() => {
   "use strict";
 
-  const REV="2.14";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.16";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1837,7 +1856,7 @@
     $("#stFin").classList.toggle("active", st==="fin");
     if (st==="editor") drawEditWave();
     if (st==="hecksler"){ drawWave(); drawGrid(); }    // versteckte Canvases haben Breite 0 — frisch rendern
-    setStatus("STATION // "+(st==="editor"?"PREPPER":st==="hecksler"?"HECKSLER":"FINALIZER"));
+    setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":"FINALIZER"));
   }
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
   $("#stHecksler").addEventListener("click", ()=>setStation("hecksler"));
@@ -1903,6 +1922,9 @@
     edNorm.disabled=!hasBuf;
     $("#edDetect").disabled=!hasBuf;
     $("#edClrMk").disabled=!hasBuf || !markers.length;
+    $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
+    $("#edSil").disabled=!hasSel;
+    $("#edEqApply").disabled=$("#edDeEssApply").disabled=!hasBuf;
     edUndo.disabled=!editUndoBuf;
   }
   let editDrag=null, mDrag=-1;
@@ -1987,6 +2009,117 @@
   }
   edFadeIn.addEventListener("click", ()=>applyFade(1));
   edFadeOut.addEventListener("click", ()=>applyFade(-1));
+  // ---------- Etappe E1: Halve / Silence / Gain ----------
+  const edHalfA=$("#edHalfA"), edHalfB=$("#edHalfB"), edSil=$("#edSil"), edGainP=$("#edGainP"), edGainM=$("#edGainM");
+  function applyHalve(keepFirst){
+    if (!buffer) return; pushEditUndo(keepFirst?"HALF A":"HALF B");
+    const half=buffer.duration/2;
+    markers = keepFirst
+      ? markers.filter((m)=>m<half-0.005)
+      : markers.filter((m)=>m>half+0.005).map((m)=>m-half);
+    applyEdit(keepFirst?subBuffer(buffer,0,half):subBuffer(buffer,half,buffer.duration),
+      keepFirst?"KEPT FIRST HALF":"KEPT SECOND HALF", true);
+  }
+  edHalfA.addEventListener("click", ()=>applyHalve(true));
+  edHalfB.addEventListener("click", ()=>applyHalve(false));
+  edSil.addEventListener("click", ()=>{
+    if (!buffer||!editSel) return; pushEditUndo("SILENCE");
+    const nb=cloneBuffer(buffer), sr=nb.sampleRate;
+    const a=Math.round(editSel.a*sr), b=Math.min(nb.length, Math.round(editSel.b*sr));
+    const F=Math.min(Math.round(0.003*sr), Math.floor((b-a)/2));
+    for (let c=0;c<nb.numberOfChannels;c++){
+      const d=nb.getChannelData(c);
+      for (let i=a;i<b;i++){
+        let g=0;
+        if (i-a<F) g=1-(i-a)/F;                          // weiche Kanten gegen Klicks
+        else if (b-1-i<F) g=1-(b-1-i)/F;
+        d[i]*=g;
+      }
+    }
+    applyEdit(nb, "SELECTION SILENCED", false);
+  });
+  function applyGain(db){
+    if (!buffer) return; pushEditUndo(db>0?"GAIN +":"GAIN -");
+    const f=Math.pow(10, db/20), nb=cloneBuffer(buffer), sr=nb.sampleRate;
+    const a=editSel?Math.round(editSel.a*sr):0, b=editSel?Math.min(nb.length,Math.round(editSel.b*sr)):nb.length;
+    for (let c=0;c<nb.numberOfChannels;c++){ const d=nb.getChannelData(c); for (let i=a;i<b;i++) d[i]*=f; }
+    applyEdit(nb, (db>0?"+":"")+db+" DB APPLIED", false);
+  }
+  edGainP.addEventListener("click", ()=>applyGain(2));
+  edGainM.addEventListener("click", ()=>applyGain(-2));
+  // ---------- Etappe E1: Offline-Render-Geruest (EQ / De-Esser) ----------
+  function eqSpec(low, mud, pres, air){
+    // Slider 0..1 -> Filterliste; pure Funktion, testbar
+    const fl=[];
+    if (low>0.01)  fl.push({ type:"highpass",  freq:40+110*low, Q:0.71, gain:0 });
+    if (mud>0.01)  fl.push({ type:"peaking",   freq:250,  Q:1.0,  gain:-12*mud });
+    const pg=(pres-0.5)*12;                                // -6..+6 dB, Mitte neutral
+    if (Math.abs(pg)>0.1) fl.push({ type:"peaking", freq:3500, Q:0.9, gain:pg });
+    if (air>0.01)  fl.push({ type:"highshelf", freq:12000, Q:0.71, gain:9*air });
+    return fl;
+  }
+  function deEssSpec(amount){
+    return { split:5500, threshold:-15-30*amount, ratio:6, attack:0.002, release:0.06 };
+  }
+  async function renderThroughChain(buf, buildFx){
+    const off=new OfflineAudioContext(buf.numberOfChannels, buf.length, buf.sampleRate);
+    const src=off.createBufferSource(); src.buffer=buf;
+    buildFx(off, src).connect(off.destination);
+    src.start();
+    return await off.startRendering();
+  }
+  async function applyRendered(msg, buildFx){
+    if (!buffer) return;
+    setStatus("RENDERING");
+    pushEditUndo(msg);
+    const rendered=await renderThroughChain(buffer, buildFx);
+    let nb;
+    if (editSel){                                          // nur die Auswahl uebernimmt das Rendering (5ms-Naht)
+      nb=cloneBuffer(buffer);
+      const sr=nb.sampleRate, a=Math.round(editSel.a*sr), b=Math.min(nb.length, Math.round(editSel.b*sr));
+      const F=Math.min(Math.round(0.005*sr), Math.floor((b-a)/2));
+      for (let c=0;c<nb.numberOfChannels;c++){
+        const d=nb.getChannelData(c), r=rendered.getChannelData(Math.min(c, rendered.numberOfChannels-1));
+        for (let i=a;i<b;i++){
+          let mix=1;
+          if (i-a<F) mix=(i-a)/F;
+          else if (b-1-i<F) mix=(b-1-i)/F;
+          d[i]=d[i]*(1-mix)+r[i]*mix;
+        }
+      }
+    } else nb=rendered;
+    applyEdit(nb, msg, false);
+  }
+  const eqLow=$("#eqLow"), eqMud=$("#eqMud"), eqPres=$("#eqPres"), eqAir=$("#eqAir");
+  $("#edEqApply").addEventListener("click", ()=>{
+    if (!buffer) return;
+    const fl=eqSpec(eqLow.value/100, eqMud.value/100, eqPres.value/100, eqAir.value/100);
+    if (!fl.length){ setStatus("EQ FLAT // NOTHING TO APPLY"); return; }
+    applyRendered("EQ APPLIED", (off, src)=>{
+      let n=src;
+      for (const f of fl){
+        const bi=off.createBiquadFilter();
+        bi.type=f.type; bi.frequency.value=f.freq; bi.Q.value=f.Q; bi.gain.value=f.gain;
+        n.connect(bi); n=bi;
+      }
+      return n;
+    });
+  });
+  $("#edDeEssApply").addEventListener("click", ()=>{
+    if (!buffer) return;
+    const sp=deEssSpec((Number($("#edDeEss").value)||0)/100);
+    applyRendered("DE-ESSED", (off, src)=>{
+      const lo=off.createBiquadFilter(); lo.type="lowpass";  lo.frequency.value=sp.split; lo.Q.value=0.71;
+      const hi=off.createBiquadFilter(); hi.type="highpass"; hi.frequency.value=sp.split; hi.Q.value=0.71;
+      const comp=off.createDynamicsCompressor();
+      comp.threshold.value=sp.threshold; comp.ratio.value=sp.ratio;
+      comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
+      const sum=off.createGain();
+      src.connect(lo); lo.connect(sum);                    // Tiefen-Zweig trocken
+      src.connect(hi); hi.connect(comp); comp.connect(sum);// S-Band komprimiert
+      return sum;
+    });
+  });
   // ---------- REX-Marker: Onset-Erkennung + Handarbeit ----------
   const edDetect=$("#edDetect"), edSens=$("#edSens"), edClrMk=$("#edClrMk");
   function detectOnsets(buf, sens){
