@@ -68,10 +68,11 @@
   .deck.st-fin #stFin { color:#6bff8c; border-color:rgba(107,255,140,.7); text-shadow:0 0 8px rgba(107,255,140,.55); box-shadow:0 0 12px rgba(107,255,140,.25), inset 0 0 8px rgba(107,255,140,.10); }
   .island-fin::before { color:#6bff8c !important; text-shadow:0 0 7px rgba(107,255,140,.5); }
   .island-editor::before { color:#ffea00 !important; text-shadow:0 0 7px rgba(255,234,0,.55); }
-  .island-editor { justify-content:center; }
-  .edit-wrap { position:relative; height:300px; margin-top:auto; }
-  .edit-tools { margin-bottom:auto; }
-  .tx-hint { font-size:8px; letter-spacing:.22em; color:rgba(255,148,136,.6); margin:10px 0 0; }
+  .edit-wrap { position:relative; height:240px; margin-top:12px; }
+  .edit-panels { display:flex; gap:12px; margin-top:12px; flex:1; align-items:stretch; }
+  .edit-panel { flex:1; border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; background:rgba(0,0,0,.25); }
+  .edit-panel-title { margin:0 0 8px; font-family:"VT323",monospace; font-size:14px; letter-spacing:.14em; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); }
+  .edit-panel-hint { font-size:8px; letter-spacing:.2em; color:rgba(255,148,136,.55); margin:8px 0 0; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
   .edit-tools { display:flex; gap:8px; align-items:center; margin-top:12px; }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
@@ -303,7 +304,7 @@
           </div>
           <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
-          <button id="edLoopBtn" disabled title="Loop the preview (selection or whole material)">LOOP</button>
+          <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
@@ -323,12 +324,36 @@
         <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
-        <button id="edUndo" disabled title="Undo edits step by step (up to 10)">UNDO</button>
+        <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
-        <button id="edMarkersBtn" disabled title="Slice markers: detect, sensitivity, clear">MARKERS</button>
-        <button id="edToneBtn" disabled title="Vocal EQ and de-esser (tweak live while previewing)">TONE</button>
-        <button id="edFitBtn" disabled title="Zoom to fit (mouse wheel zooms, Shift+drag pans)">FIT</button>
+        <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
+        <button id="edZoomIn" disabled title="Zoom in at view center (mouse wheel zooms at cursor)">ZOOM +</button>
+        <button id="edFitBtn" disabled title="Show the whole material (Shift+drag pans when zoomed)">ALL</button>
         <span class="edit-selinfo" id="editSelInfo"></span>
+      </div>
+      <div class="edit-panels">
+        <div class="edit-panel">
+          <p class="edit-panel-title">SLICE MARKERS</p>
+          <div class="edit-tools" style="margin-top:0">
+            <span class="etool"><i>SENSITIVITY</i><input type="range" id="edSens" min="0" max="100" value="50" title="Re-slices live while dragging (right = more markers)"></span>
+            <button id="edClrMk" title="Clear all markers (back to grid slicing)">CLR MK</button>
+          </div>
+          <p class="edit-panel-hint">AUTO-SLICED ON LOAD &mdash; DOUBLE-CLICK: SET / REMOVE &mdash; DRAG FLAG: MOVE</p>
+        </div>
+        <div class="edit-panel">
+          <p class="edit-panel-title">TONE // VOCAL STRIP</p>
+          <div class="edit-tools" style="margin-top:0">
+            <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosives (0 = off)"></span>
+            <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz"></span>
+            <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
+            <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
+            <button id="edEqApply" title="Render the EQ into the material">EQ APPLY</button>
+            <span class="edit-sep"></span>
+            <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz"></span>
+            <button id="edDeEssApply" title="Render the de-esser into the material">DE-ESS APPLY</button>
+          </div>
+          <p class="edit-panel-hint">TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IT IN</p>
+        </div>
       </div>
     </section>
 
@@ -396,7 +421,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.20</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.22</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -421,36 +446,10 @@
   <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
 </div>
 
-<div class="note-pop tx-pop hidden" id="mkPop">
-  <p class="tx-title">SLICE MARKERS</p>
-  <div class="edit-tools" style="margin-top:0">
-    <button id="edDetect" title="Detect onsets and set slice markers">DETECT</button>
-    <span class="etool"><i>SENSITIVITY</i><input type="range" id="edSens" min="0" max="100" value="50" title="Right = more markers"></span>
-    <button id="edClrMk" title="Clear all markers (back to grid slicing)">CLR MK</button>
-  </div>
-  <p class="tx-hint">DOUBLE-CLICK WAVE: SET / REMOVE &mdash; DRAG FLAG: MOVE</p>
-</div>
-
-<div class="note-pop tx-pop hidden" id="tonePop">
-  <p class="tx-title">TONE // VOCAL STRIP</p>
-  <div class="edit-tools" style="margin-top:0">
-    <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosives (0 = off)"></span>
-    <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz"></span>
-    <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
-    <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
-    <button id="edEqApply" title="Render the EQ into the material">EQ APPLY</button>
-  </div>
-  <div class="edit-tools">
-    <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz"></span>
-    <button id="edDeEssApply" title="Render the de-esser into the material">DE-ESS APPLY</button>
-  </div>
-  <p class="tx-hint">TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IT IN</p>
-</div>
-
 <div class="note-pop tx-pop hidden" id="atUrlPop">
   <p class="tx-title">IMPORT // PROJECT LINK</p>
-  <label class="tx-l">PASTE THE PROJECT URL FROM BETA.AUDIOTOOL.COM</label>
-  <input type="text" id="atUrlInput" spellcheck="false" title="Project link, e.g. https://beta.audiotool.com/studio?project=...">
+  <label class="tx-l">PASTE THE PROJECT URL FROM AUDIOTOOL.COM</label>
+  <input type="text" id="atUrlInput" spellcheck="false" title="Project link, e.g. https://www.audiotool.com/studio?project=...">
   <div class="tx-row">
     <button id="atUrlCancel" title="Close without opening">CANCEL</button>
     <button id="atUrlOpen" class="primary" title="Open the project and list its timeline samples">OPEN</button>
@@ -510,7 +509,7 @@
 (() => {
   "use strict";
 
-  const REV="2.20";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.22";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -650,7 +649,9 @@
     editUndoStack=[]; editSel=null; markers=[]; editView=null;
     buffer=buf; bufferBpm=(srcBpm>=30&&srcBpm<=300)?srcBpm:P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
-    buildReversed(); pitchCache.clear(); fillOrdered();
+    buildReversed(); pitchCache.clear();
+    autoDetect();                                          // Slices liegen ab Sekunde 1 bereit
+    fillOrdered();
     undoStack=[]; redoStack=[];
     drawEditWave();                                   // Editor-Ansicht haelt Schritt
   }
@@ -1204,6 +1205,13 @@
     if (tag==="INPUT"||tag==="TEXTAREA") return;
     if (e.target && (e.target.tagName==="INPUT"&&e.target.type==="text"||e.target.tagName==="TEXTAREA")) return; // Texteingabe: Tastatur gehoert dem Feld
     const mod=e.ctrlKey||e.metaKey;
+    const inEditor=deckEl.classList.contains("st-editor");
+    if (inEditor){                                        // klassische Editor-Shortcuts
+      if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); edUndo.click(); return; }
+      if (mod && (e.key==="a"||e.key==="A")){ e.preventDefault(); if (buffer){ editSel={ a:0, b:buffer.duration }; drawEditWave(); } return; }
+      if ((e.key==="Delete"||e.key==="Backspace") && editSel){ e.preventDefault(); edCut.click(); return; }
+      if (e.key==="Escape" && editSel){ editSel=null; drawEditWave(); return; }
+    }
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); redo(); return; }
     if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
@@ -1476,7 +1484,7 @@
     });
     placePop(listPop, importBtn);
   }
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); mkPop.classList.add("hidden"); tonePop.classList.add("hidden"); } });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
     if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
@@ -1560,7 +1568,7 @@
     let nexus=null;
     try {
       setStatus("OPENING PROJECT");
-      const url=proj.url || ("https://beta.audiotool.com/studio?project="+(proj.id||proj.projectId||proj.name||""));
+      const url=proj.url || ("https://www.audiotool.com/studio?project="+(proj.id||proj.projectId||proj.name||""));
       nexus=await at.open(url);
       if (nexus && nexus.start) await nexus.start();
       // Projekt-Tempo aus der config-Entity — der Import uebernimmt es 1:1 statt zu schaetzen.
@@ -1997,12 +2005,11 @@
     const hasSel=!!editSel, hasBuf=!!buffer;
     edTrim.disabled=edCut.disabled=edFadeIn.disabled=edFadeOut.disabled=!hasSel;
     edNorm.disabled=!hasBuf;
-    $("#edDetect").disabled=!hasBuf;
     $("#edClrMk").disabled=!hasBuf || !markers.length;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
     $("#edEqApply").disabled=$("#edDeEssApply").disabled=!hasBuf;
-    $("#edMarkersBtn").disabled=$("#edToneBtn").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
+    $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
   let editDrag=null, mDrag=-1, panDrag=null;
@@ -2233,7 +2240,7 @@
     });
   });
   // ---------- REX-Marker: Onset-Erkennung + Handarbeit ----------
-  const edDetect=$("#edDetect"), edSens=$("#edSens"), edClrMk=$("#edClrMk");
+  const edSens=$("#edSens"), edClrMk=$("#edClrMk");
   function detectOnsets(buf, sens){
     const sr=buf.sampleRate, d=buf.getChannelData(0);
     const hop=256, frame=512, n=Math.floor((d.length-frame)/hop);
@@ -2260,21 +2267,28 @@
     drawEditWave(); drawWave();
     setStatus(msg);
   }
-  edDetect.addEventListener("click", ()=>{
+  function autoDetect(){                                 // Hintergrund-Erkennung: Marker sind einfach da
     if (!buffer) return;
-    pushEditUndo("DETECT");
     markers=detectOnsets(buffer, (Number(edSens.value)||0)/100);
-    markersChanged(markers.length ? (markers.length+" MARKERS SET // ONSET SLICING") : "NO ONSETS FOUND // TRY HIGHER SENSITIVITY");
+  }
+  edSens.addEventListener("input", ()=>{
+    if (!buffer) return;
+    autoDetect();
+    markersChanged(markers.length ? (markers.length+" SLICES // SENS "+edSens.value) : "NO ONSETS // GRID SLICING");
   });
-  const mkPop=$("#mkPop"), tonePop=$("#tonePop");
-  $("#edMarkersBtn").addEventListener("click", (e)=>{
-    tonePop.classList.add("hidden");
-    if (mkPop.classList.contains("hidden")){ placePop(mkPop, e.currentTarget); } else mkPop.classList.add("hidden");
-  });
-  $("#edToneBtn").addEventListener("click", (e)=>{
-    mkPop.classList.add("hidden");
-    if (tonePop.classList.contains("hidden")){ placePop(tonePop, e.currentTarget); } else tonePop.classList.add("hidden");
-  });
+  function zoomBy(f){
+    if (!buffer) return;
+    const center=evT0()+evDur()/2;
+    let len=evDur()*f;
+    len=Math.max(0.05, Math.min(buffer.duration, len));
+    if (len>=buffer.duration-0.001){ editView=null; drawEditWave(); return; }
+    let t0=center-len/2;
+    t0=Math.max(0, Math.min(buffer.duration-len, t0));
+    editView={ t0, t1:t0+len };
+    drawEditWave();
+  }
+  $("#edZoomIn").addEventListener("click", ()=>zoomBy(1/1.5));
+  $("#edZoomOut").addEventListener("click", ()=>zoomBy(1.5));
   $("#edFitBtn").addEventListener("click", ()=>{ editView=null; drawEditWave(); setStatus("ZOOM RESET"); });
   edClrMk.addEventListener("click", ()=>{
     if (!buffer || !markers.length) return;
