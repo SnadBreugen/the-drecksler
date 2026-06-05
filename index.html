@@ -323,7 +323,7 @@
         <span class="edit-selinfo" id="editSelInfo"></span>
       </div>
       <div class="edit-tools edit-tools2">
-        <button id="edDetect" disabled title="Detect onsets and set REX slice markers">DETECT</button>
+        <button id="edDetect" disabled title="Detect onsets and set slice markers">DETECT</button>
         <input type="range" id="edSens" min="0" max="100" value="50" title="Detection sensitivity (right = more markers)">
         <button id="edClrMk" disabled title="Clear all markers (back to grid slicing)">CLR MK</button>
         <span class="edit-sep"></span>
@@ -402,7 +402,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.18</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.19</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -490,7 +490,7 @@
 (() => {
   "use strict";
 
-  const REV="2.18";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.19";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2191,7 +2191,7 @@
     if (!buffer) return;
     pushEditUndo("DETECT");
     markers=detectOnsets(buffer, (Number(edSens.value)||0)/100);
-    markersChanged(markers.length ? (markers.length+" MARKERS SET // REX SLICING") : "NO ONSETS FOUND // TRY HIGHER SENSITIVITY");
+    markersChanged(markers.length ? (markers.length+" MARKERS SET // ONSET SLICING") : "NO ONSETS FOUND // TRY HIGHER SENSITIVITY");
   });
   edClrMk.addEventListener("click", ()=>{
     if (!buffer || !markers.length) return;
