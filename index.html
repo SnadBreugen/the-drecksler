@@ -84,6 +84,17 @@
   .island-fx .fx-panel { border:none; background:transparent; padding:0; flex:1; }
   .pop { position:fixed; z-index:60; padding:8px 14px 9px; background:linear-gradient(180deg, var(--panel) 0%, var(--bg2) 100%); border:1px solid rgba(255,234,0,.7); border-radius:var(--radius); box-shadow:0 0 26px rgba(0,0,0,.6), 0 0 22px rgba(255,234,0,.45); pointer-events:none; }
   .pop-val { font-family:"VT323",monospace; font-size:24px; color:var(--info); letter-spacing:.04em; line-height:1; text-shadow:0 0 12px rgba(255,234,0,.7); }
+  .tx-pop { width:330px; display:flex; flex-direction:column; gap:6px; padding:14px; }
+  .tx-pop .tx-title { font-family:"VT323",monospace; font-weight:400; font-size:18px; letter-spacing:.04em; color:#6bff8c; text-shadow:0 0 6px rgba(107,255,140,.35); text-transform:uppercase; margin:0 0 4px; }
+  .tx-pop .tx-l { font-size:9px; letter-spacing:.34em; color:rgba(255,234,0,.85); text-transform:uppercase; margin-top:5px; }
+  .tx-pop .tx-opt { color:rgba(255,255,255,.3); letter-spacing:.2em; }
+  .tx-pop input { background:rgba(0,0,0,.45); border:1px solid var(--line); border-radius:var(--radius); color:#6bff8c; font-family:"VT323",monospace; font-weight:400; font-size:17px; padding:6px 9px; outline:none; }
+  .tx-pop input:focus { border-color:rgba(255,234,0,.55); box-shadow:0 0 10px rgba(255,234,0,.18); }
+  .tx-pop .tx-kind { display:flex; gap:0; }
+  .tx-pop .tx-kind button { flex:1; border-radius:var(--radius) 0 0 var(--radius); }
+  .tx-pop .tx-kind button+button { border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
+  .tx-pop .tx-row { display:flex; gap:8px; margin-top:10px; }
+  .tx-pop .tx-row button { flex:1; }
   .note-pop { position:fixed; z-index:65; padding:10px; background:linear-gradient(180deg, var(--panel) 0%, var(--bg2) 100%); border:1px solid rgba(255,234,0,.55); border-radius:var(--radius); box-shadow:0 0 28px rgba(0,0,0,.6), 0 0 18px rgba(255,234,0,.25); }
   .np-notes { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:6px; }
   .np-notes button, .np-oct button { padding:7px 0; font-size:11px; min-width:38px; text-align:center; }
@@ -315,6 +326,24 @@
   </div>
   <div class="np-oct">
     <button data-o="3">OCT 3</button><button data-o="4">OCT 4</button><button data-o="5">OCT 5</button>
+  </div>
+</div>
+
+<div class="note-pop tx-pop hidden" id="txPop">
+  <p class="tx-title">TRANSMIT // METADATA</p>
+  <label class="tx-l">TITLE</label>
+  <input type="text" id="txName" maxlength="80" spellcheck="false">
+  <label class="tx-l">KIND</label>
+  <div class="tx-kind">
+    <button id="txLoop" class="active" title="Loop — Projekt-BPM wird mitgesendet">LOOP</button><button id="txShot" title="One-Shot — ohne Tempo">ONE-SHOT</button>
+  </div>
+  <label class="tx-l">DESCRIPTION <span class="tx-opt">OPTIONAL</span></label>
+  <input type="text" id="txDesc" maxlength="200" spellcheck="false">
+  <label class="tx-l">TAGS <span class="tx-opt">KOMMA-GETRENNT</span></label>
+  <input type="text" id="txTags" maxlength="120" spellcheck="false" value="drecksler">
+  <div class="tx-row">
+    <button id="txCancel">CANCEL</button>
+    <button id="txSend" class="primary">TRANSMIT</button>
   </div>
 </div>
 
@@ -992,6 +1021,7 @@
   window.addEventListener("keydown",(e)=>{
     const tag=(document.activeElement&&document.activeElement.tagName)||"";
     if (tag==="INPUT"||tag==="TEXTAREA") return;
+    if (e.target && (e.target.tagName==="INPUT"&&e.target.type==="text"||e.target.tagName==="TEXTAREA")) return; // Texteingabe: Tastatur gehoert dem Feld
     const mod=e.ctrlKey||e.metaKey;
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); redo(); return; }
@@ -1460,7 +1490,8 @@
     if (!atSdkPromise){
       setStatus("UPLINK // LOADING SDK");
       atSdkPromise=import("https://esm.sh/@audiotool/nexus@0.0.17")
-        .catch(()=>import("https://esm.sh/@audiotool/nexus"));
+        .catch(()=>import("https://esm.sh/@audiotool/nexus"))
+        .catch((e)=>{ atSdkPromise=null; throw e; });   // Fehlversuch nicht cachen — naechster Klick darf neu laden
     }
     return atSdkPromise;
   }
@@ -1505,6 +1536,29 @@
     const a=document.createElement("a"); a.href=url; a.download="snad-voiceforge-"+Date.now()+".wav"; a.click(); URL.revokeObjectURL(url);
     setStatus("EXPORT COMPLETE // "+rendered.duration.toFixed(1)+"S");
   });
+  // ---------- Transmit-Popup ----------
+  const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags");
+  const txLoop=$("#txLoop"), txShot=$("#txShot"), txSend=$("#txSend"), txCancel=$("#txCancel");
+  let txKind="loop";
+  function setTxKind(k){ txKind=k; txLoop.classList.toggle("active",k==="loop"); txShot.classList.toggle("active",k==="one-shot"); }
+  txLoop.addEventListener("click",()=>setTxKind("loop"));
+  txShot.addEventListener("click",()=>setTxKind("one-shot"));
+  function openTxPop(){
+    txName.value="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+    if (!txTags.value.trim()) txTags.value="drecksler";
+    setTxKind("loop");
+    txPop.classList.remove("hidden");
+    const r=atBtn.getBoundingClientRect(), pw=txPop.offsetWidth, ph=txPop.offsetHeight;
+    txPop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
+    txPop.style.top=Math.max(8, r.top-ph-10)+"px";
+    txName.focus(); txName.select();
+  }
+  function closeTxPop(){ txPop.classList.add("hidden"); }
+  txCancel.addEventListener("click", closeTxPop);
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeTxPop(); });
+  document.addEventListener("pointerdown",(e)=>{ if (!txPop.classList.contains("hidden") && !txPop.contains(e.target) && e.target!==atBtn && !atBtn.contains(e.target)) closeTxPop(); });
+  txSend.addEventListener("click", ()=>{ closeTxPop(); sendToAudiotool(); });
+
   async function sendToAudiotool(){
     if (!buffer) return;
     if (!atSession){
@@ -1515,7 +1569,7 @@
       setStatus("RENDERING // TRANSMIT");
       const rendered=await renderProcessed();
       const wavBlob=encodeWav(rendered);
-      const name="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+      const name=(txName.value.trim()||"DRECKSLER_"+Date.now());
       const file=new File([wavBlob], name+".wav", { type:"audio/wav" });
       const c=atSession.client||atSession;
       if (!(c.samples && c.samples.upload)){
@@ -1523,7 +1577,15 @@
         setStatus("TRANSMIT FAILED // SAMPLES API"); return;
       }
       setStatus("TRANSMITTING // "+Math.round(wavBlob.size/1024)+" KB");
-      const up=await c.samples.upload({ file, displayName:name });
+      const tags=txTags.value.split(",").map((t)=>t.trim().toLowerCase()).filter(Boolean);
+      const up=await c.samples.upload({
+        file, displayName:name,
+        kind:txKind,
+        bpm: txKind==="loop" ? Math.round(P.chop.bpm) : 0,
+        description: txDesc.value.trim(),
+        tags: tags.length?tags:["drecksler"],
+        preventTabClose: true,
+      });
       if (up instanceof Error) throw up;
       const onServer=await up.uploaded;
       if (onServer instanceof Error) throw onServer;
@@ -1537,7 +1599,7 @@
       setStatus("TRANSMIT FAILED // SIEHE KONSOLE (F12)");
     }
   }
-  atBtn.addEventListener("click", sendToAudiotool);
+  atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
 
   window.addEventListener("resize", ()=>{ drawWave(); drawGrid(); });
   drawGrid();
