@@ -73,15 +73,22 @@
   .edit-panel { flex:1; border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; background:rgba(0,0,0,.25); }
   .edit-panel-title { margin:0 0 8px; font-family:"VT323",monospace; font-size:14px; letter-spacing:.14em; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); }
   .edit-panel-hint { font-size:8px; letter-spacing:.2em; color:rgba(255,148,136,.55); margin:8px 0 0; }
+  .eq8-row { display:flex; gap:14px; justify-content:center; padding:6px 4px 0; }
+  .eq8-band { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .eq8-band i { font-style:normal; font-size:8px; letter-spacing:.14em; color:rgba(255,148,136,.75); }
+  .eq8-band input[type=range]{ writing-mode:vertical-lr; direction:rtl; width:26px; height:110px; cursor:ns-resize; }
+  .eq8-band input[type=range]::-webkit-slider-runnable-track { width:3px; height:100%; background:linear-gradient(180deg, var(--line), var(--sig-deep)); }
+  .eq8-band input[type=range]::-webkit-slider-thumb { margin-top:0; margin-left:-5px; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
-  .edit-tools { display:flex; gap:8px; align-items:center; margin-top:12px; }
+  .edit-tools { display:flex; gap:6px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+  .edit-tools button { padding:7px 10px; font-size:8.5px; }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
   #edSens { width:90px; }
   .edit-tools2 { margin-top:8px; }
   .etool { display:flex; flex-direction:column; gap:2px; flex:none; }
   .etool i { font-style:normal; font-size:8px; letter-spacing:.2em; color:rgba(255,148,136,.75); }
-  .etool input { width:72px; }
-  .edit-selinfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); letter-spacing:.06em; }
+  .etool input[type=range] { width:72px; }
+  .edit-selinfo { margin-left:auto; flex:none; white-space:nowrap; font-family:"VT323",monospace; font-size:15px; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); letter-spacing:.06em; }
   .island-fin { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; align-items:center; justify-content:center; min-height:430px; }
   .fin-note { text-align:center; font-size:11px; letter-spacing:.3em; line-height:2.4; color:rgba(255,148,136,.75); text-transform:uppercase; }
   .fin-note span { color:var(--info); text-shadow:0 0 8px rgba(255,234,0,.45); }
@@ -347,9 +354,10 @@
             <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz"></span>
             <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
             <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
-            <button id="edEqApply" title="Render the EQ into the material">EQ APPLY</button>
+            <button id="edEqApply" title="Render the quick EQ into the material">EQ APPLY</button>
+            <button id="edEq8Btn" title="8-band graphic EQ (popup, tweak live while previewing)">8-BAND</button>
             <span class="edit-sep"></span>
-            <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz"></span>
+            <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="0" title="Tames sharp S sounds above 5.5 kHz"></span>
             <button id="edDeEssApply" title="Render the de-esser into the material">DE-ESS APPLY</button>
           </div>
           <p class="edit-panel-hint">TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IT IN</p>
@@ -421,7 +429,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.22</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.23</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -444,6 +452,24 @@
 <div class="note-pop src-pop hidden" id="srcPop">
   <button id="srcFile" title="Load an audio file from disk">FILE</button>
   <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
+</div>
+
+<div class="note-pop tx-pop hidden" id="eq8Pop">
+  <p class="tx-title">GRAPHIC EQ // 8 BAND</p>
+  <div class="eq8-row">
+    <span class="eq8-band"><input type="range" id="eq8b0" min="0" max="100" value="50" title="80 Hz (&plusmn;9 dB)"><i>80</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b1" min="0" max="100" value="50" title="160 Hz (&plusmn;9 dB)"><i>160</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b2" min="0" max="100" value="50" title="315 Hz (&plusmn;9 dB)"><i>315</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b3" min="0" max="100" value="50" title="630 Hz (&plusmn;9 dB)"><i>630</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b4" min="0" max="100" value="50" title="1.25 kHz (&plusmn;9 dB)"><i>1K2</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b5" min="0" max="100" value="50" title="2.5 kHz (&plusmn;9 dB)"><i>2K5</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b6" min="0" max="100" value="50" title="5 kHz (&plusmn;9 dB)"><i>5K</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b7" min="0" max="100" value="50" title="10 kHz (&plusmn;9 dB)"><i>10K</i></span>
+  </div>
+  <div class="tx-row">
+    <button id="eq8Flat" title="Reset all bands to 0 dB">FLAT</button>
+    <button id="eq8Apply" class="primary" title="Render the 8-band EQ into the material">APPLY</button>
+  </div>
 </div>
 
 <div class="note-pop tx-pop hidden" id="atUrlPop">
@@ -509,7 +535,7 @@
 (() => {
   "use strict";
 
-  const REV="2.22";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.23";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1484,7 +1510,7 @@
     });
     placePop(listPop, importBtn);
   }
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); eq8Pop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
     if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
@@ -1738,14 +1764,20 @@
   function buildPreviewFx(ac){
     const mk=(type,freq,Q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=freq; b.Q.value=Q; b.gain.value=0; return b; };
     const low=mk("highpass",10,0.71), mud=mk("peaking",250,1.0), pres=mk("peaking",3500,0.9), air=mk("highshelf",12000,0.71);
-    const lo=mk("lowpass",5500,0.71), hi=mk("highpass",5500,0.71);
+    const lo=mk("lowpass",5500,0.5), hi=mk("highpass",5500,0.5);   // LR-Split: Q 0.5 + invertierter HF-Zweig = flache Summe
+    const inv=ac.createGain(); inv.gain.value=-1;
     const comp=ac.createDynamicsCompressor();
     comp.threshold.value=0; comp.ratio.value=1; comp.attack.value=0.002; comp.release.value=0.06; comp.knee.value=6;
     const sum=ac.createGain();
+    const eq8=[];
+    const EQ8F=[80,160,315,630,1250,2500,5000,10000];
+    let tail=null;
     low.connect(mud); mud.connect(pres); pres.connect(air);
-    air.connect(lo); lo.connect(sum);
-    air.connect(hi); hi.connect(comp); comp.connect(sum);
-    return { input:low, output:sum, low, mud, pres, air, comp };
+    tail=air;
+    for (const f of EQ8F){ const b=mk("peaking",f,1.1); tail.connect(b); tail=b; eq8.push(b); }
+    tail.connect(lo); lo.connect(sum);
+    tail.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum);
+    return { input:low, output:sum, low, mud, pres, air, comp, eq8 };
   }
   function updatePreviewFx(){
     if (!previewFx) return;
@@ -1759,6 +1791,7 @@
     const a=(Number($("#edDeEss").value)||0)/100;
     fx.comp.threshold.setTargetAtTime(a>0.01 ? -15-30*a : 0, t, T);
     fx.comp.ratio.setTargetAtTime(a>0.01 ? 6 : 1, t, T);
+    if (fx.eq8) for (let i=0;i<fx.eq8.length;i++) fx.eq8[i].gain.setTargetAtTime(eq8Db(i), t, T);
   }
   function startStraight(ac, resumeOffset){
     playSource=ac.createBufferSource(); playSource.buffer=buffer;
@@ -2228,14 +2261,15 @@
     if (!buffer) return;
     const sp=deEssSpec((Number($("#edDeEss").value)||0)/100);
     applyRendered("DE-ESSED", (off, src)=>{
-      const lo=off.createBiquadFilter(); lo.type="lowpass";  lo.frequency.value=sp.split; lo.Q.value=0.71;
-      const hi=off.createBiquadFilter(); hi.type="highpass"; hi.frequency.value=sp.split; hi.Q.value=0.71;
+      const lo=off.createBiquadFilter(); lo.type="lowpass";  lo.frequency.value=sp.split; lo.Q.value=0.5;
+      const hi=off.createBiquadFilter(); hi.type="highpass"; hi.frequency.value=sp.split; hi.Q.value=0.5;
+      const inv=off.createGain(); inv.gain.value=-1;       // LR-Split: flache Summe
       const comp=off.createDynamicsCompressor();
       comp.threshold.value=sp.threshold; comp.ratio.value=sp.ratio;
       comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
       const sum=off.createGain();
       src.connect(lo); lo.connect(sum);                    // Tiefen-Zweig trocken
-      src.connect(hi); hi.connect(comp); comp.connect(sum);// S-Band komprimiert
+      src.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum); // S-Band komprimiert
       return sum;
     });
   });
@@ -2250,8 +2284,9 @@
     if (maxE<1e-6) return [];
     const flux=new Float32Array(n); for (let i=1;i<n;i++) flux[i]=Math.max(0, e[i]-e[i-1]);
     const sorted=Array.from(flux).sort((a,b)=>a-b), med=sorted[Math.floor(n*0.5)]||0;
-    const k=6 - 4.8*Math.max(0, Math.min(1, sens));            // links streng, rechts empfindlich
-    const thr=Math.max(med*k, maxE*0.012);
+    const sn=Math.max(0, Math.min(1, sens));
+    const k=6 - 4.8*sn;                                            // links streng, rechts empfindlich
+    const thr=Math.max(med*k, maxE*(0.05 - 0.044*sn));             // auch die absolute Schwelle folgt dem Regler
     const minGap=Math.round(0.06*sr/hop);
     const out=[]; let last=-minGap;
     for (let i=1;i<n;i++){
@@ -2287,6 +2322,31 @@
     editView={ t0, t1:t0+len };
     drawEditWave();
   }
+  const eq8Pop=$("#eq8Pop");
+  const eq8Sliders=[0,1,2,3,4,5,6,7].map((i)=>$("#eq8b"+i));
+  const EQ8F=[80,160,315,630,1250,2500,5000,10000];
+  const eq8Db=(i)=>((Number(eq8Sliders[i].value)||50)-50)/50*9;
+  $("#edEq8Btn").addEventListener("click",(e)=>{
+    if (eq8Pop.classList.contains("hidden")) placePop(eq8Pop, e.currentTarget);
+    else eq8Pop.classList.add("hidden");
+  });
+  for (const sl of eq8Sliders) sl.addEventListener("input", updatePreviewFx);
+  $("#eq8Flat").addEventListener("click", ()=>{ for (const sl of eq8Sliders) sl.value=50; updatePreviewFx(); setStatus("EQ FLAT"); });
+  $("#eq8Apply").addEventListener("click", ()=>{
+    if (!buffer) return;
+    const bands=EQ8F.map((f,i)=>({ f, db:eq8Db(i) })).filter((b)=>Math.abs(b.db)>0.2);
+    if (!bands.length){ setStatus("EQ FLAT // NOTHING TO APPLY"); return; }
+    eq8Pop.classList.add("hidden");
+    applyRendered("8-BAND EQ APPLIED", (off, src)=>{
+      let n=src;
+      for (const b of bands){
+        const bi=off.createBiquadFilter();
+        bi.type="peaking"; bi.frequency.value=b.f; bi.Q.value=1.1; bi.gain.value=b.db;
+        n.connect(bi); n=bi;
+      }
+      return n;
+    });
+  });
   $("#edZoomIn").addEventListener("click", ()=>zoomBy(1/1.5));
   $("#edZoomOut").addEventListener("click", ()=>zoomBy(1.5));
   $("#edFitBtn").addEventListener("click", ()=>{ editView=null; drawEditWave(); setStatus("ZOOM RESET"); });
