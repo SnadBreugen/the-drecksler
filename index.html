@@ -315,7 +315,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.3</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.4</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -403,7 +403,7 @@
 (() => {
   "use strict";
 
-  const REV="1.3";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.4";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -502,7 +502,7 @@
   const loopDur=()=>totalSteps()*stepDur();
   // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper nutzt (2 Takte in MATERIAL-Zeit).
   const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(totalSteps()*srcStepDur(), buffer.duration) : buffer.duration);
-  const sliceCount=()=>buffer?Math.max(0,Math.floor(buffer.duration/srcStepDur())):0;
+  const sliceCount=()=>buffer?Math.max(0,Math.floor(buffer.duration/srcStepDur() + 0.001)):0;
   const makeChop=(slice)=>({ slice, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, len:1 });
 
   function cloneBuffer(buf){
@@ -1366,10 +1366,22 @@
     }
     return out;
   }
+  // Buffer exakt auf N Beats im gegebenen Tempo bringen (trim/pad) — nach der BPM-Rundung
+  // passt das Taktfenster sonst nicht mehr haargenau und der letzte Slice kippt weg.
+  function fitBufferToBeats(buf, beats, bpm){
+    const sr=buf.sampleRate, target=Math.round(beats*(60/bpm)*sr);
+    if (target===buf.length) return buf;
+    const out=ctxGet().createBuffer(buf.numberOfChannels, target, sr);
+    for (let c=0;c<buf.numberOfChannels;c++){
+      out.getChannelData(c).set(buf.getChannelData(c).subarray(0, Math.min(target, buf.length)));
+    }
+    return out;
+  }
   function ingestDecoded(buf, label, source){
     const det=detectImportBPM(buf.duration);
     if (det){
       P.chop.bpm=det.bpm; syncChopBtns();
+      buf=fitBufferToBeats(buf, det.bars*4, det.bpm);  // exakt auf das erkannte Taktfenster
       if (det.bars===1) buf=doubleBuffer(buf);     // 1 Takt -> verdoppeln, beide Hecksler-Takte voll
       loadDecodedBuffer(buf, "TEMPO LOCKED // "+det.bpm+" BPM // "+label, source);
     } else {
