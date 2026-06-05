@@ -429,7 +429,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.23</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.24</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -535,7 +535,7 @@
 (() => {
   "use strict";
 
-  const REV="2.23";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.24";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2001,6 +2001,20 @@
       const bh=Math.max(1, pk*(h*0.92));
       ectx.fillRect(x, mid-bh/2, 1, bh);
     }
+    // Slice-Zebra: die Schnittstuecke sichtbar machen (nur im Marker-Modus)
+    if (markers.length){
+      const tab=sliceTable();
+      for (let i=0;i<tab.length;i++){
+        const x1=Math.max(0, t2px(tab[i].t0, w)), x2=Math.min(w, t2px(tab[i].t0+tab[i].dur, w));
+        if (x2<=0 || x1>=w) continue;
+        let shade=(i%2) ? "rgba(255,255,255,.045)" : null;
+        if (mDrag>=0){
+          const m=markers[mDrag];
+          if (Math.abs(tab[i].t0-m)<0.002 || Math.abs(tab[i].t0+tab[i].dur-m)<0.002) shade="rgba(255,234,0,.10)";  // die zwei Slices an der Fahne
+        }
+        if (shade){ ectx.fillStyle=shade; ectx.fillRect(x1,0,x2-x1,h); }
+      }
+    }
     // Chopfenster-Markierung (was der Chopper verwendet)
     const win=Math.min(totalSteps()*srcStepDur(), dur);
     const wx=t2px(win, w);
@@ -2080,7 +2094,7 @@
   });
   editCanvas.addEventListener("pointerup",()=>{
     if (panDrag){ panDrag=null; return; }
-    if (mDrag>=0){ mDrag=-1; markersChanged("MARKER MOVED"); return; }
+    if (mDrag>=0){ const m=markers[mDrag]; mDrag=-1; markersChanged("MARKER MOVED"); auditionSliceAt(m); return; }
     editDrag=null; drawEditWave();
   });
   editCanvas.addEventListener("wheel",(e)=>{
@@ -2356,6 +2370,22 @@
     markers=[];
     markersChanged("MARKERS CLEARED // GRID SLICING");
   });
+  function auditionSliceAt(m){
+    if (!buffer || isPlaying()) return;                   // laufendes Playback hat Vorrang
+    const tab=sliceTable();
+    const sl=tab.find((x)=>Math.abs(x.t0-m)<0.003);
+    if (!sl) return;
+    const ac=ctxGet();
+    const src=ac.createBufferSource(); src.buffer=buffer;
+    const g=ac.createGain();
+    const dur=Math.min(sl.dur, 1.2), t=ac.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.9, t+0.005);
+    g.gain.setValueAtTime(0.9, t+dur-0.01);
+    g.gain.linearRampToValueAtTime(0, t+dur);
+    src.connect(g); g.connect(ac.destination);
+    src.start(t, sl.t0, dur);
+  }
   function markerHit(e){
     if (!buffer || !markers.length) return -1;
     const r=editCanvas.getBoundingClientRect();
@@ -2375,6 +2405,7 @@
     else {
       const t=evtT(e);
       markers.push(t); markersChanged("MARKER SET // "+t.toFixed(2)+"s");
+      auditionSliceAt(t);
     }
   });
   edNorm.addEventListener("click", ()=>{
