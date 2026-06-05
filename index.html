@@ -62,19 +62,11 @@
   .station-tabs button:first-child { border-radius:var(--radius) 0 0 var(--radius); border-left:1px solid var(--line); }
   .station-tabs button:last-child { border-radius:0 var(--radius) var(--radius) 0; }
   .island-editor { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; }
-  /* Stations-Lackierung: EDITOR = gelbes Chassis, Schrift-Rollen tauschen auf Rot */
-  .deck.st-editor { background:linear-gradient(168deg, #f2d800 0%, #ddbf00 100%); border-color:#6b5a00; }
-  .deck.st-editor .corp { color:#c9261a; text-shadow:0 0 8px rgba(201,38,26,.5), 0 0 1px rgba(201,38,26,.9); }
-  .deck.st-editor .corp .corp-wave { filter:drop-shadow(0 0 4px rgba(201,38,26,.5)); }
-  .deck.st-editor .brand { color:#3c3300; }
-  .deck.st-editor .brand b { color:#171300; }
-  .deck.st-editor .chassis-rev, .deck.st-editor .chassis-slogan { color:#786700; }
-  /* FINALIZER = gruener Maschinenlack (Freigabe), Anzeige-Gelb kehrt als Leuchtschrift zurueck */
-  .deck.st-fin { background:linear-gradient(168deg, #2fa44e 0%, #279042 100%); border-color:#11532a; }
-  .deck.st-fin .brand { color:#0d3019; }
-  .deck.st-fin .brand b { color:#051a0d; }
-  .deck.st-fin .chassis-rev, .deck.st-fin .chassis-slogan { color:#125a29; }
-  .island-editor::before { color:rgba(255,108,92,1) !important; text-shadow:0 0 7px rgba(255,84,98,.5); }
+  /* Stations-Identitaet als LICHT statt Lack: aktiver Tab + Stage-Tag leuchten in der Stationsfarbe */
+  .deck.st-editor #stEditor { color:#ffea00; border-color:rgba(255,234,0,.75); text-shadow:0 0 8px rgba(255,234,0,.6); box-shadow:0 0 12px rgba(255,234,0,.28), inset 0 0 8px rgba(255,234,0,.10); }
+  .deck.st-fin #stFin { color:#6bff8c; border-color:rgba(107,255,140,.7); text-shadow:0 0 8px rgba(107,255,140,.55); box-shadow:0 0 12px rgba(107,255,140,.25), inset 0 0 8px rgba(107,255,140,.10); }
+  .island-fin::before { color:#6bff8c !important; text-shadow:0 0 7px rgba(107,255,140,.5); }
+  .island-editor::before { color:#ffea00 !important; text-shadow:0 0 7px rgba(255,234,0,.55); }
   .edit-wrap { position:relative; flex:1; min-height:300px; margin-top:12px; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
   .edit-tools { display:flex; gap:8px; align-items:center; margin-top:12px; }
@@ -383,7 +375,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.8</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.9</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -471,7 +463,7 @@
 (() => {
   "use strict";
 
-  const REV="2.8";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.9";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
