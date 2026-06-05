@@ -72,7 +72,8 @@
   .metro-grp::before { content:"M E T R O N O M"; position:absolute; top:-11px; left:1px; right:1px; font-size:8px; color:#fff; pointer-events:none; text-align:justify; text-align-last:justify; }
   .tbtn { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
   #metroBtn { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; color:#fff; border-radius:var(--radius) 0 0 var(--radius); }
-  #metroNote { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:28px; line-height:1; letter-spacing:0; color:#fff; border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
+  #metroNote { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-family:"VT323",monospace; font-weight:400; font-size:21px; line-height:1; letter-spacing:0; color:rgba(255,255,255,.28); border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
+  #metroNote.lit { color:#6bff8c; text-shadow:0 0 6px rgba(107,255,140,.35); }
   .cap-head .meter { flex:1; }
   .chopbar { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:nowrap; }
   .chopbar .fx-name { font-size:22px; margin-right:2px; }
@@ -1124,9 +1125,9 @@
       btn.classList.add("active"); P.chop.res=+btn.dataset.res; schedStep=0; if (buffer) fillOrdered(); else rebuildGrid(false);
     });
   });
-  metroBtn.addEventListener("click", ()=>{ P.metro=!P.metro; metroBtn.classList.toggle("active", P.metro); });
+  metroBtn.addEventListener("click", ()=>{ P.metro=!P.metro; metroBtn.classList.toggle("active", P.metro); syncMetroNote(); });
   const metroNote=$("#metroNote"), notePop=$("#notePop");
-  function syncMetroNote(){ metroNote.textContent=noteName(P.metroRoot); }
+  function syncMetroNote(){ metroNote.textContent=P.metro?noteName(P.metroRoot):"\u2014"; metroNote.classList.toggle("lit", P.metro); }
   function syncNotePop(){
     const semi=((P.metroRoot%12)+12)%12, oct=Math.floor(P.metroRoot/12)-1;
     notePop.querySelectorAll("[data-n]").forEach((b)=>b.classList.toggle("active", +b.dataset.n===semi));
