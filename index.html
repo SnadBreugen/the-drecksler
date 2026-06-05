@@ -62,7 +62,18 @@
   .station-tabs button:first-child { border-radius:var(--radius) 0 0 var(--radius); border-left:1px solid var(--line); }
   .station-tabs button:last-child { border-radius:0 var(--radius) var(--radius) 0; }
   .island-editor { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; }
-  .stage.island-editor { border-color:rgba(255,234,0,.55); box-shadow:0 0 0 1px rgba(255,234,0,.35), 0 0 18px rgba(255,234,0,.22), inset 0 0 10px rgba(255,234,0,.05); }
+  /* Stations-Lackierung: EDITOR = gelbes Chassis, Schrift-Rollen tauschen auf Rot */
+  .deck.st-editor { background:linear-gradient(168deg, #f2d800 0%, #ddbf00 100%); border-color:#6b5a00; }
+  .deck.st-editor .corp { color:#c9261a; text-shadow:0 0 8px rgba(201,38,26,.5), 0 0 1px rgba(201,38,26,.9); }
+  .deck.st-editor .corp .corp-wave { filter:drop-shadow(0 0 4px rgba(201,38,26,.5)); }
+  .deck.st-editor .brand { color:#3c3300; }
+  .deck.st-editor .brand b { color:#171300; }
+  .deck.st-editor .chassis-rev, .deck.st-editor .chassis-slogan { color:#786700; }
+  /* FINALIZER = gruener Maschinenlack (Freigabe), Anzeige-Gelb kehrt als Leuchtschrift zurueck */
+  .deck.st-fin { background:linear-gradient(168deg, #2fa44e 0%, #279042 100%); border-color:#11532a; }
+  .deck.st-fin .brand { color:#0d3019; }
+  .deck.st-fin .brand b { color:#051a0d; }
+  .deck.st-fin .chassis-rev, .deck.st-fin .chassis-slogan { color:#125a29; }
   .island-editor::before { color:rgba(255,108,92,1) !important; text-shadow:0 0 7px rgba(255,84,98,.5); }
   .edit-wrap { position:relative; flex:1; min-height:300px; margin-top:12px; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
@@ -90,8 +101,8 @@
   .deck-foot { grid-area:foot; margin-bottom:0; display:flex; align-items:center; gap:12px; }
   .deck-foot .foot-meter { flex:1; max-width:380px; margin-left:14px; }
   .chassis-foot { display:flex; align-items:baseline; justify-content:space-between; margin-top:12px; }
-  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:11px; letter-spacing:.3em; color:#69160f; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); }
-  .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#69160f; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
+  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:11px; letter-spacing:.3em; color:#8c2014; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); }
+  .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#8c2014; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
   .cap-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
   .cap-head .transport { margin-top:0; flex:none; }
   .metro-grp { position:relative; display:flex; gap:0; flex:none; }
@@ -277,10 +288,10 @@
   <div class="banner" id="banner"></div>
 
   <div class="station-tabs">
-    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">EDITOR</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">HECKSLER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
+    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">PREPPER</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">HECKSLER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
   </div>
   <div class="deck-grid">
-    <section class="stage island-editor" data-tag="EDITOR">
+    <section class="stage island-editor" data-tag="PREPPER">
       <div class="cap-head">
         <div class="transport">
           <button class="danger tbtn" id="recBtn" title="ARM REC — 1 bar count-in, 2 bars recording"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
@@ -288,6 +299,8 @@
             <button id="metroBtn" title="Metronome on/off — use headphones while recording, the mic picks up the click"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
             <button id="metroNote" title="Root note — click to pick">A4</button>
           </div>
+          <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
+          <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
@@ -319,7 +332,7 @@
       </div>
       <div class="wave-wrap" id="waveWrap">
         <canvas class="wave" id="wave"></canvas>
-        <div class="hint" id="hint">NO MATERIAL &mdash; CAPTURE OR IMPORT IN THE EDITOR</div>
+        <div class="hint" id="hint">NO MATERIAL &mdash; CAPTURE OR IMPORT IN THE PREPPER</div>
       </div>
       <input type="file" id="fileInput" accept="audio/*" class="hidden" />
     </section>
@@ -370,7 +383,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.2</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.8</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -458,7 +471,7 @@
 (() => {
   "use strict";
 
-  const REV="2.2";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.8";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -572,7 +585,7 @@
   }
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
-    [playBtn, stopPlayBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
+    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
   }
   let bufferSource="file";                                   // Herkunft: mic | file | audiotool (Lizenzregel)
   function loadDecodedBuffer(buf, msg, source, srcBpm){
@@ -1123,7 +1136,7 @@
     const mod=e.ctrlKey||e.metaKey;
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); redo(); return; }
-    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else startMonitor(); return; }
+    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
     if (e.key==="Delete"||e.key==="Backspace"){ e.preventDefault(); deleteSelected(); }
@@ -1603,6 +1616,8 @@
   function setPlayIcon(playing){
     playBtn.innerHTML = playing ? PAUSE_SVG : PLAY_SVG;
     playBtn.title = playing ? "PAUSE" : "PLAY";
+    edPlayBtn.innerHTML = playing ? PAUSE_SVG : PLAY_SVG;
+    edPlayBtn.title = playing ? "PAUSE" : "Preview material / selection (Space)";
   }
   function pausePlayback(){
     if (!isPlaying()) return;
@@ -1619,6 +1634,21 @@
   }
   function isPlaying(){ return !!(schedTimer||playSource); }
   playBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startMonitor(); });
+  const edPlayBtn=$("#edPlayBtn"), edStopBtn=$("#edStopBtn");
+  async function startPreview(){
+    if (!buffer) return;
+    const resume=(pauseState && pauseState.mode==="straight") ? pauseState : null;
+    stopPlayback();
+    const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
+    liveFx=buildChain(ac);
+    const keep=selection;
+    selection=editSel ? { start:editSel.a, end:editSel.b } : null;   // Vorschau-Fenster = Editor-Auswahl
+    startStraight(ac, resume?resume.offset:null);
+    selection=keep;
+    setPlayIcon(true);
+  }
+  edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
+  edStopBtn.addEventListener("click", ()=>stopPlayback());
   function startStraight(ac, resumeOffset){
     playSource=ac.createBufferSource(); playSource.buffer=buffer; playSource.connect(liveFx.input);
     const baseOff=selection?selection.start:0, baseDur=selection?selection.end-selection.start:buffer.duration;
@@ -1626,7 +1656,7 @@
     if (resumeOffset!=null && resumeOffset>baseOff && resumeOffset<baseOff+baseDur-0.01){ offset=resumeOffset; dur=baseOff+baseDur-resumeOffset; }
     straightStartedAt=ac.currentTime; straightOffset=offset;
     playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
-    (function follow(){ if (!playSource) return; const ph=offset+(ac.currentTime-straightStartedAt); drawWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); rafId=requestAnimationFrame(follow); })();
+    (function follow(){ if (!playSource) return; const ph=offset+(ac.currentTime-straightStartedAt); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); rafId=requestAnimationFrame(follow); })();
   }
   function startChopper(ac){
     const rs=arguments.length>1 ? (arguments[1]|0) : 0;
@@ -1768,7 +1798,7 @@
     $("#stFin").classList.toggle("active", st==="fin");
     if (st==="editor") drawEditWave();
     if (st==="hecksler"){ drawWave(); drawGrid(); }    // versteckte Canvases haben Breite 0 — frisch rendern
-    setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"HECKSLER":"FINALIZER"));
+    setStatus("STATION // "+(st==="editor"?"PREPPER":st==="hecksler"?"HECKSLER":"FINALIZER"));
   }
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
   $("#stHecksler").addEventListener("click", ()=>setStation("hecksler"));
@@ -1779,7 +1809,7 @@
   const edTrim=$("#edTrim"), edCut=$("#edCut"), edFade=$("#edFade"), edNorm=$("#edNorm"), edUndo=$("#edUndo");
   const ectx=editCanvas.getContext("2d");
   let editSel=null, editUndoBuf=null, editUndoMsg="";
-  function drawEditWave(){
+  function drawEditWave(playhead){
     const dpr=window.devicePixelRatio||1, w=editCanvas.clientWidth, h=editCanvas.clientHeight;
     if (!w||!h) return;
     editCanvas.width=w*dpr; editCanvas.height=h*dpr; ectx.setTransform(dpr,0,0,dpr,0,0);
@@ -1812,6 +1842,10 @@
       ectx.fillStyle="rgba(255,84,98,.16)"; ectx.fillRect(x1,0,x2-x1,h);
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
+    }
+    if (playhead!=null){
+      const px=(playhead/dur)*w;
+      if (px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
     }
     editSelInfo.textContent=editSel ? (editSel.a.toFixed(2)+"s \u2013 "+editSel.b.toFixed(2)+"s") : (dur.toFixed(2)+"s TOTAL");
   }
