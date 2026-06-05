@@ -61,7 +61,9 @@
   .island-chop { grid-area:chop; margin-bottom:0; }
   .deck-foot { grid-area:foot; margin-bottom:0; display:flex; align-items:center; gap:12px; }
   .deck-foot .foot-meter { flex:1; max-width:380px; margin-left:14px; }
-  .chassis-slogan { text-align:right; margin-top:12px; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#69160f; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
+  .chassis-foot { display:flex; align-items:baseline; justify-content:space-between; margin-top:12px; }
+  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:11px; letter-spacing:.3em; color:#69160f; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); }
+  .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#69160f; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
   .cap-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
   .cap-head .transport { margin-top:0; flex:none; }
   .metro-grp { position:relative; display:flex; gap:0; flex:none; }
@@ -309,7 +311,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-slogan">THE SIGNAL CONTINUES</div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.0</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -376,6 +378,9 @@
 <script>
 (() => {
   "use strict";
+
+  const REV="1.0";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
   const P = {
