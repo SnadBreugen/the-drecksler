@@ -311,7 +311,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.0</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.1</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -379,7 +379,7 @@
 (() => {
   "use strict";
 
-  const REV="1.0";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.1";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1353,9 +1353,7 @@
       const hx1=(Math.max(0,dot.start)/vd)*w, hx2=(Math.min(dot.end,vd)/vd)*w;
       if (hx2>hx1){
         const base=dot.col||"rgba(255,233,160,1)";
-        // Leuchtfeld in Chop-Farbe hinter den Balken.
-        ctx.fillStyle=base.replace(/,[\d.]+\)$/, ",0.28)");
-        ctx.fillRect(hx1, 0, hx2-hx1, h);
+        // Nur die Balken selbst leuchten in Chop-Farbe — kein Feld dahinter.
         const hg=ctx.createLinearGradient(0,0,0,h); hg.addColorStop(0,"#ffffff"); hg.addColorStop(0.28,base); hg.addColorStop(1,base);
         ctx.fillStyle=hg;
         drawBars(hx1, hx2);
