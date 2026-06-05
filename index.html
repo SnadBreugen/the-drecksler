@@ -68,7 +68,10 @@
   .deck.st-fin #stFin { color:#6bff8c; border-color:rgba(107,255,140,.7); text-shadow:0 0 8px rgba(107,255,140,.55); box-shadow:0 0 12px rgba(107,255,140,.25), inset 0 0 8px rgba(107,255,140,.10); }
   .island-fin::before { color:#6bff8c !important; text-shadow:0 0 7px rgba(107,255,140,.5); }
   .island-editor::before { color:#ffea00 !important; text-shadow:0 0 7px rgba(255,234,0,.55); }
-  .edit-wrap { position:relative; flex:1; min-height:300px; margin-top:12px; }
+  .island-editor { justify-content:center; }
+  .edit-wrap { position:relative; height:300px; margin-top:auto; }
+  .edit-tools { margin-bottom:auto; }
+  .tx-hint { font-size:8px; letter-spacing:.22em; color:rgba(255,148,136,.6); margin:10px 0 0; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
   .edit-tools { display:flex; gap:8px; align-items:center; margin-top:12px; }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
@@ -300,6 +303,7 @@
           </div>
           <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
+          <button id="edLoopBtn" disabled title="Loop the preview (selection or whole material)">LOOP</button>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
@@ -320,21 +324,11 @@
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10)">UNDO</button>
+        <span class="edit-sep"></span>
+        <button id="edMarkersBtn" disabled title="Slice markers: detect, sensitivity, clear">MARKERS</button>
+        <button id="edToneBtn" disabled title="Vocal EQ and de-esser (tweak live while previewing)">TONE</button>
+        <button id="edFitBtn" disabled title="Zoom to fit (mouse wheel zooms, Shift+drag pans)">FIT</button>
         <span class="edit-selinfo" id="editSelInfo"></span>
-      </div>
-      <div class="edit-tools edit-tools2">
-        <button id="edDetect" disabled title="Detect onsets and set slice markers">DETECT</button>
-        <input type="range" id="edSens" min="0" max="100" value="50" title="Detection sensitivity (right = more markers)">
-        <button id="edClrMk" disabled title="Clear all markers (back to grid slicing)">CLR MK</button>
-        <span class="edit-sep"></span>
-        <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosive thumps (0 = off, right = up to 150 Hz)"></span>
-        <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz (right = stronger cut)"></span>
-        <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral, left = cut, right = boost)"></span>
-        <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz (right = more air)"></span>
-        <button id="edEqApply" disabled title="Render the EQ into the material (tweak live while previewing, then apply)">EQ APPLY</button>
-        <span class="edit-sep"></span>
-        <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz (right = stronger)"></span>
-        <button id="edDeEssApply" disabled title="Render the de-esser into the material (tweak live while previewing, then apply)">DE-ESS APPLY</button>
       </div>
     </section>
 
@@ -402,7 +396,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.19</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.20</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -425,6 +419,32 @@
 <div class="note-pop src-pop hidden" id="srcPop">
   <button id="srcFile" title="Load an audio file from disk">FILE</button>
   <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
+</div>
+
+<div class="note-pop tx-pop hidden" id="mkPop">
+  <p class="tx-title">SLICE MARKERS</p>
+  <div class="edit-tools" style="margin-top:0">
+    <button id="edDetect" title="Detect onsets and set slice markers">DETECT</button>
+    <span class="etool"><i>SENSITIVITY</i><input type="range" id="edSens" min="0" max="100" value="50" title="Right = more markers"></span>
+    <button id="edClrMk" title="Clear all markers (back to grid slicing)">CLR MK</button>
+  </div>
+  <p class="tx-hint">DOUBLE-CLICK WAVE: SET / REMOVE &mdash; DRAG FLAG: MOVE</p>
+</div>
+
+<div class="note-pop tx-pop hidden" id="tonePop">
+  <p class="tx-title">TONE // VOCAL STRIP</p>
+  <div class="edit-tools" style="margin-top:0">
+    <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosives (0 = off)"></span>
+    <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz"></span>
+    <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
+    <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
+    <button id="edEqApply" title="Render the EQ into the material">EQ APPLY</button>
+  </div>
+  <div class="edit-tools">
+    <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="40" title="Tames sharp S sounds above 5.5 kHz"></span>
+    <button id="edDeEssApply" title="Render the de-esser into the material">DE-ESS APPLY</button>
+  </div>
+  <p class="tx-hint">TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IT IN</p>
 </div>
 
 <div class="note-pop tx-pop hidden" id="atUrlPop">
@@ -490,7 +510,7 @@
 (() => {
   "use strict";
 
-  const REV="2.19";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.20";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -627,7 +647,7 @@
   }
   let bufferSource="file";                                   // Herkunft: mic | file | audiotool (Lizenzregel)
   function loadDecodedBuffer(buf, msg, source, srcBpm){
-    editUndoStack=[]; editSel=null; markers=[];
+    editUndoStack=[]; editSel=null; markers=[]; editView=null;
     buffer=buf; bufferBpm=(srcBpm>=30&&srcBpm<=300)?srcBpm:P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear(); fillOrdered();
@@ -1456,7 +1476,7 @@
     });
     placePop(listPop, importBtn);
   }
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); mkPop.classList.add("hidden"); tonePop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
     if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
@@ -1699,6 +1719,13 @@
   }
   edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
   edStopBtn.addEventListener("click", ()=>stopPlayback());
+  let edLoop=false;
+  const edLoopBtn=$("#edLoopBtn");
+  edLoopBtn.addEventListener("click", ()=>{
+    edLoop=!edLoop;
+    edLoopBtn.classList.toggle("active", edLoop);
+    setStatus(edLoop?"PREVIEW LOOP ON":"PREVIEW LOOP OFF");
+  });
   let previewFx=null;                                   // Live-EQ/De-Ess fuer die Editor-Vorschau
   function buildPreviewFx(ac){
     const mk=(type,freq,Q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=freq; b.Q.value=Q; b.gain.value=0; return b; };
@@ -1731,12 +1758,18 @@
       previewFx=buildPreviewFx(ac); updatePreviewFx();
       playSource.connect(previewFx.input); previewFx.output.connect(liveFx.input);
     } else { previewFx=null; playSource.connect(liveFx.input); }
+    const wantLoop=deckEl.classList.contains("st-editor") && edLoop;
     const baseOff=selection?selection.start:0, baseDur=selection?selection.end-selection.start:buffer.duration;
     let offset=baseOff, dur=baseDur;
     if (resumeOffset!=null && resumeOffset>baseOff && resumeOffset<baseOff+baseDur-0.01){ offset=resumeOffset; dur=baseOff+baseDur-resumeOffset; }
     straightStartedAt=ac.currentTime; straightOffset=offset;
-    playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
-    (function follow(){ if (!playSource) return; const ph=offset+(ac.currentTime-straightStartedAt); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); rafId=requestAnimationFrame(follow); })();
+    if (wantLoop){
+      playSource.loop=true; playSource.loopStart=baseOff; playSource.loopEnd=baseOff+baseDur;
+      playSource.start(0, offset);
+    } else {
+      playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
+    }
+    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); rafId=requestAnimationFrame(follow); })();
   }
   function startChopper(ac){
     const rs=arguments.length>1 ? (arguments[1]|0) : 0;
@@ -1897,6 +1930,12 @@
   const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo");
   const ectx=editCanvas.getContext("2d");
   let editSel=null, editUndoStack=[];                 // Mehrstufen-Undo mit Speicher-Budget
+  let editView=null;                                   // {t0,t1} Zoom-Fenster, null = ganzes Material
+  const evT0=()=>editView?editView.t0:0;
+  const evT1=()=>editView?editView.t1:(buffer?buffer.duration:0);
+  const evDur=()=>Math.max(0.001, evT1()-evT0());
+  const px2t=(x,w)=>evT0()+(x/w)*evDur();
+  const t2px=(t,w)=>((t-evT0())/evDur())*w;
   function drawEditWave(playhead){
     const dpr=window.devicePixelRatio||1, w=editCanvas.clientWidth, h=editCanvas.clientHeight;
     if (!w||!h) return;
@@ -1905,35 +1944,42 @@
     editHint.style.display=buffer?"none":"";
     syncEditTools();
     if (!buffer) return;
-    const data=buffer.getChannelData(0), dur=buffer.duration, mid=h/2;
+    const data=buffer.getChannelData(0), dur=buffer.duration, mid=h/2, sr=buffer.sampleRate;
+    const v0=evT0(), vd=evDur();
     const hg=ectx.createLinearGradient(0,0,0,h);
-    hg.addColorStop(0,"#ffea00"); hg.addColorStop(0.5,"#ff9a00"); hg.addColorStop(1,"#2e1401");
+    hg.addColorStop(0,"#bdfaff"); hg.addColorStop(0.5,"#3fc9e0"); hg.addColorStop(1,"#062831");
     ectx.fillStyle=hg;
-    const step=Math.max(1, Math.floor(data.length/w));
+    const sppx=vd*sr/w;                                  // Samples pro Pixel im View
     for (let x=0;x<w;x++){
-      const i0=Math.floor(x*data.length/w);
+      const i0=Math.floor((v0+(x/w)*vd)*sr);
+      if (i0>=data.length) break;
       let pk=0;
-      for (let i=i0;i<Math.min(i0+step,data.length);i+=Math.max(1,Math.floor(step/24))){ const v=Math.abs(data[i]); if (v>pk) pk=v; }
+      const lim=Math.min(i0+Math.max(1,Math.floor(sppx)), data.length);
+      const stp=Math.max(1, Math.floor(sppx/24));
+      for (let i=i0;i<lim;i+=stp){ const v=Math.abs(data[i]); if (v>pk) pk=v; }
       const bh=Math.max(1, pk*(h*0.92));
       ectx.fillRect(x, mid-bh/2, 1, bh);
     }
-    // Hecksler-Fenster: was der Chopper verwendet (2 Takte in Material-Zeit)
-    const win=Math.min(totalSteps()*srcStepDur(), dur), wx=(win/dur)*w;
-    if (wx<w-1){
-      ectx.fillStyle="rgba(0,0,0,.45)"; ectx.fillRect(wx,0,w-wx,h);
-      ectx.strokeStyle="rgba(255,108,92,.8)"; ectx.setLineDash([4,4]);
-      ectx.beginPath(); ectx.moveTo(wx,0); ectx.lineTo(wx,h); ectx.stroke(); ectx.setLineDash([]);
+    // Chopfenster-Markierung (was der Chopper verwendet)
+    const win=Math.min(totalSteps()*srcStepDur(), dur);
+    const wx=t2px(win, w);
+    if (win<evT1()){
+      if (wx<w){ ectx.fillStyle="rgba(0,0,0,.45)"; ectx.fillRect(Math.max(0,wx),0,w-Math.max(0,wx),h); }
+      if (wx>=0 && wx<=w){
+        ectx.strokeStyle="rgba(255,108,92,.8)"; ectx.setLineDash([4,4]);
+        ectx.beginPath(); ectx.moveTo(wx,0); ectx.lineTo(wx,h); ectx.stroke(); ectx.setLineDash([]);
+      }
     }
-    // Selektion
     if (editSel){
-      const x1=(editSel.a/dur)*w, x2=(editSel.b/dur)*w;
+      const x1=t2px(editSel.a,w), x2=t2px(editSel.b,w);
       ectx.fillStyle="rgba(255,84,98,.16)"; ectx.fillRect(x1,0,x2-x1,h);
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
     }
     if (markers.length){
       for (const m of markers){
-        const mx=(m/dur)*w;
+        const mx=t2px(m,w);
+        if (mx<-6||mx>w+6) continue;
         ectx.strokeStyle="rgba(255,234,0,.8)";
         ectx.beginPath(); ectx.moveTo(mx,0); ectx.lineTo(mx,h); ectx.stroke();
         ectx.fillStyle="#ffea00";
@@ -1941,10 +1987,11 @@
       }
     }
     if (playhead!=null){
-      const px=(playhead/dur)*w;
-      if (px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
+      const px=t2px(playhead,w);
+      if (px>=0 && px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
     }
-    editSelInfo.textContent=editSel ? (editSel.a.toFixed(2)+"s \u2013 "+editSel.b.toFixed(2)+"s") : (dur.toFixed(2)+"s TOTAL");
+    const zoomTag=editView ? " // ZOOM "+(dur/vd).toFixed(1)+"X" : "";
+    editSelInfo.textContent=(editSel ? (editSel.a.toFixed(2)+"s \u2013 "+editSel.b.toFixed(2)+"s") : (dur.toFixed(2)+"s TOTAL"))+zoomTag;
   }
   function syncEditTools(){
     const hasSel=!!editSel, hasBuf=!!buffer;
@@ -1955,37 +2002,62 @@
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
     $("#edEqApply").disabled=$("#edDeEssApply").disabled=!hasBuf;
+    $("#edMarkersBtn").disabled=$("#edToneBtn").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
-  let editDrag=null, mDrag=-1;
+  let editDrag=null, mDrag=-1, panDrag=null;
+  function evtT(e){
+    const r=editCanvas.getBoundingClientRect();
+    return Math.max(0, Math.min(buffer.duration, px2t(e.clientX-r.left, r.width)));
+  }
   editCanvas.addEventListener("pointerdown",(e)=>{
     if (!buffer) return;
+    if (e.shiftKey && editView){                          // Shift+Drag = Ausschnitt schieben
+      panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
+      editCanvas.setPointerCapture(e.pointerId); return;
+    }
     const hit=(typeof markerHit==="function") ? markerHit(e) : -1;
     if (hit>=0){ mDrag=hit; editCanvas.setPointerCapture(e.pointerId); return; }
-    const r=editCanvas.getBoundingClientRect();
-    const t=Math.max(0, Math.min(buffer.duration, (e.clientX-r.left)/r.width*buffer.duration));
-    editDrag={ a:t }; editSel=null; drawEditWave();
+    editDrag={ a:evtT(e) }; editSel=null; drawEditWave();
     editCanvas.setPointerCapture(e.pointerId);
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
-    if (mDrag>=0){
+    if (panDrag){
       const r=editCanvas.getBoundingClientRect();
-      markers[mDrag]=Math.max(0, Math.min(buffer.duration, (e.clientX-r.left)/r.width*buffer.duration));
-      drawEditWave();
-      return;
+      const dt=-(e.clientX-panDrag.x)/r.width*(panDrag.t1-panDrag.t0);
+      const len=panDrag.t1-panDrag.t0;
+      let t0=panDrag.t0+dt;
+      t0=Math.max(0, Math.min(buffer.duration-len, t0));
+      editView={ t0, t1:t0+len };
+      drawEditWave(); return;
     }
+    if (mDrag>=0){ markers[mDrag]=evtT(e); drawEditWave(); return; }
     if (!editDrag) return;
-    const r=editCanvas.getBoundingClientRect();
-    const t=Math.max(0, Math.min(buffer.duration, (e.clientX-r.left)/r.width*buffer.duration));
-    const a=Math.min(editDrag.a,t), b=Math.max(editDrag.a,t);
+    const t=evtT(e), a=Math.min(editDrag.a,t), b=Math.max(editDrag.a,t);
     editSel=(b-a>0.01)?{ a, b }:null;
     drawEditWave();
   });
   editCanvas.addEventListener("pointerup",()=>{
+    if (panDrag){ panDrag=null; return; }
     if (mDrag>=0){ mDrag=-1; markersChanged("MARKER MOVED"); return; }
     editDrag=null; drawEditWave();
   });
+  editCanvas.addEventListener("wheel",(e)=>{
+    if (!buffer) return;
+    e.preventDefault();
+    const r=editCanvas.getBoundingClientRect();
+    const cursorT=px2t(e.clientX-r.left, r.width);
+    const f=e.deltaY<0 ? 1/1.25 : 1.25;                  // rein/raus
+    let len=evDur()*f;
+    len=Math.max(0.05, Math.min(buffer.duration, len));
+    if (len>=buffer.duration-0.001){ editView=null; drawEditWave(); return; }
+    const rel=(cursorT-evT0())/evDur();                   // Punkt unterm Cursor bleibt stehen
+    let t0=cursorT-rel*len;
+    t0=Math.max(0, Math.min(buffer.duration-len, t0));
+    editView={ t0, t1:t0+len };
+    drawEditWave();
+  }, { passive:false });
   function subBuffer(buf, a, b){
     const sr=buf.sampleRate, i0=Math.max(0,Math.round(a*sr)), i1=Math.min(buf.length,Math.round(b*sr));
     const out=ctxGet().createBuffer(buf.numberOfChannels, Math.max(1,i1-i0), sr);
@@ -2013,6 +2085,7 @@
   }
   function applyEdit(nb, msg, rebuild){
     buffer=nb; buildReversed(); pitchCache.clear();
+    if (rebuild) editView=null;                          // Laenge geaendert -> Zoom zuruecksetzen
     if (rebuild) fillOrdered();                         // Werkbank-Regel: Materialaenderung -> Hecksler frisch
     selection=null; editSel=null;
     drawWave(); drawEditWave(); setStatus(msg);
@@ -2193,6 +2266,16 @@
     markers=detectOnsets(buffer, (Number(edSens.value)||0)/100);
     markersChanged(markers.length ? (markers.length+" MARKERS SET // ONSET SLICING") : "NO ONSETS FOUND // TRY HIGHER SENSITIVITY");
   });
+  const mkPop=$("#mkPop"), tonePop=$("#tonePop");
+  $("#edMarkersBtn").addEventListener("click", (e)=>{
+    tonePop.classList.add("hidden");
+    if (mkPop.classList.contains("hidden")){ placePop(mkPop, e.currentTarget); } else mkPop.classList.add("hidden");
+  });
+  $("#edToneBtn").addEventListener("click", (e)=>{
+    mkPop.classList.add("hidden");
+    if (tonePop.classList.contains("hidden")){ placePop(tonePop, e.currentTarget); } else tonePop.classList.add("hidden");
+  });
+  $("#edFitBtn").addEventListener("click", ()=>{ editView=null; drawEditWave(); setStatus("ZOOM RESET"); });
   edClrMk.addEventListener("click", ()=>{
     if (!buffer || !markers.length) return;
     pushEditUndo("CLR MK");
@@ -2205,7 +2288,7 @@
     const x=e.clientX-r.left, y=e.clientY-r.top;
     if (y>22) return -1;
     for (let i=0;i<markers.length;i++){
-      const mx=(markers[i]/buffer.duration)*r.width;
+      const mx=t2px(markers[i], r.width);
       if (Math.abs(x-mx)<=6) return i;
     }
     return -1;
@@ -2216,8 +2299,7 @@
     editDrag=null; editSel=null;
     if (hit>=0){ markers.splice(hit,1); markersChanged("MARKER DELETED"); }
     else {
-      const r=editCanvas.getBoundingClientRect();
-      const t=Math.max(0, Math.min(buffer.duration, (e.clientX-r.left)/r.width*buffer.duration));
+      const t=evtT(e);
       markers.push(t); markersChanged("MARKER SET // "+t.toFixed(2)+"s");
     }
   });
