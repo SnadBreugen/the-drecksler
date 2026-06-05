@@ -315,7 +315,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.2</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.3</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -338,6 +338,16 @@
 <div class="note-pop src-pop hidden" id="srcPop">
   <button id="srcFile" title="Load an audio file from disk">FILE</button>
   <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
+</div>
+
+<div class="note-pop tx-pop hidden" id="atUrlPop">
+  <p class="tx-title">IMPORT // PROJECT LINK</p>
+  <label class="tx-l">PASTE THE PROJECT URL FROM BETA.AUDIOTOOL.COM</label>
+  <input type="text" id="atUrlInput" spellcheck="false" title="Project link, e.g. https://beta.audiotool.com/studio?project=...">
+  <div class="tx-row">
+    <button id="atUrlCancel" title="Close without opening">CANCEL</button>
+    <button id="atUrlOpen" class="primary" title="Open the project and list its timeline samples">OPEN</button>
+  </div>
 </div>
 
 <div class="note-pop list-pop hidden" id="listPop">
@@ -393,7 +403,7 @@
 (() => {
   "use strict";
 
-  const REV="1.2";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.3";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1297,6 +1307,7 @@
 
   // ---------- Import ----------
   const srcPop=$("#srcPop"), listPop=$("#listPop"), listPopTitle=$("#listPopTitle"), listPopBody=$("#listPopBody");
+  const atUrlPop=$("#atUrlPop"), atUrlInput=$("#atUrlInput");
   function placePop(pop, anchor){
     pop.classList.remove("hidden");
     const r=anchor.getBoundingClientRect(), pw=pop.offsetWidth, ph=pop.offsetHeight;
@@ -1309,6 +1320,9 @@
   });
   $("#srcFile").addEventListener("click", ()=>{ srcPop.classList.add("hidden"); fileInput.click(); });
   $("#srcAt").addEventListener("click", ()=>{ srcPop.classList.add("hidden"); atImportFlow(); });
+  $("#atUrlOpen").addEventListener("click", atOpenFromInput);
+  $("#atUrlCancel").addEventListener("click", ()=>atUrlPop.classList.add("hidden"));
+  atUrlInput.addEventListener("keydown",(e)=>{ if (e.key==="Enter") atOpenFromInput(); });
   function showListPop(title, items, onPick){
     listPopTitle.textContent=title;
     listPopBody.innerHTML="";
@@ -1320,10 +1334,11 @@
     });
     placePop(listPop, importBtn);
   }
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); } });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
     if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
+    if (!atUrlPop.classList.contains("hidden") && !atUrlPop.contains(e.target)) atUrlPop.classList.add("hidden");
   });
   fileInput.addEventListener("change", (e)=>{ if (e.target.files[0]) ingestFile(e.target.files[0]); });
   ["dragenter","dragover"].forEach((ev)=>waveWrap.addEventListener(ev, (e)=>{ e.preventDefault(); waveWrap.classList.add("drop"); }));
@@ -1376,16 +1391,15 @@
   async function atImportFlow(){
     const at=atSession || await atConnect(true);
     if (!at) return;
-    const c=at.client||at;
-    try {
-      setStatus("FETCHING PROJECTS");
-      const resp=await c.projects.listProjects({});
-      if (resp instanceof Error) throw resp;
-      const projects=resp.projects||resp.items||(Array.isArray(resp)?resp:[]);
-      console.log("[UPLINK] projects:", resp);
-      if (!projects.length){ setStatus("NO PROJECTS FOUND"); return; }
-      showListPop("SELECT PROJECT", projects.map((p)=>({ label:String(p.displayName||p.name||"UNNAMED").toUpperCase(), value:p })), atOpenProject);
-    } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
+    atUrlInput.value="";
+    placePop(atUrlPop, importBtn);
+    atUrlInput.focus();
+  }
+  function atOpenFromInput(){
+    const url=atUrlInput.value.trim();
+    if (!/audiotool\.com/.test(url)){ setStatus("INVALID PROJECT LINK"); return; }
+    atUrlPop.classList.add("hidden");
+    atOpenProject({ url });
   }
   async function atOpenProject(proj){
     const at=atSession, c=at.client||at;
