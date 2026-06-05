@@ -337,6 +337,8 @@
   <div class="tx-kind">
     <button id="txLoop" class="active" title="Loop — Projekt-BPM wird mitgesendet">LOOP</button><button id="txShot" title="One-Shot — ohne Tempo">ONE-SHOT</button>
   </div>
+  <label class="tx-l" id="txBpmL">BPM</label>
+  <input type="text" id="txBpm" maxlength="6" inputmode="numeric" spellcheck="false">
   <label class="tx-l">VISIBILITY</label>
   <div class="tx-kind">
     <button id="txHidden" class="active" title="Unlisted — nur f&uuml;r dich, nicht in der Community-Suche">HIDDEN</button><button id="txPublic" title="Public — f&uuml;r alle in Suche und Listings sichtbar">PUBLIC</button>
@@ -465,11 +467,13 @@
   const stepsPerBar=()=>Math.round(4/P.chop.res);
   const stepsPerBeat=()=>Math.round(1/P.chop.res);
   const totalSteps=()=>BARS*stepsPerBar();
-  const stepDur=()=>(60/P.chop.bpm)*P.chop.res;
+  const stepDur=()=>(60/P.chop.bpm)*P.chop.res;                  // RASTER-Zeit: wann Steps triggern (Projekt-BPM)
+  let bufferBpm=120;                                              // Tempo, in dem das Material entstand (REX-Unterbau)
+  const srcStepDur=()=>(60/bufferBpm)*P.chop.res;                 // MATERIAL-Zeit: wo Slices im Buffer liegen
   const loopDur=()=>totalSteps()*stepDur();
-  // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper spielt (2 Takte).
-  const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(loopDur(), buffer.duration) : buffer.duration);
-  const sliceCount=()=>buffer?Math.max(0,Math.floor(buffer.duration/stepDur())):0;
+  // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper nutzt (2 Takte in MATERIAL-Zeit).
+  const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(totalSteps()*srcStepDur(), buffer.duration) : buffer.duration);
+  const sliceCount=()=>buffer?Math.max(0,Math.floor(buffer.duration/srcStepDur())):0;
   const makeChop=(slice)=>({ slice, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, len:1 });
 
   function cloneBuffer(buf){
@@ -487,7 +491,7 @@
     [playBtn, stopPlayBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
   }
   function loadDecodedBuffer(buf, msg){
-    buffer=buf; selection=null; setEditingEnabled(true);
+    buffer=buf; bufferBpm=P.chop.bpm; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear(); fillOrdered();
     undoStack=[]; redoStack=[];
@@ -656,16 +660,18 @@
   // ---------- Per-chop voice ----------
   const STUT_VALS=[0,16,32,64], STUT_LABELS=["AUS","1/16","1/32","1/64"];
   function playChop(ac, n, chop, when, sd, sc, sink){
+    const ssd=srcStepDur();                                   // Material-Zeit (REX: Slices behalten Originaltempo)
     const stut=chop.stut||0;
     if (stut>0){
-      // Re-Trigger des Chop-Anfangs im Notenraster (taktbezogen, unabhängig vom Slot-Raster).
+      // Re-Trigger des Chop-Anfangs im Notenraster (taktbezogen, RASTER-Zeit).
       // Jeder Trigger ist ein normaler playChop mit verkürztem len -> erbt Fades, Pitch-Cache, Filter.
-      const st0=Math.max(0,Math.min(0.9,chop.st||0)), lenO=(chop.len==null)?1:chop.len, effSd=sd*Math.max(0.05,lenO-st0);
+      const st0=Math.max(0,Math.min(0.9,chop.st||0)), lenO=(chop.len==null)?1:chop.len;
+      const effPlay=Math.max(0.01, Math.min(ssd*Math.max(0.05,lenO-st0), sd));
       const stutDur=sd*stepsPerBar()/stut;
       let first=null;
-      for (let t=0; t<effSd-0.001; t+=stutDur){
-        const tl=Math.min(stutDur, effSd-t);
-        const src=playChop(ac, n, { ...chop, stut:0, st:st0, len:st0+tl/sd }, when+t, sd, sc);
+      for (let t=0; t<effPlay-0.001; t+=stutDur){
+        const tl=Math.min(stutDur, effPlay-t);                // Echtzeit == Materialzeit (Originalgeschwindigkeit)
+        const src=playChop(ac, n, { ...chop, stut:0, st:st0, len:st0+tl/ssd }, when+t, sd, sc);
         if (src){ if (!first) first=src; else if (sink) sink.push(src); }
       }
       return first;
@@ -673,21 +679,22 @@
     const idx=chop.slice % sc, semi=chop.pitch||0, crush=chop.crush||0, tube=chop.tube||0;
     const useBuf=chop.reverse ? reversedBuffer : buffer;
     if (!useBuf) return null;
-    const a=idx*sd, revA=Math.max(0, buffer.duration - a - sd);
-    // Überlapp-Crossfade: F über den Step hinaus spielen; Nachbar blendet im selben Fenster ein.
-    // Bei fortlaufendem Material summieren sich die linearen Rampen exakt zu 1 -> perfekte Rekonstruktion.
-    // Gespielter Quellbereich: [a+st*sd, a+len*sd] — vorwärts wie rückwärts derselbe Bereich.
+    const a=idx*ssd, revA=Math.max(0, buffer.duration - a - ssd);
+    // REX-Regel: Slice spielt in Originalgeschwindigkeit (Material-Zeit), der Slot (Raster-Zeit) kappt.
+    // Projekt schneller als Material -> Slice wird am Slot-Ende geschnitten; langsamer -> Luecke (REX-Atmen).
+    // Gespielter Quellbereich: [a+st*ssd, a+len*ssd] — vorwärts wie rückwärts derselbe Bereich.
     const st=Math.max(0, Math.min(0.9, chop.st||0));
     const len=(chop.len==null)?1:chop.len;
-    const effSd=sd*Math.max(0.05, len-st);
+    const tempoMatch=Math.abs(sd-ssd)<1e-6;
+    const effPlay=Math.max(0.01, Math.min(ssd*Math.max(0.05, len-st), sd));
     const full=(st<=0 && len>=1);
-    const F=Math.min(0.008, effSd*0.25);
-    const tail=full?F:0;                              // Crossfade-Hangover nur bei voller Laenge
-    const srcOffWithin=chop.reverse ? (1-len)*sd : st*sd;  // Versatz im (vollen) Slice
+    const F=Math.min(0.008, effPlay*0.25);
+    const tail=(full&&tempoMatch)?F:0;                // Rekonstruktions-Crossfade nur bei Tempo-Gleichstand
+    const srcOffWithin=chop.reverse ? (1-len)*ssd : st*ssd;  // Versatz im (vollen) Slice, Material-Zeit
     const sliceBase=chop.reverse ? revA : a;
     const offset=sliceBase+srcOffWithin;
-    const durEx=Math.min(effSd+tail, Math.max(0.01, useBuf.duration-offset));
-    const holdEnd=full?(when+sd):(when+effSd-F);      // Fade-out im Slot bei Kuerzung
+    const durEx=Math.min(effPlay+tail, Math.max(0.01, useBuf.duration-offset));
+    const holdEnd=(full&&tempoMatch)?(when+sd):(when+effPlay-F);  // Fade-out am echten Spielende
     const gv=(chop.gain==null?1:chop.gain);
     const g=ac.createGain(); g.connect(n.input);
     g.gain.setValueAtTime(0, when);
@@ -703,11 +710,11 @@
     if (semi===0 && crush===0 && tube===0){
       src.buffer=useBuf; try { src.start(when, offset, durEx); } catch(e){}
     } else {
-      const key=(chop.reverse?"R":"F")+":"+idx+":"+semi+":"+Math.round(crush*100)+":"+Math.round(tube*100)+":"+Math.round(sd*1000);
+      const key=(chop.reverse?"R":"F")+":"+idx+":"+semi+":"+Math.round(crush*100)+":"+Math.round(tube*100)+":"+Math.round(ssd*1000);
       let pb=pitchCache.get(key);
       if (!pb){
-        // Immer den VOLLEN Slice rendern — Kuerzungen schneiden nur beim Abspielen.
-        const fullDur=Math.min(sd+F, Math.max(0.01, useBuf.duration-sliceBase));
+        // Immer den VOLLEN Slice rendern (Material-Zeit) — Kuerzungen schneiden nur beim Abspielen.
+        const fullDur=Math.min(ssd+F, Math.max(0.01, useBuf.duration-sliceBase));
         try { pb=makeVoiceSlice(useBuf, sliceBase, fullDur, semi, crush, tube); } catch(e){ pb=null; }
         if (pb) pitchCache.set(key,pb);
       }
@@ -1136,7 +1143,13 @@
     btn.addEventListener("pointercancel",endKnob);
     btn.addEventListener("lostpointercapture",endKnob);
   }
-  bindKnob(bpmBtn, { min:60, max:200, step:1, get:()=>P.chop.bpm, set:(v)=>{ P.chop.bpm=v; syncChopBtns(); drawGrid(); }, fmt:(v)=>Math.round(v)+" BPM" });
+  bindKnob(bpmBtn, { min:60, max:200, step:1, get:()=>P.chop.bpm, set:(v)=>{
+    const playing=!!schedTimer && audioCtx;                      // Phase erhalten: Playhead bleibt wo er ist
+    let ph=0; if (playing) ph=(audioCtx.currentTime-chopStartTime)/stepDur();
+    P.chop.bpm=v;
+    if (playing) chopStartTime=audioCtx.currentTime-ph*stepDur();
+    syncChopBtns(); drawGrid();
+  }, fmt:(v)=>Math.round(v)+" BPM" });
   bindKnob(densBtn,{ min:0.1, max:0.95, step:0.01, get:()=>P.chop.density, set:(v)=>{ P.chop.density=v; syncChopBtns(); }, fmt:(v)=>Math.round(v*100)+"%" });
   syncChopBtns();
 
@@ -1414,11 +1427,11 @@
       const p=pos<0?0:pos;
       drawGrid(p);
       const stepIdx=Math.floor(p)%totalSteps(), frac=p-Math.floor(p);
-      const cch=arrangement[stepIdx], sc=sliceCount(), sd=stepDur();
+      const cch=arrangement[stepIdx], sc=sliceCount(), ssd=srcStepDur();
       let hl=null;
       if (cch && sc>0){
-        const a=(cch.slice%sc)*sd, l=(cch.len==null?1:cch.len), st0=Math.max(0,Math.min(0.9,cch.st||0));
-        hl={ start:a+st0*sd, end:a+l*sd, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
+        const a=(cch.slice%sc)*ssd, l=(cch.len==null?1:cch.len), st0=Math.max(0,Math.min(0.9,cch.st||0));
+        hl={ start:a+st0*ssd, end:a+l*ssd, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
       }
       drawWave(null, hl);
       tc.textContent=fmtTime((ac.currentTime-chopStartTime)%loopDur());
@@ -1541,11 +1554,17 @@
     setStatus("EXPORT COMPLETE // "+rendered.duration.toFixed(1)+"S");
   });
   // ---------- Transmit-Popup ----------
-  const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags");
+  const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags"), txBpm=$("#txBpm"), txBpmL=$("#txBpmL");
   const txLoop=$("#txLoop"), txShot=$("#txShot"), txSend=$("#txSend"), txCancel=$("#txCancel");
   const txHidden=$("#txHidden"), txPublic=$("#txPublic");
   let txKind="loop", txVis="unlisted";
-  function setTxKind(k){ txKind=k; txLoop.classList.toggle("active",k==="loop"); txShot.classList.toggle("active",k==="one-shot"); }
+  function setTxKind(k){
+    txKind=k; txLoop.classList.toggle("active",k==="loop"); txShot.classList.toggle("active",k==="one-shot");
+    const loop=k==="loop";
+    txBpm.disabled=!loop;
+    txBpm.style.opacity=txBpmL.style.opacity=loop?"1":".35";
+    txBpm.title=loop?"Tempo des Loops":"One-Shot — ohne Tempo";
+  }
   txLoop.addEventListener("click",()=>setTxKind("loop"));
   txShot.addEventListener("click",()=>setTxKind("one-shot"));
   function setTxVis(v){ txVis=v; txHidden.classList.toggle("active",v==="unlisted"); txPublic.classList.toggle("active",v==="public"); }
@@ -1553,6 +1572,7 @@
   txPublic.addEventListener("click",()=>setTxVis("public"));
   function openTxPop(){
     txName.value="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+    txBpm.value=String(Math.round(P.chop.bpm));
     if (!txTags.value.trim()) txTags.value="drecksler";
     setTxKind("loop"); setTxVis("unlisted");
     txPop.classList.remove("hidden");
@@ -1586,15 +1606,19 @@
       }
       setStatus("TRANSMITTING // "+Math.round(wavBlob.size/1024)+" KB");
       const tags=txTags.value.split(",").map((t)=>t.trim().toLowerCase()).filter(Boolean);
-      const up=await c.samples.upload({
+      const opts={
         file, displayName:name,
         kind:txKind,
-        bpm: txKind==="loop" ? Math.round(P.chop.bpm) : 0,
         description: txDesc.value.trim(),
         tags: tags.length?tags:["drecksler"],
         visibility: txVis,
         preventTabClose: true,
-      });
+      };
+      if (txKind==="loop"){
+        const v=Math.round(parseFloat(txBpm.value.replace(",", ".")));
+        opts.bpm=(isFinite(v)&&v>=30&&v<=300)?v:Math.round(P.chop.bpm);
+      }
+      const up=await c.samples.upload(opts);
       if (up instanceof Error) throw up;
       const onServer=await up.uploaded;
       if (onServer instanceof Error) throw onServer;
