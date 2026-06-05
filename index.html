@@ -290,6 +290,7 @@
     </section>
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
+      <button id="uplinkBtn" title="Mit Audiotool verbinden (Login)">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Arrangement als WAV-Datei rendern">EXPORT // WAV</button>
       <button id="atBtn" disabled title="Direkt in die Audiotool-Library senden (in Arbeit)">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
@@ -1447,6 +1448,54 @@
     for (let i=0;i<buf.length;i++) for (let c=0;c<numCh;c++){ const s=Math.max(-1,Math.min(1,chans[c][i])); view.setInt16(off, s<0?s*0x8000:s*0x7fff, true); off+=2; }
     return new Blob([ab], { type:"audio/wav" });
   }
+  // ---------- Audiotool Uplink (Etappe 1: Login + Verbindungstest) ----------
+  const AT_CLIENT_ID="a8734739-ded2-4167-81bb-699669ee05f5";
+  const AT_REDIRECT="https://snadbreugen.github.io/the-drecksler/";
+  const AT_SCOPE="sample:read sample:write project:read project:write";
+  const uplinkBtn=$("#uplinkBtn");
+  let atSession=null, atSdkPromise=null;
+  function loadAtSdk(){
+    if (!atSdkPromise){
+      setStatus("UPLINK // LOADING SDK");
+      atSdkPromise=import("https://esm.sh/@audiotool/nexus@0.0.17")
+        .catch(()=>import("https://esm.sh/@audiotool/nexus"));
+    }
+    return atSdkPromise;
+  }
+  async function atConnect(interactive){
+    if (location.protocol==="file:"){ setStatus("UPLINK NUR AUF DER LIVE-URL"); return null; }
+    try {
+      const sdk=await loadAtSdk();
+      const at=await sdk.audiotool({ clientId:AT_CLIENT_ID, redirectUrl:AT_REDIRECT, scope:AT_SCOPE });
+      if (at.status==="unauthenticated"){
+        if (interactive){ setStatus("UPLINK // REDIRECTING TO AUDIOTOOL"); at.login(); }
+        return null;
+      }
+      atSession=at;
+      // Diagnose fuer den ersten Live-Test: was bietet die Session an?
+      try { console.log("[UPLINK] session keys:", Object.keys(at)); } catch{}
+      let who="";
+      try {
+        const c=at.client||at;
+        if (c.users && c.users.getWhoami){
+          const r=await c.users.getWhoami({});
+          who=(r && (r.user && (r.user.displayName||r.user.name) || r.displayName||r.name)) || "";
+        }
+      } catch(e){ console.warn("[UPLINK] whoami:", e); }
+      uplinkBtn.textContent="UPLINK \u2713";
+      uplinkBtn.title="Verbunden mit Audiotool";
+      setStatus("UPLINK ESTABLISHED"+(who?" // "+String(who).toUpperCase():""));
+      return at;
+    } catch(e){
+      console.error("[UPLINK]", e);
+      setStatus("UPLINK FAILED // SIEHE KONSOLE (F12)");
+      return null;
+    }
+  }
+  uplinkBtn.addEventListener("click", ()=>atConnect(true));
+  // Rueckkehr vom OAuth-Redirect: Login still abschliessen
+  if (/[?&#](code|state)=/.test(location.search+location.hash)) atConnect(false);
+
   wavBtn.addEventListener("click", async ()=>{
     if (!buffer) return; setStatus("RENDERING // EXPORT");
     const rendered=await renderProcessed();
