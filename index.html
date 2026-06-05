@@ -324,7 +324,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.8</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.9</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -412,7 +412,7 @@
 (() => {
   "use strict";
 
-  const REV="1.8";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.9";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -529,8 +529,8 @@
     [playBtn, stopPlayBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
   }
   let bufferSource="file";                                   // Herkunft: mic | file | audiotool (Lizenzregel)
-  function loadDecodedBuffer(buf, msg, source){
-    buffer=buf; bufferBpm=P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
+  function loadDecodedBuffer(buf, msg, source, srcBpm){
+    buffer=buf; bufferBpm=(srcBpm>=30&&srcBpm<=300)?srcBpm:P.chop.bpm; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear(); fillOrdered();
     undoStack=[]; redoStack=[];
@@ -1456,7 +1456,7 @@
       for (const nm of seen){
         let meta=null;
         try { const m=await c.samples.get(nm); if (!(m instanceof Error)) meta=m; } catch(err){}
-        items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:(meta&&meta.name)||nm });
+        items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:{ name:(meta&&meta.name)||nm, bpm:(meta&&Number(meta.bpm))||0, displayName:(meta&&meta.displayName)||"" } });
       }
       showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample, projBpm));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
@@ -1466,20 +1466,23 @@
     try {
       const nm=String(sample.displayName||sample.name||"AUDIOTOOL SAMPLE").toUpperCase();
       setStatus("DOWNLOADING // "+nm);
-      const blob=await c.samples.download(sample, { format:"wav" });
+      const blob=await c.samples.download(sample.name||sample, { format:"wav" });
       if (blob instanceof Error) throw blob;
       let buf=await ctxGet().decodeAudioData(await blob.arrayBuffer());
-      if (projBpm>=30 && projBpm<=300){
-        const bpm=Math.round(projBpm);                     // Projekt-Tempo 1:1 uebernehmen
-        P.chop.bpm=bpm; syncChopBtns();
-        const barDur=4*60/bpm;
-        const bars=Math.max(1, Math.round(buf.duration/barDur));
-        buf=fitBufferToBeats(buf, bars*4, bpm);            // aufs Taktraster des Projekts schneiden/padden
-        if (bars===1) buf=doubleBuffer(buf);
-        loadDecodedBuffer(buf, "TEMPO SYNCED // "+bpm+" BPM // "+nm, "audiotool");
-      } else {
-        ingestDecoded(buf, nm, "audiotool");               // kein Tempo lesbar -> Laengen-Erkennung
+      // Zwei Uhren (REX): Raster folgt dem PROJEKT, die Material-Uhr dem SAMPLE selbst.
+      let srcBpm=Math.round(Number(sample.bpm)||0);                      // Audiotool-Metadatum
+      if (!(srcBpm>=30 && srcBpm<=300)){
+        const det=detectImportBPM(buf.duration);                         // Fallback: Laengen-Erkennung
+        srcBpm=det?det.bpm:0;
       }
+      if (!(srcBpm>=30 && srcBpm<=300)) srcBpm=(projBpm>=30&&projBpm<=300)?Math.round(projBpm):P.chop.bpm;
+      const barDur=4*60/srcBpm;
+      const bars=Math.max(1, Math.round(buf.duration/barDur));
+      buf=fitBufferToBeats(buf, bars*4, srcBpm);                         // aufs MATERIAL-Tempo schneiden/padden
+      if (bars===1) buf=doubleBuffer(buf);
+      if (projBpm>=30 && projBpm<=300){ P.chop.bpm=Math.round(projBpm); syncChopBtns(); }
+      else { P.chop.bpm=srcBpm; syncChopBtns(); }
+      loadDecodedBuffer(buf, "TEMPO SYNCED // GRID "+Math.round(P.chop.bpm)+" / SRC "+srcBpm+" BPM // "+nm, "audiotool", srcBpm);
     } catch(e){ console.error("[UPLINK]", e); setStatus("DOWNLOAD FAILED // SEE CONSOLE (F12)"); }
   }
 
