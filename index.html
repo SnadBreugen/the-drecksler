@@ -262,7 +262,7 @@
         <div class="transport">
           <button class="danger tbtn" id="recBtn" title="ARM REC — 1 bar count-in, 2 bars recording"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
           <div class="metro-grp">
-            <button id="metroBtn" title="Metronome on/off"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
+            <button id="metroBtn" title="Metronome on/off — use headphones while recording, the mic picks up the click"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
             <button id="metroNote" title="Root note — click to pick">A4</button>
           </div>
           <button class="tbtn" id="playBtn" disabled title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
@@ -324,7 +324,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 1.5</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 1.7</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -412,7 +412,7 @@
 (() => {
   "use strict";
 
-  const REV="1.5";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="1.7";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1269,7 +1269,9 @@
     const recBeats=BARS*4; recLenCaptured=recBeats*recBeatDur;
     const lead=0.18; recT0=ac.currentTime+lead;
     const recStartT=recT0+recCountInBeats*recBeatDur;
-    for (let i=0;i<recCountInBeats+recBeats;i++) scheduleClick(ac, recT0+i*recBeatDur, i%4===0); // count-in + guide clicks
+    // Count-in klickt immer (Einsatz!), Guide-Klicks waehrend der Aufnahme nur bei aktivem Metronom.
+    const clickUntil=P.metro ? recCountInBeats+recBeats : recCountInBeats;
+    for (let i=0;i<clickUntil;i++) scheduleClick(ac, recT0+i*recBeatDur, i%4===0);
     const src=ac.createMediaStreamSource(stream); analyser=ac.createAnalyser(); analyser.fftSize=1024; src.connect(analyser);
     chunks=[]; recorder=new MediaRecorder(stream);
     recorder.ondataavailable=(e)=>e.data.size&&chunks.push(e.data);
@@ -1430,25 +1432,24 @@
       const url=proj.url || ("https://beta.audiotool.com/studio?project="+(proj.id||proj.projectId||proj.name||""));
       nexus=await at.open(url);
       if (nexus && nexus.start) await nexus.start();
+      // Timeline-Audio liegt als Entity-Typ "sample" im Dokument; fields.sampleName ist der API-Name.
       let regions=[];
-      for (const tn of ["audioRegion","audioTrackRegion","sampleRegion","audioClip"]){
-        try { const r=nexus.queryEntities.ofTypes(tn).get(); if (r && r.length){ regions=r; console.log("[UPLINK] region type:", tn, r); break; } } catch(err){}
-      }
-      const seen=new Map();
+      try { regions=nexus.queryEntities.ofTypes("sample").get()||[]; }
+      catch(err){ console.error("[UPLINK] query sample entities:", err); }
+      console.log("[UPLINK] timeline sample entities:", regions);
+      const seen=new Set();
       for (const r of regions){
-        const f=r.fields||{};
-        const sref=(f.sample&&f.sample.value)||(f.sampleName&&f.sampleName.value)||null;
-        if (sref){ const k=JSON.stringify(sref); if (!seen.has(k)) seen.set(k, sref); }
+        const nm=r && r.fields && r.fields.sampleName && r.fields.sampleName.value;
+        if (typeof nm==="string" && nm) seen.add(nm);
       }
-      console.log("[UPLINK] timeline sample refs:", [...seen.values()]);
+      console.log("[UPLINK] sample names:", [...seen]);
       if (!seen.size){ setStatus("NO SAMPLES IN TIMELINE"); return; }
       setStatus("READING SAMPLE INFO");
       const items=[];
-      for (const sref of seen.values()){
+      for (const nm of seen){
         let meta=null;
-        try { const m=await c.samples.get(sref); if (!(m instanceof Error)) meta=m; } catch(err){}
-        const lab=String((meta&&(meta.displayName||meta.name))||sref).toUpperCase().slice(0,46);
-        items.push({ label:lab, value:meta||sref });
+        try { const m=await c.samples.get(nm); if (!(m instanceof Error)) meta=m; } catch(err){}
+        items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:(meta&&meta.name)||nm });
       }
       showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
