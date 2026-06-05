@@ -337,6 +337,10 @@
   <div class="tx-kind">
     <button id="txLoop" class="active" title="Loop — Projekt-BPM wird mitgesendet">LOOP</button><button id="txShot" title="One-Shot — ohne Tempo">ONE-SHOT</button>
   </div>
+  <label class="tx-l">VISIBILITY</label>
+  <div class="tx-kind">
+    <button id="txHidden" class="active" title="Unlisted — nur f&uuml;r dich, nicht in der Community-Suche">HIDDEN</button><button id="txPublic" title="Public — f&uuml;r alle in Suche und Listings sichtbar">PUBLIC</button>
+  </div>
   <label class="tx-l">DESCRIPTION <span class="tx-opt">OPTIONAL</span></label>
   <input type="text" id="txDesc" maxlength="200" spellcheck="false">
   <label class="tx-l">TAGS <span class="tx-opt">KOMMA-GETRENNT</span></label>
@@ -1539,14 +1543,18 @@
   // ---------- Transmit-Popup ----------
   const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags");
   const txLoop=$("#txLoop"), txShot=$("#txShot"), txSend=$("#txSend"), txCancel=$("#txCancel");
-  let txKind="loop";
+  const txHidden=$("#txHidden"), txPublic=$("#txPublic");
+  let txKind="loop", txVis="unlisted";
   function setTxKind(k){ txKind=k; txLoop.classList.toggle("active",k==="loop"); txShot.classList.toggle("active",k==="one-shot"); }
   txLoop.addEventListener("click",()=>setTxKind("loop"));
   txShot.addEventListener("click",()=>setTxKind("one-shot"));
+  function setTxVis(v){ txVis=v; txHidden.classList.toggle("active",v==="unlisted"); txPublic.classList.toggle("active",v==="public"); }
+  txHidden.addEventListener("click",()=>setTxVis("unlisted"));
+  txPublic.addEventListener("click",()=>setTxVis("public"));
   function openTxPop(){
     txName.value="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
     if (!txTags.value.trim()) txTags.value="drecksler";
-    setTxKind("loop");
+    setTxKind("loop"); setTxVis("unlisted");
     txPop.classList.remove("hidden");
     const r=atBtn.getBoundingClientRect(), pw=txPop.offsetWidth, ph=txPop.offsetHeight;
     txPop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
@@ -1584,6 +1592,7 @@
         bpm: txKind==="loop" ? Math.round(P.chop.bpm) : 0,
         description: txDesc.value.trim(),
         tags: tags.length?tags:["drecksler"],
+        visibility: txVis,
         preventTabClose: true,
       });
       if (up instanceof Error) throw up;
