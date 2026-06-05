@@ -61,8 +61,8 @@
   .station-tabs button { border-radius:0; border-left:none; padding:9px 24px; letter-spacing:.24em; }
   .station-tabs button:first-child { border-radius:var(--radius) 0 0 var(--radius); border-left:1px solid var(--line); }
   .station-tabs button:last-child { border-radius:0 var(--radius) var(--radius) 0; }
-  .island-editor { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column;
-    border-color:rgba(255,234,0,.55); box-shadow:0 0 0 1px rgba(255,234,0,.35), 0 0 18px rgba(255,234,0,.22), inset 0 0 10px rgba(255,234,0,.05); }
+  .island-editor { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; }
+  .stage.island-editor { border-color:rgba(255,234,0,.55); box-shadow:0 0 0 1px rgba(255,234,0,.35), 0 0 18px rgba(255,234,0,.22), inset 0 0 10px rgba(255,234,0,.05); }
   .island-editor::before { color:rgba(255,108,92,1) !important; text-shadow:0 0 7px rgba(255,84,98,.5); }
   .edit-wrap { position:relative; flex:1; min-height:300px; margin-top:12px; }
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
@@ -71,10 +71,11 @@
   .island-fin { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; align-items:center; justify-content:center; min-height:430px; }
   .fin-note { text-align:center; font-size:11px; letter-spacing:.3em; line-height:2.4; color:rgba(255,148,136,.75); text-transform:uppercase; }
   .fin-note span { color:var(--info); text-shadow:0 0 8px rgba(255,234,0,.45); }
-  .deck:not(.st-editor) .island-editor { display:none; }
-  .deck:not(.st-fin) .island-fin { display:none; }
+  .island-editor, .island-fin { grid-row:1 / 3; grid-column:1 / -1; }
+  .deck:not(.st-editor) .island-editor { visibility:hidden; }
+  .deck:not(.st-fin) .island-fin { visibility:hidden; }
   .deck.st-editor .island-wave, .deck.st-editor .island-chop, .deck.st-editor .island-fx,
-  .deck.st-fin .island-wave, .deck.st-fin .island-chop, .deck.st-fin .island-fx { display:none; }
+  .deck.st-fin .island-wave, .deck.st-fin .island-chop, .deck.st-fin .island-fx { visibility:hidden; }
   .island-wave { grid-area:wave; margin-bottom:0; }
   .island-fx { grid-area:fx; margin-bottom:0; display:flex; flex-direction:column; transition:border-color .25s ease, box-shadow .25s ease; }
   .island-fx.lit { border-color:rgba(255,234,0,.75); box-shadow:0 0 0 1px rgba(255,234,0,.55), 0 0 20px rgba(255,234,0,.34), inset 0 0 12px rgba(255,234,0,.08); animation:tubeOn .45s ease-out; }
@@ -148,7 +149,8 @@
   .corp .corp-wave { flex:none; filter:drop-shadow(0 0 4px rgba(255,234,0,.5)); }
   .brand { font-family:"Anton","Rubik Mono One",monospace; font-size:36px; line-height:1; letter-spacing:.06em; word-spacing:-.18em; color:#3a0c09; margin:5px 0 6px; }
   .brand b { color:#140404; font-weight:normal; }
-  .status { font-family:"VT323",monospace; font-size:15px; letter-spacing:.12em; font-weight:400; text-transform:uppercase; color:#6bff8c; display:flex; align-items:center; gap:10px; text-shadow:0 0 6px rgba(107,255,140,.35); }
+  .status { font-family:"VT323",monospace; font-size:15px; letter-spacing:.12em; font-weight:400; text-transform:uppercase; color:#6bff8c; display:flex; align-items:center; gap:10px; text-shadow:0 0 6px rgba(107,255,140,.35); width:560px; }
+  .status #statusText { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:right; }
   .status .tc { font-family:"VT323",monospace; font-weight:400; font-size:20px; letter-spacing:.05em; color:#6bff8c; text-shadow:0 0 4px rgba(107,255,140,.3); }
 
   .banner { display:none; background:rgba(255,69,50,.10); border:1px solid rgba(255,255,255,.35); color:#ffd2cb; padding:9px 13px; border-radius:var(--radius); font-size:12px; letter-spacing:.08em; margin-bottom:16px; text-transform:uppercase; }
@@ -368,7 +370,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.1</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.2</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -456,7 +458,7 @@
 (() => {
   "use strict";
 
-  const REV="2.1";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.2";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
