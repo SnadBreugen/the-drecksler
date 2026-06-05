@@ -68,8 +68,8 @@
   .deck.st-fin #stFin { color:#6bff8c; border-color:rgba(107,255,140,.7); text-shadow:0 0 8px rgba(107,255,140,.55); box-shadow:0 0 12px rgba(107,255,140,.25), inset 0 0 8px rgba(107,255,140,.10); }
   .island-fin::before { color:#6bff8c !important; text-shadow:0 0 7px rgba(107,255,140,.5); }
   .island-editor::before { color:#ffea00 !important; text-shadow:0 0 7px rgba(255,234,0,.55); }
-  .edit-wrap { position:relative; height:240px; margin-top:12px; }
-  .edit-panels { display:flex; gap:12px; margin-top:12px; flex:1; align-items:stretch; }
+  .edit-wrap { position:relative; height:320px; margin-top:12px; }
+  .edit-panels { display:flex; gap:12px; margin-top:12px; align-items:stretch; }
   .edit-panel { flex:1; border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; background:rgba(0,0,0,.25); }
   .edit-panel-title { margin:0 0 8px; font-family:"VT323",monospace; font-size:14px; letter-spacing:.14em; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); }
   .edit-panel-hint { font-size:8px; letter-spacing:.2em; color:rgba(255,148,136,.55); margin:8px 0 0; }
@@ -82,6 +82,7 @@
   .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
   .edit-tools { display:flex; gap:6px; align-items:center; margin-top:12px; flex-wrap:wrap; }
   .edit-tools button { padding:7px 10px; font-size:8.5px; }
+  .tbtn.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 12px rgba(255,234,0,.3), inset 0 0 6px rgba(255,234,0,.12); }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
   #edSens { width:90px; }
   .edit-tools2 { margin-top:8px; }
@@ -342,10 +343,11 @@
         <div class="edit-panel">
           <p class="edit-panel-title">SLICE MARKERS</p>
           <div class="edit-tools" style="margin-top:0">
+            <button id="edMkShow" title="Show slice flags on the waveform (edit them by hand)">SHOW</button>
             <span class="etool"><i>SENSITIVITY</i><input type="range" id="edSens" min="0" max="100" value="50" title="Re-slices live while dragging (right = more markers)"></span>
             <button id="edClrMk" title="Clear all markers (back to grid slicing)">CLR MK</button>
           </div>
-          <p class="edit-panel-hint">AUTO-SLICED ON LOAD &mdash; DOUBLE-CLICK: SET / REMOVE &mdash; DRAG FLAG: MOVE</p>
+          <p class="edit-panel-hint">AUTO-SLICED ON LOAD &mdash; SHOW REVEALS THE FLAGS: DOUBLE-CLICK SET / REMOVE, DRAG TO MOVE</p>
         </div>
         <div class="edit-panel">
           <p class="edit-panel-title">TONE // VOCAL STRIP</p>
@@ -429,7 +431,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.24</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.26</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -457,14 +459,14 @@
 <div class="note-pop tx-pop hidden" id="eq8Pop">
   <p class="tx-title">GRAPHIC EQ // 8 BAND</p>
   <div class="eq8-row">
-    <span class="eq8-band"><input type="range" id="eq8b0" min="0" max="100" value="50" title="80 Hz (&plusmn;9 dB)"><i>80</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b1" min="0" max="100" value="50" title="160 Hz (&plusmn;9 dB)"><i>160</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b2" min="0" max="100" value="50" title="315 Hz (&plusmn;9 dB)"><i>315</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b3" min="0" max="100" value="50" title="630 Hz (&plusmn;9 dB)"><i>630</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b4" min="0" max="100" value="50" title="1.25 kHz (&plusmn;9 dB)"><i>1K2</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b5" min="0" max="100" value="50" title="2.5 kHz (&plusmn;9 dB)"><i>2K5</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b6" min="0" max="100" value="50" title="5 kHz (&plusmn;9 dB)"><i>5K</i></span>
-    <span class="eq8-band"><input type="range" id="eq8b7" min="0" max="100" value="50" title="10 kHz (&plusmn;9 dB)"><i>10K</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b0" min="0" max="100" value="50" title="80 Hz low shelf (&plusmn;12 dB)"><i id="eq8l0">80</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b1" min="0" max="100" value="50" title="160 Hz (&plusmn;12 dB)"><i id="eq8l1">160</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b2" min="0" max="100" value="50" title="315 Hz (&plusmn;12 dB)"><i id="eq8l2">315</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b3" min="0" max="100" value="50" title="630 Hz (&plusmn;12 dB)"><i id="eq8l3">630</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b4" min="0" max="100" value="50" title="1.25 kHz (&plusmn;12 dB)"><i id="eq8l4">1K2</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b5" min="0" max="100" value="50" title="2.5 kHz (&plusmn;12 dB)"><i id="eq8l5">2K5</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b6" min="0" max="100" value="50" title="5 kHz (&plusmn;12 dB)"><i id="eq8l6">5K</i></span>
+    <span class="eq8-band"><input type="range" id="eq8b7" min="0" max="100" value="50" title="10 kHz high shelf (&plusmn;12 dB)"><i id="eq8l7">10K</i></span>
   </div>
   <div class="tx-row">
     <button id="eq8Flat" title="Reset all bands to 0 dB">FLAT</button>
@@ -535,7 +537,7 @@
 (() => {
   "use strict";
 
-  const REV="2.24";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.26";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1774,7 +1776,11 @@
     let tail=null;
     low.connect(mud); mud.connect(pres); pres.connect(air);
     tail=air;
-    for (const f of EQ8F){ const b=mk("peaking",f,1.1); tail.connect(b); tail=b; eq8.push(b); }
+    for (let i=0;i<EQ8F.length;i++){
+      const type=(i===0)?"lowshelf":(i===EQ8F.length-1)?"highshelf":"peaking";
+      const b=mk(type, EQ8F[i], 1.41);                    // Oktavbandbreite; Enden als Shelves
+      tail.connect(b); tail=b; eq8.push(b);
+    }
     tail.connect(lo); lo.connect(sum);
     tail.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum);
     return { input:low, output:sum, low, mud, pres, air, comp, eq8 };
@@ -2001,8 +2007,8 @@
       const bh=Math.max(1, pk*(h*0.92));
       ectx.fillRect(x, mid-bh/2, 1, bh);
     }
-    // Slice-Zebra: die Schnittstuecke sichtbar machen (nur im Marker-Modus)
-    if (markers.length){
+    // Slice-Zebra: die Schnittstuecke sichtbar machen (nur auf Abruf via SHOW)
+    if (markersVisible && markers.length){
       const tab=sliceTable();
       for (let i=0;i<tab.length;i++){
         const x1=Math.max(0, t2px(tab[i].t0, w)), x2=Math.min(w, t2px(tab[i].t0+tab[i].dur, w));
@@ -2031,7 +2037,7 @@
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
     }
-    if (markers.length){
+    if (markersVisible && markers.length){
       for (const m of markers){
         const mx=t2px(m,w);
         if (mx<-6||mx>w+6) continue;
@@ -2138,11 +2144,13 @@
     }
   }
   function applyEdit(nb, msg, rebuild){
+    const restart=!!playSource && deckEl.classList.contains("st-editor");   // laufende Vorschau spielt sonst den alten Buffer weiter
     buffer=nb; buildReversed(); pitchCache.clear();
     if (rebuild) editView=null;                          // Laenge geaendert -> Zoom zuruecksetzen
     if (rebuild) fillOrdered();                         // Werkbank-Regel: Materialaenderung -> Hecksler frisch
     selection=null; editSel=null;
     drawWave(); drawEditWave(); setStatus(msg);
+    if (restart){ stopPlayback(); startPreview(); }      // nahtlos mit dem neuen Material weiter
   }
   edTrim.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("TRIM");
@@ -2322,6 +2330,7 @@
   }
   edSens.addEventListener("input", ()=>{
     if (!buffer) return;
+    if (!markersVisible){ markersVisible=true; edMkShow.classList.add("active"); }  // wer dreht, will sehen
     autoDetect();
     markersChanged(markers.length ? (markers.length+" SLICES // SENS "+edSens.value) : "NO ONSETS // GRID SLICING");
   });
@@ -2339,13 +2348,21 @@
   const eq8Pop=$("#eq8Pop");
   const eq8Sliders=[0,1,2,3,4,5,6,7].map((i)=>$("#eq8b"+i));
   const EQ8F=[80,160,315,630,1250,2500,5000,10000];
-  const eq8Db=(i)=>((Number(eq8Sliders[i].value)||50)-50)/50*9;
+  const eq8Db=(i)=>((Number(eq8Sliders[i].value)||50)-50)/50*12;
+  const EQ8LBL=["80","160","315","630","1K2","2K5","5K","10K"];
+  function eq8Labels(){
+    for (let i=0;i<8;i++){
+      const el=$("#eq8l"+i), db=eq8Db(i);
+      el.textContent=Math.abs(db)>0.2 ? ((db>0?"+":"")+db.toFixed(1)) : EQ8LBL[i];
+      el.style.color=Math.abs(db)>0.2 ? "#ffea00" : "";
+    }
+  }
   $("#edEq8Btn").addEventListener("click",(e)=>{
     if (eq8Pop.classList.contains("hidden")) placePop(eq8Pop, e.currentTarget);
     else eq8Pop.classList.add("hidden");
   });
-  for (const sl of eq8Sliders) sl.addEventListener("input", updatePreviewFx);
-  $("#eq8Flat").addEventListener("click", ()=>{ for (const sl of eq8Sliders) sl.value=50; updatePreviewFx(); setStatus("EQ FLAT"); });
+  for (const sl of eq8Sliders) sl.addEventListener("input", ()=>{ updatePreviewFx(); eq8Labels(); });
+  $("#eq8Flat").addEventListener("click", ()=>{ for (const sl of eq8Sliders) sl.value=50; updatePreviewFx(); eq8Labels(); setStatus("EQ FLAT"); });
   $("#eq8Apply").addEventListener("click", ()=>{
     if (!buffer) return;
     const bands=EQ8F.map((f,i)=>({ f, db:eq8Db(i) })).filter((b)=>Math.abs(b.db)>0.2);
@@ -2355,7 +2372,8 @@
       let n=src;
       for (const b of bands){
         const bi=off.createBiquadFilter();
-        bi.type="peaking"; bi.frequency.value=b.f; bi.Q.value=1.1; bi.gain.value=b.db;
+        bi.type=(b.f===80)?"lowshelf":(b.f===10000)?"highshelf":"peaking";
+        bi.frequency.value=b.f; bi.Q.value=1.41; bi.gain.value=b.db;
         n.connect(bi); n=bi;
       }
       return n;
@@ -2369,6 +2387,13 @@
     pushEditUndo("CLR MK");
     markers=[];
     markersChanged("MARKERS CLEARED // GRID SLICING");
+  });
+  let markersVisible=false;
+  const edMkShow=$("#edMkShow");
+  edMkShow.addEventListener("click", ()=>{
+    markersVisible=!markersVisible;
+    edMkShow.classList.toggle("active", markersVisible);
+    drawEditWave();
   });
   function auditionSliceAt(m){
     if (!buffer || isPlaying()) return;                   // laufendes Playback hat Vorrang
@@ -2387,7 +2412,7 @@
     src.start(t, sl.t0, dur);
   }
   function markerHit(e){
-    if (!buffer || !markers.length) return -1;
+    if (!buffer || !markers.length || !markersVisible) return -1;
     const r=editCanvas.getBoundingClientRect();
     const x=e.clientX-r.left, y=e.clientY-r.top;
     if (y>22) return -1;
@@ -2398,7 +2423,7 @@
     return -1;
   }
   editCanvas.addEventListener("dblclick",(e)=>{
-    if (!buffer) return;
+    if (!buffer || !markersVisible) return;
     const hit=markerHit(e);
     editDrag=null; editSel=null;
     if (hit>=0){ markers.splice(hit,1); markersChanged("MARKER DELETED"); }
