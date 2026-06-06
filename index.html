@@ -248,9 +248,6 @@
   #metroBtn.active { color:#1c0503; background:var(--sig); border-color:var(--sig); }
   .grid-wrap { position:relative; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   .fx-panel { flex:0 0 235px; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
-  .modegrp { display:flex; gap:4px; }
-  .modegrp button { padding:8px 12px; font-size:10px; letter-spacing:.1em; }
-  .modegrp button.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 8px rgba(255,234,0,.25), inset 0 0 5px rgba(255,234,0,.10); }
   .stutgrp { display:flex; gap:4px; }
   .stutgrp button { flex:1; padding:6px 2px; font-size:10px; letter-spacing:.06em; }
   .stutgrp button.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 8px rgba(255,234,0,.25), inset 0 0 5px rgba(255,234,0,.10); }
@@ -446,10 +443,6 @@
     <section class="stage fxstage island-chop" id="stageChop" data-tag="CHOPPER">
       <div class="chopbar">
         <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically; on release the material is stretched to fit. ALT+drag corrects the source BPM (re-label, no stretch)">120 BPM</button>
-        <div class="modegrp">
-          <button id="modeGrid" class="active" title="GRID — the classic chopper: fixed 1/8 slots">GRID</button>
-          <button id="modeMark" title="MARK — draw regions in the wave; each becomes a free chop you place on the 2-bar loop">MARK</button>
-        </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
           <button class="pbtn" id="densBtn" disabled title="Scatter density: hit chance per slot — drag vertically">DENS 60%</button>
@@ -468,7 +461,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.50</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.51</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1002,12 +995,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.50";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.51";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
   const P = {
-    chop: { on:true,  bpm:120, res:0.5, density:0.6, mode:"grid" }, // mode: grid = feste 1/8-Slots, mark = freie Chops
+    chop: { on:true,  bpm:120, res:0.5, density:0.6 }, // res = beats per step (1/8=0.5, 1/16=0.25)
     out:  { gain:0 },
     metro:false, metroRoot:69,                          // A4 (MIDI), Bereich C3..C5 = 48..72
     finisher:"RAW",
@@ -1057,7 +1050,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // Wird der Wert auf Neutral zurückgestellt (pitch 0, gain 1, len 1, reverse aus), fällt op zurück auf null (Original-Rot).
   function markOp(c, kind, neutral){ c.op = neutral ? null : kind; }
   let selectedStep=null, selectedSteps=new Set(), gridDrag=null;
-  let markChops=[], markSel=-1, markDrag=null, markPreview=null, markTlDrag=null;   // MARK-Modus: freie Chops {off,len,trig}
   let schedTimer=null, nextStepTime=0, schedStep=0, chopStartTime=0, activeSources=[];
   let pauseState=null, straightStartedAt=0, straightOffset=0, straightBaseOff=0, straightBaseDur=0;
   const PLAY_SVG='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg>', PAUSE_SVG='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="3" y="1" width="7" height="22" fill="currentColor"/><rect x="14" y="1" width="7" height="22" fill="currentColor"/></svg>';
@@ -1130,7 +1122,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
     [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
-    if (typeof syncModeBtns==="function") syncModeBtns();    // Scatter & Co. bleiben im MARK-Modus gesperrt
   }
   let bufferSource="file";                                   // Herkunft: mic | file | audiotool (Lizenzregel)
 
@@ -1199,7 +1190,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     editUndoStack=[]; editSel=null; editView=null; sliceOff=[];
     buffer=buf; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     defaultMaterial=false;                                   // echtes Material schlaegt das Beispiel
-    markChops=[]; markSel=-1; markPreview=null;              // Mark-Regionen zeigen auf altes Material
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();      // EINE Uhr: Material liegt nach dem Laden im Grid-Tempo
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear();
@@ -1518,7 +1508,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return col;
   }
   function drawGrid(playPos, preview){
-    if (P.chop.mode==="mark"){ drawMarkTimeline(playPos); return; }
     const { w, h }=fitGrid(); gctx.clearRect(0,0,w,h);
     const ts=totalSteps(), spb=stepsPerBar(), cw=w/ts;
     for (let i=0;i<ts;i++){
@@ -1601,18 +1590,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     setSelection(s, step);
   }
   function stepFromX(clientX){ const r=grid.getBoundingClientRect(); const s=Math.floor(((clientX-r.left)/r.width)*totalSteps()); return (s>=0 && s<totalSteps())?s:null; }
-  const tlT=(e)=>{ const r=grid.getBoundingClientRect(); return Math.max(0, Math.min(loopDur()-0.001, (e.clientX-r.left)/r.width*loopDur())); };
-  function markHitTl(t){ for (let i=markChops.length-1;i>=0;i--){ const m=markChops[i]; if (t>=m.trig && t<=m.trig+Math.max(0.04, Math.min(m.len, loopDur()-m.trig))) return i; } return -1; }
   grid.addEventListener("pointerdown",(e)=>{
-    if (P.chop.mode==="mark"){
-      e.preventDefault(); try{ grid.setPointerCapture(e.pointerId); }catch{}
-      const t=tlT(e), hit=markHitTl(t);
-      markSel=hit;
-      markTlDrag=(hit>=0)?{ i:hit, t0:t, trig0:markChops[hit].trig, moved:false }:null;
-      if (hit>=0) auditionMark(markChops[hit]);
-      drawGrid(); drawWave();
-      return;
-    }
     if (!buffer || e.button!==0) return;
     const step=stepFromX(e.clientX); if (step==null) return;
     const fc=arrangement[step];
@@ -1633,16 +1611,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     try { grid.setPointerCapture(e.pointerId); } catch{}
   });
   grid.addEventListener("pointermove",(e)=>{
-    if (P.chop.mode==="mark"){
-      if (!markTlDrag) return;
-      const t=tlT(e), m=markChops[markTlDrag.i], ssd=stepDur();
-      let nt=markTlDrag.trig0+(t-markTlDrag.t0);
-      if (Math.abs(nt-markTlDrag.trig0)>0.01) markTlDrag.moved=true;
-      if (!e.shiftKey) nt=Math.round(nt/ssd)*ssd;              // 8tel-Einrasten, SHIFT = frei
-      m.trig=Math.max(0, Math.min(loopDur()-0.02, nt));
-      drawGrid();
-      return;
-    }
     if (!gridDrag||!gridDrag.active){
       // Hover-Cursor: ew-resize ueber der Block-Kante eines belegten Chops
       if (!buffer){ grid.style.cursor=""; return; }
@@ -1727,11 +1695,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     setStatus((d.duplicate?"CHOP COPIED // STEP ":"CHOP MOVED // STEP ")+(to+1));
   }
   grid.addEventListener("dblclick",(e)=>{
-    if (P.chop.mode==="mark"){
-      const hit=markHitTl(tlT(e));
-      if (hit>=0){ markChops.splice(hit,1); markSel=-1; setStatus("CHOP DELETED"); drawGrid(); drawWave(); }
-      return;
-    }
     if (!buffer) return;
     const step=stepFromX(e.clientX); if (step==null) return;
     if (arrangement[step]){
@@ -1747,7 +1710,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
   });
   grid.addEventListener("contextmenu",(e)=>{
-    if (P.chop.mode==="mark"){ e.preventDefault(); return; }
     e.preventDefault();
     if (!buffer) return;
     const step=stepFromX(e.clientX); if (step==null) return;
@@ -1759,13 +1721,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (!selectedSteps.has(step)) selectChop(step); else { updateFxPanel(); drawGrid(); }
     setStatus("REVERSE "+(nv?"ON":"OFF")+" // "+(group.length>1?group.length+" CHOPS":"STEP "+(step+1)));
   });
-  grid.addEventListener("pointerup", (e)=>{
-    if (P.chop.mode==="mark"){
-      if (markTlDrag && markTlDrag.moved){ const m=markChops[markTlDrag.i]; setStatus("CHOP \u2192 "+m.trig.toFixed(2)+"s"); }
-      markTlDrag=null; return;
-    }
-    endGridDrag(e);
-  });
+  grid.addEventListener("pointerup", endGridDrag);
   grid.addEventListener("pointercancel", ()=>{ gridDrag=null; drawGrid(); });
 
   function deleteSelected(){
@@ -1793,11 +1749,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
-    if (e.key==="Delete"||e.key==="Backspace"){
-      e.preventDefault();
-      if (P.chop.mode==="mark"){ if (markSel>=0){ markChops.splice(markSel,1); markSel=-1; setStatus("CHOP DELETED"); drawGrid(); drawWave(); } return; }
-      deleteSelected();
-    }
+    if (e.key==="Delete"||e.key==="Backspace"){ e.preventDefault(); deleteSelected(); }
     else if (e.key==="ArrowUp"||e.key==="ArrowDown"){
       e.preventDefault(); nudgeSnapshot("pitch:"+[...selectedSteps].join(","));
       const d=(e.key==="ArrowUp"?1:-1);
@@ -1811,7 +1763,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // Trackpads/Smooth-Scroll-Treiber (kleine Deltas, teils mit Gegen-Jitter) akkumulieren.
   let wheelAcc=0, wheelStep=null;
   grid.addEventListener("wheel",(e)=>{
-    if (P.chop.mode==="mark") return;
     if (!buffer) return;
     e.preventDefault();
     const step=stepFromX(e.clientX);
@@ -2255,21 +2206,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const grad=ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,"#ffea00"); grad.addColorStop(0.5,"#ff9a00"); grad.addColorStop(1,"#2e1401");
     ctx.fillStyle=grad;
     drawBars(0, w);
-    if (P.chop.mode==="mark"){                               // markierte Chop-Quellen + Aufzieh-Vorschau
-      for (let i=0;i<markChops.length;i++){
-        const m=markChops[i], x1=m.off/vd*w, x2=Math.min(vd,(m.off+m.len))/vd*w;
-        if (x2<=0 || x1>=w) continue;
-        ctx.fillStyle=(i===markSel)?"rgba(255,234,0,0.22)":"rgba(255,69,50,0.18)";
-        ctx.fillRect(x1,0,x2-x1,h);
-        ctx.strokeStyle=(i===markSel)?"#ffea00":"rgba(255,69,50,0.8)"; ctx.lineWidth=1;
-        ctx.strokeRect(x1+0.5,0.5,x2-x1-1,h-1);
-      }
-      if (markPreview){
-        const x1=markPreview.a/vd*w, x2=markPreview.b/vd*w;
-        ctx.fillStyle="rgba(255,234,0,0.14)"; ctx.fillRect(x1,0,x2-x1,h);
-        ctx.setLineDash([4,3]); ctx.strokeStyle="#ffea00"; ctx.strokeRect(x1+0.5,0.5,x2-x1-1,h-1); ctx.setLineDash([]);
-      }
-    }
     if (dot!=null && dot.end>dot.start){
       // Aktiver Slice glueht auf: gespielter Quellbereich in Hell
       const hx1=(Math.max(0,dot.start)/vd)*w, hx2=(Math.min(dot.end,vd)/vd)*w;
@@ -2329,7 +2265,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     stopPlayback();
     const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
     liveFx=buildChain(ac);
-    if (P.chop.on && chopHasContent()) startChopper(ac, (resume && resume.mode==="chop") ? resume.step : 0);
+    if (P.chop.on && arrangement.some((x)=>x!=null)) startChopper(ac, (resume && resume.mode==="chop") ? resume.step : 0);
     else startStraight(ac, (resume && resume.mode==="straight") ? resume.offset : null);
     setPlayIcon(true);
   }
@@ -2439,101 +2375,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); rafId=requestAnimationFrame(follow); })();
   }
-  const chopHasContent=()=> (P.chop.mode==="mark") ? markChops.length>0 : arrangement.some((x)=>x!=null);
-  const modeGridBtn=$("#modeGrid"), modeMarkBtn=$("#modeMark");
-  function syncModeBtns(){
-    const mark=(P.chop.mode==="mark"), hasBuf=!!buffer;
-    modeGridBtn.classList.toggle("active", !mark); modeMarkBtn.classList.toggle("active", mark);
-    [densBtn, $("#scatterBtn"), $("#resetBtn"), $("#clearChopBtn")].forEach((b)=>{ b.disabled = mark || !hasBuf; });
-  }
-  function setChopMode(m){
-    if (P.chop.mode===m) return;
-    P.chop.mode=m; markPreview=null; markDrag=null; markTlDrag=null;
-    syncModeBtns(); drawWave(); drawGrid();
-    setStatus(m==="mark" ? "MARK MODE // DRAW REGIONS IN THE WAVE" : "GRID MODE // 16 SLOTS");
-  }
-  modeGridBtn.addEventListener("click", ()=>setChopMode("grid"));
-  modeMarkBtn.addEventListener("click", ()=>setChopMode("mark"));
-
-  // MARK: freier Chop-Player — Quelle (off/len) ist Material-Zeit, Trigger (trig) ist Loop-Zeit
-  function playMarkChop(ac, n, mc, when){
-    if (!buffer) return null;
-    const off=Math.max(0, Math.min(mc.off, buffer.duration-0.02));
-    const dur=Math.max(0.02, Math.min(mc.len, buffer.duration-off));
-    const F=Math.min(0.006, dur*0.2);                          // Mikro-Fades gegen Klicks
-    const g=ac.createGain(); g.connect(n.input);
-    g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(1, when+F);
-    g.gain.setValueAtTime(1, Math.max(when+F, when+dur-F));
-    g.gain.linearRampToValueAtTime(0, when+dur);
-    const src=ac.createBufferSource(); src.buffer=buffer; src.connect(g);
-    try { src.start(when, off, dur+0.005); } catch(e){}
-    return src;
-  }
-  function auditionMark(mc){
-    const ac=ctxGet(); try{ ac.resume(); }catch{}
-    const sink=liveFx ? liveFx : { input:(function(){ const g=ac.createGain(); g.connect(ac.destination); return g; })() };
-    playMarkChop(ac, sink, mc, ac.currentTime+0.02);
-  }
-  function drawMarkTimeline(playPos){
-    const { w, h }=fitGrid(); gctx.clearRect(0,0,w,h);
-    const ld=loopDur(), sd=stepDur(), spb=stepsPerBar(), ts=totalSteps();
-    for (let i=0;i<ts;i++){                                    // Takt-Schattierung + 8tel-Hilfslinien
-      const x=i/ts*w;
-      if (Math.floor(i/spb)%2===1){ gctx.fillStyle="rgba(255,255,255,0.02)"; gctx.fillRect(x,0,w/ts,h); }
-      gctx.strokeStyle=(i%spb===0)?"rgba(255,234,0,0.25)":(i%stepsPerBeat()===0)?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.05)";
-      gctx.beginPath(); gctx.moveTo(Math.round(x)+0.5,0); gctx.lineTo(Math.round(x)+0.5,h); gctx.stroke();
-    }
-    for (let i=0;i<markChops.length;i++){
-      const m=markChops[i];
-      const x=m.trig/ld*w, bw=Math.max(3, Math.min(m.len, ld-m.trig)/ld*w);
-      const sel=(i===markSel);
-      gctx.fillStyle=sel ? "rgba(255,234,0,0.85)" : "rgba(255,69,50,0.85)";
-      gctx.fillRect(x, 12, bw, h-24);
-      if (sel){ gctx.strokeStyle="#ffea00"; gctx.lineWidth=1.5; gctx.strokeRect(x+0.5, 12.5, bw-1, h-25); }
-    }
-    if (markChops.length===0){
-      gctx.fillStyle="rgba(189,250,255,0.45)"; gctx.font="16px 'VT323',monospace";
-      const tt="MARK A REGION IN THE WAVE ABOVE \u2014 IT BECOMES A CHOP";
-      gctx.fillText(tt, Math.max(8,(w-gctx.measureText(tt).width)/2), h/2+5);
-    }
-    if (playPos!=null){
-      const px=(playPos*sd)/ld*w;
-      gctx.strokeStyle="#fff"; gctx.beginPath(); gctx.moveTo(px,0); gctx.lineTo(px,h); gctx.stroke();
-    }
-  }
-  // MARK: Markieren in der Material-Wave
-  const waveT=(e)=>{ const r=canvas.getBoundingClientRect(); return Math.max(0, Math.min(viewDur(), (e.clientX-r.left)/r.width*viewDur())); };
-  function markHitWave(t){ for (let i=markChops.length-1;i>=0;i--){ const m=markChops[i]; if (t>=m.off && t<=m.off+m.len) return i; } return -1; }
-  canvas.addEventListener("pointerdown",(e)=>{
-    if (P.chop.mode!=="mark" || !buffer) return;
-    e.preventDefault(); try{ canvas.setPointerCapture(e.pointerId); }catch{}
-    markDrag={ a:waveT(e), moved:false };
-    markPreview=null;
-  });
-  canvas.addEventListener("pointermove",(e)=>{
-    if (P.chop.mode!=="mark" || !markDrag) return;
-    const t=waveT(e);
-    if (Math.abs(t-markDrag.a)>0.012) markDrag.moved=true;
-    if (markDrag.moved){ markPreview={ a:Math.min(markDrag.a,t), b:Math.max(markDrag.a,t) }; drawWave(); }
-  });
-  canvas.addEventListener("pointerup",(e)=>{
-    if (P.chop.mode!=="mark" || !markDrag) return;
-    const t=waveT(e), ld=loopDur();
-    if (markDrag.moved && markPreview && (markPreview.b-markPreview.a)>=0.02){
-      const off=markPreview.a, len=markPreview.b-markPreview.a;
-      const trig=Math.max(0, Math.min(ld-0.02, off % ld));     // Trigger faellt auf die natuerliche Position im Loop
-      markChops.push({ off, len, trig });
-      markSel=markChops.length-1;
-      setStatus("CHOP MARKED // "+Math.round(len*1000)+" MS \u2192 LOOP @ "+trig.toFixed(2)+"s");
-      auditionMark(markChops[markSel]);
-    } else {
-      const hit=markHitWave(t); markSel=hit;
-      if (hit>=0) auditionMark(markChops[hit]);
-    }
-    markDrag=null; markPreview=null; drawWave(); drawGrid();
-  });
-
   function startChopper(ac){
     const rs=arguments.length>1 ? (arguments[1]|0) : 0;
     const t0=(arguments.length>2 && arguments[2]) ? arguments[2] : (ac.currentTime+0.08);
@@ -2546,12 +2387,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const p=pos<0?0:pos;
       drawGrid(p);
       const stepIdx=Math.floor(p)%totalSteps(), frac=p-Math.floor(p);
+      const cch=arrangement[stepIdx], tabF=sliceTable();
       let hl=null;
-      if (P.chop.mode==="mark"){
-        const curT=((ac.currentTime-chopStartTime)%loopDur()+loopDur())%loopDur();
-        for (const mc of markChops){ if (curT>=mc.trig && curT<mc.trig+mc.len){ hl={ start:mc.off, end:mc.off+mc.len, col:"rgba(255,234,0,1)" }; break; } }
-      }
-      const cch=(P.chop.mode==="mark")?null:arrangement[stepIdx], tabF=sliceTable();
       if (cch && tabF.length>0){
         const slF=tabF[cch.slice%tabF.length], l=(cch.len==null?1:cch.len), st0=Math.max(0,Math.min(0.9,cch.st||0));
         hl={ start:slF.t0+st0*slF.dur, end:slF.t0+l*slF.dur, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
@@ -2564,20 +2401,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function chopScheduler(){
     const ac=audioCtx, sd=stepDur(), tab=sliceTable(), ts=totalSteps(), spb=stepsPerBar(), spbeat=stepsPerBeat(), look=ac.currentTime+0.2;
-    if (P.chop.mode==="mark"){
-      while (nextStepTime < look){
-        const s=schedStep % ts, t0=s*sd, t1=t0+sd;
-        for (const mc of markChops){
-          if (mc.trig>=t0 && mc.trig<t1){
-            const src=playMarkChop(ac, liveFx, mc, nextStepTime+(mc.trig-t0));
-            if (src){ activeSources.push(src); src.onended=()=>{ const k=activeSources.indexOf(src); if (k>=0) activeSources.splice(k,1); }; }
-          }
-        }
-        if (P.metro && (s % spbeat===0)) scheduleClick(ac, nextStepTime, s % spb===0);
-        nextStepTime+=sd; schedStep=(schedStep+1)%ts;
-      }
-      return;
-    }
     while (nextStepTime < look){
       const s=schedStep % ts, ch=arrangement[s];
       if (ch && tab.length>0){
@@ -2609,12 +2432,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const sr=buffer.sampleRate;
     const outCh=(FINISHERS[P.finisher]||FINISHERS.RAW).width>0 ? 2 : 1;
     let rendered;
-    if (P.chop.on && P.chop.mode==="mark" && markChops.length){
-      const loopLen=Math.ceil(loopDur()*sr);
-      const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off);
-      for (const mc of markChops) playMarkChop(off, n, mc, mc.trig);
-      rendered=await off.startRendering();
-    } else if (P.chop.on && P.chop.mode!=="mark" && arrangement.some((x)=>x!=null)){
+    if (P.chop.on && arrangement.some((x)=>x!=null)){
       const sd=stepDur(), tab=sliceTable(), ts=totalSteps(), loopLen=Math.ceil(loopDur()*sr);
       const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off);
       for (let step=0; step<ts; step++){
@@ -2708,7 +2526,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       (async ()=>{
         if (buffer && !chainNeutral()) await applyLiveChain();   // Editor-Sound einbrennen: Chopper klingt wie der Editor
         // Nahtlose Uebergabe: Editor-Quelle laeuft bis zur naechsten Step-Grenze, der Chopper setzt exakt dort ein
-        if (playSource && audioCtx && P.chop.on && chopHasContent()) handoverToChopper();
+        if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)) handoverToChopper();
         drawWave(); drawGrid();                        // versteckte Canvases haben Breite 0 — frisch rendern
       })();
     }
@@ -3416,7 +3234,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["p","$ "],["k","fx"],["t",": "],["v","PITCH STUTTER TUBE CRUSH HP LP"]],
       [["p","$ "],["k","SCATTER"],["t"," + "],["v","DENS"],["t",": roll \u00B7 "],["v","RESET CLEAR"]],
       [["p","$ "],["k","grid"],["t",": "],["v","1/8"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
-      [["p","$ "],["k","mode"],["t",": "],["v","GRID | MARK"],["t"," \u2014 draw your own chops"]],
       [["c","# alt+drag BPM corrects the source bpm"]],
       [["c","# colors = what changed on each chop"]],
       [["c","# switching from EDITOR hands the loop over"]],
@@ -3480,7 +3297,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW \u2014 the material as the chopper reads it; highlight follows the playing chop. In MARK mode: drag here to draw a chop, click a region to hear it";
+  $("#wave").dataset.desc="CHOPPER VIEW \u2014 the material as the chopper reads it; the highlight follows the playing chop";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
