@@ -348,8 +348,8 @@
           <div class="eq-stage">
             <div class="eq-graph-wrap"><canvas id="eqCanvas"></canvas></div>
             <div class="eq-side">
-              <button id="eq8Flat" title="Reset all bands to 0 dB">FLAT</button>
-              <button id="eq8Apply" class="primary" title="Render the 8-band EQ into the material">APPLY</button>
+              <button id="eq8Flat" title="Reset the whole live chain to neutral">FLAT</button>
+              <button id="eq8Apply" class="primary" title="Render the FULL live chain (tone + 8-band + de-ess) into the material — what you hear becomes the material">APPLY</button>
             </div>
             <div class="eq-tone">
               <p class="eq-tone-h">TONE // VOCAL STRIP</p>
@@ -358,13 +358,9 @@
               <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
               <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
               <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="0" title="Tames sharp S sounds above 5.5 kHz"></span>
-              <div class="eq-tone-btns">
-                <button id="edEqApply" title="Render the quick EQ into the material">EQ APPLY</button>
-                <button id="edDeEssApply" title="Render the de-esser into the material">DE-ESS APPLY</button>
-              </div>
             </div>
           </div>
-          <p class="edit-panel-hint">ISO BANDS 63&ndash;8K &middot; &plusmn;12 DB &middot; DRAG THE CURVE POINTS &middot; DOUBLE-CLICK = ZERO &middot; TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IT IN</p>
+          <p class="edit-panel-hint">ISO BANDS 63&ndash;8K &middot; &plusmn;12 DB &middot; DRAG THE CURVE POINTS &middot; DOUBLE-CLICK = ZERO &middot; TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IN THE WHOLE CHAIN</p>
         </div>
       </div>
     </section>
@@ -433,7 +429,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.38</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.39</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -983,7 +979,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.38";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.39";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2291,7 +2287,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     const comp=ac.createDynamicsCompressor();
     comp.threshold.value=0; comp.ratio.value=1; comp.attack.value=0.002; comp.release.value=0.06; comp.knee.value=6;
     const sum=ac.createGain();
-    const specAn=ac.createAnalyser(); specAn.fftSize=2048; specAn.smoothingTimeConstant=0.82;
+    const specAn=ac.createAnalyser(); specAn.fftSize=8192; specAn.smoothingTimeConstant=0.82;   // feine Bins (~5 Hz): links spitz statt Treppe
     sum.connect(specAn);                                   // Live-Spektrum fuers EQ-Display
     const eq8=[];
     let tail=null;
@@ -2491,9 +2487,12 @@ if (typeof exports === 'object' && typeof module === 'object') {
     $("#stFin").classList.toggle("active", st==="fin");
     if (st==="editor"){ drawEditWave(); drawEqGraph(); }
     if (st==="hecksler"){
-      // Nahtlose Uebergabe: Editor-Quelle laeuft bis zur naechsten Step-Grenze, der Chopper setzt exakt dort ein
-      if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)) handoverToChopper();
-      drawWave(); drawGrid();                          // versteckte Canvases haben Breite 0 — frisch rendern
+      (async ()=>{
+        if (buffer && !chainNeutral()) await applyLiveChain();   // Editor-Sound einbrennen: Chopper klingt wie der Editor
+        // Nahtlose Uebergabe: Editor-Quelle laeuft bis zur naechsten Step-Grenze, der Chopper setzt exakt dort ein
+        if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)) handoverToChopper();
+        drawWave(); drawGrid();                        // versteckte Canvases haben Breite 0 — frisch rendern
+      })();
     }
     setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":"FINALIZER"));
   }
@@ -2589,7 +2588,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     edNorm.disabled=!hasBuf;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
-    $("#edEqApply").disabled=$("#edDeEssApply").disabled=$("#eq8Apply").disabled=!hasBuf;
+    $("#eq8Apply").disabled=!hasBuf;
     $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
@@ -2795,16 +2794,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   edGainP.addEventListener("click", ()=>applyGain(2));
   edGainM.addEventListener("click", ()=>applyGain(-2));
   // ---------- Etappe E1: Offline-Render-Geruest (EQ / De-Esser) ----------
-  function eqSpec(low, mud, pres, air){
-    // Slider 0..1 -> Filterliste; pure Funktion, testbar
-    const fl=[];
-    if (low>0.01)  fl.push({ type:"highpass",  freq:40+110*low, Q:0.71, gain:0 });
-    if (mud>0.01)  fl.push({ type:"peaking",   freq:250,  Q:1.0,  gain:-12*mud });
-    const pg=(pres-0.5)*12;                                // -6..+6 dB, Mitte neutral
-    if (Math.abs(pg)>0.1) fl.push({ type:"peaking", freq:3500, Q:0.9, gain:pg });
-    if (air>0.01)  fl.push({ type:"highshelf", freq:12000, Q:0.71, gain:9*air });
-    return fl;
-  }
   function deEssSpec(amount){
     return { split:5500, threshold:-15-30*amount, ratio:6, attack:0.002, release:0.06 };
   }
@@ -2840,36 +2829,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   const eqLow=$("#eqLow"), eqMud=$("#eqMud"), eqPres=$("#eqPres"), eqAir=$("#eqAir");
   for (const el of [eqLow, eqMud, eqPres, eqAir]) el.addEventListener("input", updatePreviewFx);
   $("#edDeEss").addEventListener("input", updatePreviewFx);
-  $("#edEqApply").addEventListener("click", ()=>{
-    if (!buffer) return;
-    const fl=eqSpec(eqLow.value/100, eqMud.value/100, eqPres.value/100, eqAir.value/100);
-    if (!fl.length){ setStatus("EQ FLAT // NOTHING TO APPLY"); return; }
-    applyRendered("EQ APPLIED", (off, src)=>{
-      let n=src;
-      for (const f of fl){
-        const bi=off.createBiquadFilter();
-        bi.type=f.type; bi.frequency.value=f.freq; bi.Q.value=f.Q; bi.gain.value=f.gain;
-        n.connect(bi); n=bi;
-      }
-      return n;
-    });
-  });
-  $("#edDeEssApply").addEventListener("click", ()=>{
-    if (!buffer) return;
-    const sp=deEssSpec((Number($("#edDeEss").value)||0)/100);
-    applyRendered("DE-ESSED", (off, src)=>{
-      const lo=off.createBiquadFilter(); lo.type="lowpass";  lo.frequency.value=sp.split; lo.Q.value=0.5;
-      const hi=off.createBiquadFilter(); hi.type="highpass"; hi.frequency.value=sp.split; hi.Q.value=0.5;
-      const inv=off.createGain(); inv.gain.value=-1;       // LR-Split: flache Summe
-      const comp=off.createDynamicsCompressor();
-      comp.threshold.value=sp.threshold; comp.ratio.value=sp.ratio;
-      comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
-      const sum=off.createGain();
-      src.connect(lo); lo.connect(sum);                    // Tiefen-Zweig trocken
-      src.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum); // S-Band komprimiert
-      return sum;
-    });
-  });
   function zoomBy(f){
     if (!buffer) return;
     const center=evT0()+evDur()/2;
@@ -2954,8 +2913,9 @@ if (typeof exports === 'object' && typeof module === 'object') {
       const binHz=audioCtx.sampleRate/2/n;
       const pts=[];                                          // Kontur einmal rechnen, zweimal zeichnen
       for (let x=0;x<=w;x+=2){
-        const bi=Math.min(n-1, Math.max(0, Math.round(x2f(x,w)/binHz)));
-        const v=eqSpecBuf[bi]/255;
+        const fb=Math.max(0, Math.min(n-1.001, x2f(x,w)/binHz));
+        const b0=Math.floor(fb), fr=fb-b0;                 // linear interpolieren: keine Bin-Treppen
+        const v=(eqSpecBuf[b0]*(1-fr)+eqSpecBuf[Math.min(n-1,b0+1)]*fr)/255;
         pts.push([x, hh-(v*v)*(hh-6)]);
       }
       eqg.fillStyle="rgba(255,69,50,.30)";                   // Spektrum in Alarmrot (Signalfarbe), deutlich heller
@@ -2986,6 +2946,46 @@ if (typeof exports === 'object' && typeof module === 'object') {
       const tw=eqg.measureText(txt).width, tx=Math.max(4, Math.min(w-tw-4, x+10)), ty=Math.max(14, y-10);
       eqg.fillText(txt, tx, ty);
     }
+  }
+  function chainNeutral(){
+    const lv=Number(eqLow.value)||0, mv=Number(eqMud.value)||0, pv=Number(eqPres.value)||0, av=Number(eqAir.value)||0;
+    const dv=Number($("#edDeEss").value)||0;
+    return lv<1 && mv<1 && Math.abs(pv-50)<1 && av<1 && dv<1 && eq8Gains.every((g)=>Math.abs(g)<0.05);
+  }
+  async function applyLiveChain(){
+    // DER eine APPLY: brennt die komplette Live-Kette in EXAKT der Vorhoer-Reihenfolge ein
+    // (Quick-EQ -> 8-Band -> De-Ess). Danach ist die Kette neutral: Editor-Klang == Material == Chopper.
+    if (!buffer) return;
+    if (chainNeutral()){ setStatus("CHAIN NEUTRAL // NOTHING TO APPLY"); return; }
+    const lowV=(Number(eqLow.value)||0)/100, mudV=(Number(eqMud.value)||0)/100;
+    const presV=(Number(eqPres.value)||0)/100, airV=(Number(eqAir.value)||0)/100;
+    const dAmt=(Number($("#edDeEss").value)||0)/100, gains=eq8Gains.slice();
+    await applyRendered("CHAIN APPLIED // EDITOR = CHOPPER", (off, src)=>{
+      const mk=(type,freq,Q,g)=>{ const b=off.createBiquadFilter(); b.type=type; b.frequency.value=freq; b.Q.value=Q; b.gain.value=g||0; return b; };
+      const low=mk("highpass", lowV>0.01 ? 40+110*lowV : 10, 0.71);
+      const mud=mk("peaking", 250, 1.0, -12*mudV);
+      const pres=mk("peaking", 3500, 0.9, (presV-0.5)*12);
+      const air=mk("highshelf", 12000, 0.71, 9*airV);
+      src.connect(low); low.connect(mud); mud.connect(pres); pres.connect(air);
+      let tail=air;
+      for (let i=0;i<EQ8F.length;i++){
+        const b=mk((i===0)?"lowshelf":(i===EQ8F.length-1)?"highshelf":"peaking", EQ8F[i], 1.41, gains[i]);
+        tail.connect(b); tail=b;
+      }
+      const sp=deEssSpec(dAmt);
+      const lo=mk("lowpass", sp.split, 0.5), hi=mk("highpass", sp.split, 0.5);
+      const inv=off.createGain(); inv.gain.value=-1;
+      const comp=off.createDynamicsCompressor();
+      comp.threshold.value=dAmt>0.01?sp.threshold:0; comp.ratio.value=dAmt>0.01?sp.ratio:1;
+      comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
+      const sum=off.createGain();
+      tail.connect(lo); lo.connect(sum);
+      tail.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum);
+      return sum;
+    });
+    eqLow.value=0; eqMud.value=0; eqPres.value=50; eqAir.value=0; $("#edDeEss").value=0;
+    for (let i=0;i<8;i++) eq8Gains[i]=0;
+    updatePreviewFx(); drawEqGraph();
   }
   function eqBandAt(e){
     const r=eqCanvas.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
@@ -3018,26 +3018,11 @@ if (typeof exports === 'object' && typeof module === 'object') {
   eqCanvas.addEventListener("pointerup",eqPtEnd);
   eqCanvas.addEventListener("pointercancel",eqPtEnd);
   eqCanvas.addEventListener("dblclick",(e)=>{ const band=eqBandAt(e); if (band>=0) setBand(band, 0); });
+  $("#eq8Apply").addEventListener("click", ()=>{ applyLiveChain(); });
   $("#eq8Flat").addEventListener("click", ()=>{
+    eqLow.value=0; eqMud.value=0; eqPres.value=50; eqAir.value=0; $("#edDeEss").value=0;
     for (let i=0;i<8;i++) eq8Gains[i]=0;
-    updatePreviewFx(); drawEqGraph(); setStatus("EQ FLAT");
-  });
-  $("#eq8Apply").addEventListener("click", ()=>{
-    if (!buffer) return;
-    const bands=EQ8F.map((f,i)=>({ f, i, db:eq8Gains[i] })).filter((b)=>Math.abs(b.db)>0.2);
-    if (!bands.length){ setStatus("EQ FLAT // NOTHING TO APPLY"); return; }
-    applyRendered("8-BAND EQ APPLIED", (off, src)=>{
-      let n=src;
-      for (const b of bands){
-        const bi=off.createBiquadFilter();
-        bi.type=(b.i===0)?"lowshelf":(b.i===EQ8F.length-1)?"highshelf":"peaking";  // Typ am Index, nicht am Hz-Wert
-        bi.frequency.value=b.f; bi.Q.value=1.41; bi.gain.value=b.db;
-        n.connect(bi); n=bi;
-      }
-      return n;
-    });
-    for (let i=0;i<8;i++) eq8Gains[i]=0;                    // eingebrannt -> Kette neutral, keine Doppelwirkung
-    updatePreviewFx(); drawEqGraph();
+    updatePreviewFx(); drawEqGraph(); setStatus("CHAIN FLAT");
   });
   $("#edZoomIn").addEventListener("click", ()=>zoomBy(1/1.5));
   $("#edZoomOut").addEventListener("click", ()=>zoomBy(1.5));
