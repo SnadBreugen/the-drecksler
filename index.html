@@ -460,7 +460,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.43</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.44</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1015,7 +1015,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.43";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.44";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3246,11 +3246,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     ],
     hecksler:[
       [["p","> "],["k","CHOPPER"],["t"," // rearrange"]],
-      [["p","$ "],["k","click"],["t"," a pad \u2014 select + hear"]],
-      [["p","$ "],["k","drag"],["t"," pads to move"]],
-      [["p","$ "],["k","fx"],["t"," per chop: "],["v","PITCH REV VOL"],["t"," \u2026"]],
-      [["p","$ "],["k","SCATTER"],["t"," rolls a new arrangement"]],
-      [["c","# colors = what the dice changed"]],
+      [["p","$ "],["k","click"],["t",": select + hear"]],
+      [["p","$ "],["k","shift+click"],["t",": range \u00B7 "],["k","ctrl+click"],["t",": add"]],
+      [["p","$ "],["k","drag"],["t",": move \u00B7 "],["k","ctrl+drag"],["t",": copy"]],
+      [["p","$ "],["k","drag \u2195"],["t",": volume \u00B7 "],["k","shift+\u2195"],["t",": pitch"]],
+      [["p","$ "],["k","block edges"],["t",": trim start / length"]],
+      [["p","$ "],["k","wheel"],["t"," on a chop: pitch "],["v","\u00B112"]],
+      [["p","$ "],["k","\u2191\u2193"],["t",": pitch \u00B11 \u00B7 "],["k","right-click"],["t",": "],["v","REVERSE"]],
+      [["p","$ "],["k","double-click"],["t",": delete / restore"]],
+      [["p","$ "],["k","DEL"],["t",": clear selection \u00B7 "],["k","ctrl+z/y"],["t",": undo"]],
+      [["p","$ "],["k","fx"],["t",": "],["v","PITCH STUTTER TUBE CRUSH HP LP"]],
+      [["p","$ "],["k","SCATTER"],["t"," + "],["v","DENS"],["t",": roll \u00B7 "],["v","RESET CLEAR"]],
+      [["p","$ "],["k","grid"],["t",": "],["v","1/8 1/16"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
+      [["c","# alt+drag BPM corrects the source bpm"]],
+      [["c","# colors = what changed on each chop"]],
       [["c","# switching from EDITOR hands the loop over"]],
       [["c","// grid is law. content obeys."]],
     ],
