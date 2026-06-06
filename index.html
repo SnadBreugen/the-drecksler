@@ -138,7 +138,7 @@
   .deck-foot { grid-area:foot; margin-bottom:0; display:flex; align-items:center; gap:12px; }
   .deck-foot .foot-meter { flex:1; max-width:380px; margin-left:14px; }
   .chassis-foot { display:flex; align-items:baseline; justify-content:space-between; margin-top:12px; }
-  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:11px; letter-spacing:.3em; color:#8c2014; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); }
+  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:16px; letter-spacing:.3em; color:#3a0d08; text-shadow:0 -1px 1px rgba(0,0,0,.45), 0 1px 1px rgba(255,255,255,.34); }
   .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#8c2014; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
   .cap-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
   .cap-head .transport { margin-top:0; flex:none; }
@@ -472,7 +472,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.63</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.65</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1006,7 +1006,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.63";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.65";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3404,17 +3404,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       for (let k=0;k<pts.length;k++){ if (k===0) eqg.moveTo(pts[k][0],pts[k][1]); else eqg.lineTo(pts[k][0],pts[k][1]); }
       eqg.stroke();
     }
-    // ECHTE Summenkurve (Anzeige-Gelb mit Glow)
+    // ECHTE Summenkurve: feine Neonlinie + Hauchfuellung zur 0-dB-Achse (Messinstrument, kein Gummiband)
     const curve=eqCurveDb();
-    eqg.strokeStyle="#ffea00"; eqg.lineWidth=2;
-    eqg.shadowColor="rgba(255,234,0,.55)"; eqg.shadowBlur=6;
+    const yZero=db2y(0,hh);
+    eqg.beginPath();
+    for (let k=0;k<EQ_N;k++){ const x=fx2x(eqFreqs[k],w), y=db2y(curve[k],hh); if (k===0) eqg.moveTo(x,y); else eqg.lineTo(x,y); }
+    const fillPath=()=>{ eqg.lineTo(fx2x(eqFreqs[EQ_N-1],w), yZero); eqg.lineTo(fx2x(eqFreqs[0],w), yZero); eqg.closePath(); };
+    eqg.save(); fillPath();
+    eqg.fillStyle="rgba(255,234,0,.10)"; eqg.fill(); eqg.restore();   // Anhebung/Absenkung auf einen Blick
+    eqg.strokeStyle="#ffea00"; eqg.lineWidth=1.5;
+    eqg.shadowColor="rgba(255,234,0,.6)"; eqg.shadowBlur=7;
     eqg.beginPath();
     for (let k=0;k<EQ_N;k++){ const x=fx2x(eqFreqs[k],w), y=db2y(curve[k],hh); if (k===0) eqg.moveTo(x,y); else eqg.lineTo(x,y); }
     eqg.stroke(); eqg.shadowBlur=0;
-    for (let i=0;i<EQ8F.length;i++){
-      const x=fx2x(EQ8F[i],w), y=db2y(eq8Gains[i],hh);
-      eqg.fillStyle=(i===eqPtDrag)?"#ffffff":"#ffea00";
-      eqg.beginPath(); eqg.arc(x,y,(i===eqPtDrag)?6:4.5,0,Math.PI*2); eqg.fill();
+    for (let i=0;i<EQ8F.length;i++){                          // Griffe: hohle Ringe, fuellen sich erst beim Anfassen
+      const x=fx2x(EQ8F[i],w), y=db2y(eq8Gains[i],hh), act=(i===eqPtDrag);
+      eqg.beginPath(); eqg.arc(x,y, act?5.5:4, 0, Math.PI*2);
+      eqg.fillStyle=act?"#ffea00":"rgba(10,8,6,.92)"; eqg.fill();
+      eqg.lineWidth=1.4; eqg.strokeStyle=act?"#ffffff":"#ffea00";
+      if (act){ eqg.shadowColor="rgba(255,234,0,.7)"; eqg.shadowBlur=8; }
+      eqg.stroke(); eqg.shadowBlur=0;
     }
     if (eqPtDrag>=0){                                       // Wert direkt am Griffpunkt ablesbar
       const x=fx2x(EQ8F[eqPtDrag],w), y=db2y(eq8Gains[eqPtDrag],hh);
@@ -3653,6 +3662,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     closeNotePop(); closeTxPop(); hidePop();
     if (editSel){ editSel=null; if (deckEl.classList.contains("st-editor")) drawEditWave(); }
     if (selectedStep!=null || selectedSteps.size){ selectedStep=null; selectedSteps.clear(); updateFxPanel(); drawGrid(); }
+    if (P.chop.mode==="mark" && (markSel>=0 || markPreview)){   // Chassis-Klick raeumt auch Claim + Stueck-Auswahl
+      markSel=-1; markEditIdx=-1; markPreview=null; markDrag=null;
+      $("#markSetBtn").disabled=true;
+      updateFxPanel(); drawWave(); drawGrid();
+    }
   });
   window.addEventListener("resize", ()=>{ drawWave(); drawGrid(); });
   drawGrid();
