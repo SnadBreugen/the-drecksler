@@ -472,7 +472,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.58</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.59</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1006,7 +1006,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.58";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.59";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2360,8 +2360,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const mid=h/2, ch=buffer.getChannelData(0);
     const vlen=Math.max(1, Math.min(ch.length, Math.floor(vd*buffer.sampleRate)));
     const step=Math.max(1, Math.floor(vlen/w));
-    if (selection){ const x1=(selection.start/vd)*w, x2=(Math.min(selection.end,vd)/vd)*w;
-      if (x1<w) { ctx.fillStyle="rgba(255,216,56,0.14)"; ctx.fillRect(x1,0,x2-x1,h); } }
     ctx.strokeStyle="rgba(255,216,56,0.10)"; ctx.beginPath(); ctx.moveTo(0,mid); ctx.lineTo(w,mid); ctx.stroke();
     function drawBars(x0, x1){
       for (let x=Math.max(0,Math.floor(x0)); x<Math.min(w,Math.ceil(x1)); x++){
@@ -2403,23 +2401,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     if (playhead!=null){ const px=(playhead/vd)*w; if (px<=w){ ctx.strokeStyle="#fff"; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,h); ctx.stroke(); } }
   }
-  let dragStart=null;
-  canvas.addEventListener("pointerdown", (e)=>{ if (!buffer) return; const r=canvas.getBoundingClientRect(); dragStart=((e.clientX-r.left)/r.width)*viewDur(); canvas.setPointerCapture(e.pointerId); });
-  canvas.addEventListener("pointermove", (e)=>{ if (dragStart==null||!buffer) return; const r=canvas.getBoundingClientRect(), cur=((e.clientX-r.left)/r.width)*viewDur(); selection={ start:Math.max(0,Math.min(dragStart,cur)), end:Math.min(viewDur(),Math.max(dragStart,cur)) }; drawWave(); });
-  canvas.addEventListener("pointerup", ()=>{ if (selection&&selection.end-selection.start<0.01) selection=null; dragStart=null; drawWave(); });
-
-  // ---------- Destructive edits ----------
-  const sampleSpan=()=>{ const sr=buffer.sampleRate; return [selection?Math.floor(selection.start*sr):0, selection?Math.floor(selection.end*sr):buffer.length]; };
-  function applyGainRange(s,e,g){ const out=cloneBuffer(buffer); for (let c=0;c<out.numberOfChannels;c++){ const d=out.getChannelData(c); for (let i=s;i<e;i++) d[i]=Math.max(-1,Math.min(1,d[i]*g)); } buffer=out; }
-  function editNormalize(){ let peak=0; for (let c=0;c<buffer.numberOfChannels;c++){ const d=buffer.getChannelData(c); for (let i=0;i<d.length;i++) peak=Math.max(peak,Math.abs(d[i])); } if (peak===0) return; applyGainRange(0, buffer.length, dbToGain(-1)/peak); }
-  function editFade(dir){ const [s,e]=sampleSpan(), out=cloneBuffer(buffer), nn=e-s; for (let c=0;c<out.numberOfChannels;c++){ const d=out.getChannelData(c); for (let i=s;i<e;i++){ const t=(i-s)/nn; d[i]*=dir==="in"?t:1-t; } } buffer=out; }
-  function editReverse(){ const [s,e]=sampleSpan(), out=cloneBuffer(buffer); for (let c=0;c<out.numberOfChannels;c++){ const d=out.getChannelData(c); d.set(d.slice(s,e).reverse(), s); } buffer=out; }
-  function editSilence(){ const [s,e]=sampleSpan(); applyGainRange(s,e,0); }
-  function editTrim(){ if (!selection) return; const [s,e]=sampleSpan(), len=e-s; const out=ctxGet().createBuffer(buffer.numberOfChannels, len, buffer.sampleRate); for (let c=0;c<buffer.numberOfChannels;c++) out.getChannelData(c).set(buffer.getChannelData(c).subarray(s,e)); buffer=out; selection=null; tc.textContent=fmtTime(buffer.duration); }
-  editBtns.forEach((b)=>b.addEventListener("click", ()=>{
-    ({ normalize:editNormalize, reverse:editReverse, trim:editTrim, silence:editSilence, fadeIn:()=>editFade("in"), fadeOut:()=>editFade("out") })[b.dataset.edit]();
-    buildReversed(); pitchCache.clear(); drawWave(); drawGrid();
-  }));
 
   // ---------- Playback ----------
   function handoverToChopper(){
