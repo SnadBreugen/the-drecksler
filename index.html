@@ -246,6 +246,9 @@
   #metroBtn.active { color:#1c0503; background:var(--sig); border-color:var(--sig); }
   .grid-wrap { position:relative; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   .fx-panel { flex:0 0 235px; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .stutgrp { display:flex; gap:4px; }
+  .stutgrp button { flex:1; padding:6px 2px; font-size:10px; letter-spacing:.06em; }
+  .stutgrp button.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 8px rgba(255,234,0,.25), inset 0 0 5px rgba(255,234,0,.10); }
   .fx-filters-h { font-size:10px; letter-spacing:.34em; color:rgba(255,234,0,.85); text-transform:uppercase; margin:0; }
   .fx-filters { background:rgba(255,234,0,.12); border-radius:var(--radius); padding:9px 10px; margin:2px -4px 0; display:flex; flex-direction:column; gap:10px; }
   .fx-duo { display:flex; gap:8px; }
@@ -415,7 +418,7 @@
       <div class="fx-panel disabled" id="fxPanel">
         <p class="fxp-title" id="fxpTitle">CHOP FX // &mdash;</p>
         <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Pitch ±12 semitones"></div>
-        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><input type="range" id="fxStut" min="0" max="3" step="1" value="0" disabled title="Re-trigger on the note grid (trap stutter)"></div>
+        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-trigger on the note grid (trap stutter)"><button data-sv="0" disabled>AUS</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
         <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube saturation"></div>
         <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bitcrusher"></div>
         <div class="fx-filters">
@@ -438,7 +441,7 @@
           <button class="res-btn active" data-res="0.5" title="Grid: 8 slots per bar">1/8</button>
           <button class="res-btn" data-res="0.25" title="Grid: 16 slots per bar">1/16</button>
         </div>
-        <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically; on release the material is stretched to fit">120 BPM</button>
+        <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically; on release the material is stretched to fit. ALT+drag corrects the source BPM (re-label, no stretch)">120 BPM</button>
         <span class="cb-flex"></span>
         <div class="scat-grp">
           <button class="pbtn" id="densBtn" disabled title="Scatter density: hit chance per slot — drag vertically">DENS 60%</button>
@@ -457,7 +460,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.41</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.43</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1012,7 +1015,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.41";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.43";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1082,7 +1085,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const canvas=$("#wave"), ctx=canvas.getContext("2d"), waveWrap=$("#waveWrap");
   const grid=$("#grid"), gctx=grid.getContext("2d");
   const editBtns=[...document.querySelectorAll("[data-edit]")];
-  const fxPanel=$("#fxPanel"), fxpTitle=$("#fxpTitle"), fxPitch=$("#fxPitch"), fxStut=$("#fxStut"), vFxStut=$("#vFxStut"), fxTube=$("#fxTube"), fxCrush=$("#fxCrush");
+  const fxPanel=$("#fxPanel"), fxpTitle=$("#fxpTitle"), fxPitch=$("#fxPitch"), vFxStut=$("#vFxStut"), fxTube=$("#fxTube"), fxCrush=$("#fxCrush");
   const vFxPitch=$("#vFxPitch"), vFxTube=$("#vFxTube"), vFxCrush=$("#vFxCrush");
   const fxHp=$("#fxHp"), fxHpQ=$("#fxHpQ"), fxLp=$("#fxLp"), fxLpQ=$("#fxLpQ");
   const vFxHp=$("#vFxHp"), vFxHpQ=$("#vFxHpQ"), vFxLp=$("#vFxLp"), vFxLpQ=$("#vFxLpQ");
@@ -1147,6 +1150,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // Gefittet wird IMMER aus tempoRef (letzter Material-Stand) — maximal eine Stretch-Generation,
   // kein Qualitaetsverlust beim Knopf-Wackeln. Loads und Edits erneuern den Snapshot.
   let tempoRef=null, bufferFitBpm=120, tempoFitBusy=false, tempoFitPending=false;
+  let defaultMaterial=false;                                 // Beispiel-Sample geladen? -> Quellen-Hinweis ueber der Wave
   function setTempoRef(){ tempoRef = buffer ? { buf:cloneBuffer(buffer), bpm:Math.round(P.chop.bpm) } : null; }
   async function stretchBufferRate(buf, rate){
     // rate > 1 = schneller/kuerzer. Vorlauf gegen Engine-Latenz: geplant wird bei LEAD,
@@ -1205,6 +1209,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function loadDecodedBuffer(buf, msg, source){
     editUndoStack=[]; editSel=null; editView=null; sliceOff=[];
     buffer=buf; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
+    defaultMaterial=false;                                   // echtes Material schlaegt das Beispiel
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();      // EINE Uhr: Material liegt nach dem Laden im Grid-Tempo
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
     buildReversed(); pitchCache.clear();
@@ -1566,13 +1571,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function updateFxPanel(){
     const ch=selectedStep!=null ? arrangement[selectedStep] : null;
     const en=!!ch;
-    [fxPitch,fxStut,fxTube,fxCrush,fxHp,fxHpQ,fxLp,fxLpQ].forEach((s)=>(s.disabled=!en));
+    [fxPitch,fxTube,fxCrush,fxHp,fxHpQ,fxLp,fxLpQ].forEach((s)=>(s.disabled=!en));
+    stutBtns.forEach((b)=>(b.disabled=!en));
     fxPanel.classList.toggle("disabled", !en);
     $("#islandFx").classList.toggle("lit", en);
     if (ch){
       const lp=(ch.lp==null?1:ch.lp), hp=ch.hp||0;
       fxpTitle.textContent= selectedSteps.size>1 ? "CHOP FX // "+selectedSteps.size+" CHOPS" : "CHOP FX // STEP "+(selectedStep+1);
-      fxPitch.value=ch.pitch||0; fxStut.value=Math.max(0, STUT_VALS.indexOf(ch.stut||0)); fxTube.value=ch.tube||0; fxCrush.value=ch.crush||0;
+      fxPitch.value=ch.pitch||0; syncStutBtns(ch.stut||0); fxTube.value=ch.tube||0; fxCrush.value=ch.crush||0;
       fxHp.value=hp; fxHpQ.value=ch.hpq||0; fxLp.value=lp; fxLpQ.value=ch.lpq||0;
       vFxPitch.textContent=fmtSemi(ch.pitch||0);
       vFxStut.textContent=STUT_LABELS[Math.max(0, STUT_VALS.indexOf(ch.stut||0))];
@@ -1584,6 +1590,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       vFxLpQ.textContent=Math.round((ch.lpq||0)*100)+"%";
     } else {
       fxpTitle.textContent="CHOP FX // \u2014";
+      syncStutBtns(-1);
       [vFxPitch,vFxStut,vFxTube,vFxCrush,vFxHp,vFxHpQ,vFxLp,vFxLpQ].forEach((v)=>(v.textContent="\u2014"));
     }
   }
@@ -1804,14 +1811,23 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     el.addEventListener("input", ()=>{
       if (selectedStep==null) return;
       nudgeSnapshot(key+":"+[...selectedSteps].join(","));
-      const val= key==="pitch" ? Math.max(-12,Math.min(12,Math.round(+el.value))) : key==="stut" ? STUT_VALS[Math.max(0,Math.min(3,Math.round(+el.value)))] : Math.max(0,Math.min(1,+el.value));
+      const val= key==="pitch" ? Math.max(-12,Math.min(12,Math.round(+el.value))) : Math.max(0,Math.min(1,+el.value));
       selectedSteps.forEach((st)=>{ const c=arrangement[st]; if (c){ c[key]=val; if (key==="pitch") markOp(c,"pitch",!val); } });
       valEl.textContent=fmt(val);
       drawGrid();
     });
   }
   bindFx(fxPitch,"pitch",vFxPitch,fmtSemi);
-  bindFx(fxStut,"stut",vFxStut,(v)=>STUT_LABELS[Math.max(0, STUT_VALS.indexOf(v))]);
+  const fxStutGrp=$("#fxStutGrp"), stutBtns=[...fxStutGrp.querySelectorAll("button")];
+  function syncStutBtns(val){ stutBtns.forEach((b)=>b.classList.toggle("active", Number(b.dataset.sv)===(val||0))); }
+  stutBtns.forEach((b)=>b.addEventListener("click", ()=>{
+    if (selectedStep==null) return;
+    nudgeSnapshot("stut:"+[...selectedSteps].join(","));
+    const val=Number(b.dataset.sv);
+    selectedSteps.forEach((st)=>{ const c=arrangement[st]; if (c) c.stut=val; });
+    vFxStut.textContent=STUT_LABELS[Math.max(0, STUT_VALS.indexOf(val))];
+    syncStutBtns(val); drawGrid();
+  }));
   bindFx(fxTube,"tube",vFxTube,(v)=>Math.round(v*100)+"%");
   bindFx(fxCrush,"crush",vFxCrush,(v)=>Math.round(v*100)+"%");
   bindFx(fxHp,"hp",vFxHp,(v)=> v<=0.001 ? "AUS" : fmtHz(hpFreq(v)));
@@ -1862,7 +1878,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (cfg.end) cfg.end();                                  // z.B. Tempo-Fit erst beim Loslassen
   }
   function bindKnob(btn, cfg){
-    btn.addEventListener("pointerdown",(e)=>startKnob(btn,cfg,e));
+    btn.addEventListener("pointerdown",(e)=>startKnob(btn,(e.altKey && cfg.alt)?cfg.alt:cfg,e));
     btn.addEventListener("pointermove",moveKnob);
     btn.addEventListener("pointerup",endKnob);
     btn.addEventListener("pointercancel",endKnob);
@@ -1875,7 +1891,19 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (playing) chopStartTime=audioCtx.currentTime-ph*stepDur();
     syncChopBtns(); drawGrid();
   }, end:()=>{ applyTempoFit(); },                               // Loslassen = Material aufs Grid stretchen
-  fmt:(v)=>Math.round(v)+" BPM" });
+  fmt:(v)=>Math.round(v)+" BPM",
+  alt:{ min:60, max:200, step:1,                                 // ALT+Drag: SRC-BPM korrigieren (relabeln, KEIN Stretch)
+    get:()=>{ srcDragVal=bufferFitBpm; return bufferFitBpm; },
+    set:(v)=>{ srcDragVal=v; },
+    fmt:(v)=>"SRC "+Math.round(v)+" BPM",
+    end:()=>{
+      if (!buffer) return;
+      const v=Math.round(srcDragVal);
+      bufferFitBpm=v; P.chop.bpm=v; syncChopBtns(); setTempoRef();   // Material + Grid sprechen jetzt dieselbe Wahrheit
+      drawWave(); drawEditWave(); drawGrid(); tc.textContent=fmtTime(buffer.duration);
+      setStatus("SRC BPM "+v+" // MATERIAL RE-LABELED");
+    } } });
+  let srcDragVal=120;
   bindKnob(densBtn,{ min:0.1, max:0.95, step:0.01, get:()=>P.chop.density, set:(v)=>{ P.chop.density=v; syncChopBtns(); }, fmt:(v)=>Math.round(v*100)+"%" });
   syncChopBtns();
 
@@ -2610,6 +2638,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ectx.strokeStyle="rgba(189,250,255,.25)";
       ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
     }
+    if (defaultMaterial){                                    // Quellen-Hinweis, nur solange das Beispiel liegt
+      ectx.font="20px 'VT323',monospace"; ectx.fillStyle="#ff4532";
+      ectx.shadowColor="rgba(255,69,50,.55)"; ectx.shadowBlur=8;
+      const dtx="RECORD AUDIO \u00B7 UPLOAD FILE \u00B7 IMPORT FROM AUDIOTOOL";
+      ectx.fillText(dtx, Math.max(8,(w-ectx.measureText(dtx).width)/2), 44);
+      ectx.shadowBlur=0;
+    }
     if (playhead!=null){
       const px=t2px(playhead,w);
       if (px>=0 && px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
@@ -3199,8 +3234,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const FEAT={
     editor:[
       [["p","> "],["k","EDITOR"],["t"," // prep the material"]],
-      [["p","$ "],["k","arm"],["t"," "],["v","\u25CF"],["t"," \u2014 count-in, records "],["v","2 bars"],["t"," auto"]],
-      [["p","$ "],["k","import"],["t",": "],["v","WAV"],["t"," / "],["v","AUDIOTOOL"]],
+      [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t"," \u2014 count-in, "],["v","2 bars"],["t"," auto"]],
+      [["p","$ "],["k","upload"],["t",": drop or "],["v","IMPORT WAV"]],
+      [["p","$ "],["k","import"],["t",": "],["v","AUDIOTOOL TIMELINE"],["t"," via uplink"]],
       [["c","# click the wave \u2014 hear that slice"]],
       [["c","# top strip: drag \u2014 slip the content"]],
       [["p","$ "],["k","shape"],["t",": drag the "],["v","yellow"],["t"," EQ points"]],
@@ -3304,6 +3340,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       buf=fitBufferToBeats(buf, 8, 120);               // exakt 2 Takte @ 120
       P.chop.bpm=120; syncChopBtns();
       loadDecodedBuffer(buf, "EXAMPLE LOADED // THE SIGNAL // 120 BPM", "file");
+      defaultMaterial=true; drawEditWave();
     } catch(e){ console.warn("[DEFAULT MATERIAL]", e); }
   })();
 })();
