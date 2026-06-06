@@ -460,7 +460,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.44</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.45</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1015,7 +1015,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.44";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.45";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1912,7 +1912,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   helpBtn.addEventListener("click",()=>helpModal.classList.remove("hidden"));
   helpClose.addEventListener("click",()=>helpModal.classList.add("hidden"));
   helpModal.addEventListener("pointerdown",(e)=>{ if (e.target===helpModal) helpModal.classList.add("hidden"); });
-  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (knobDrag) endKnob(e); hidePop(); closeNotePop(); helpModal.classList.add("hidden"); } });
+  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (recState==="recording"||recState==="countin"){ abortRecording(); return; } if (knobDrag) endKnob(e); hidePop(); closeNotePop(); helpModal.classList.add("hidden"); } });
 
   document.querySelectorAll(".tg[data-tg]").forEach((btn)=>{
     const fx=btn.dataset.tg, stage=btn.closest(".stage");
@@ -1971,7 +1971,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return out;
   }
   recBtn.addEventListener("click", async ()=>{
-    if (recState==="countin" || recState==="recording"){ abortRecording(); return; }
+    if (recState==="recording"){ try{recorder.stop();}catch{} return; }   // REC stoppt & uebernimmt den Take
+    if (recState==="countin"){ abortRecording(); return; }                // im Count-in: abbrechen
     let stream;
     try { stream=await navigator.mediaDevices.getUserMedia({ audio:true }); }
     catch(e){ banner.classList.add("show"); banner.textContent="MIC DENIED OR ABSENT: "+e.message.toUpperCase(); return; }
@@ -1994,8 +1995,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     recAborted=false; recState="countin";
     const startDelay=Math.max(0,(recStartT-ac.currentTime)*1000);
     recTimers.push(setTimeout(()=>{ if (recState==="countin"){ try{recorder.start();}catch{} recState="recording"; } }, startDelay));
-    recTimers.push(setTimeout(()=>{ if (recState==="recording"){ try{recorder.stop();}catch{} } }, startDelay+recLenCaptured*1000+80));
-    recBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg>'; recBtn.title="Stop (reset position)"; recBtn.classList.add("armed"); recDot.classList.add("live"); hint.style.display="none";
+    // KEIN Auto-Stopp mehr: aufgenommen wird, bis REC erneut gedrueckt wird (ESC verwirft)
+    recBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg>'; recBtn.title="REC again = keep the take \u00B7 ESC = discard"; recBtn.classList.add("armed"); recDot.classList.add("live"); hint.style.display="none";
     recLoop();
   }
   function recLoop(){
@@ -2003,8 +2004,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const ac=audioCtx, rel=ac.currentTime-recT0, ci=recCountInBeats*recBeatDur;
     if (rel<ci){ setStatus("COUNT-IN // "+Math.max(1, Math.ceil(recCountInBeats-rel/recBeatDur))); }
     else {
-      const rr=rel-ci, bar=Math.min(BARS, Math.floor(rr/(4*recBeatDur))+1);
-      setStatus("RECORDING // BAR "+bar+"/"+BARS); tc.textContent=fmtTime(Math.max(0,rr));
+      const rr=rel-ci, bar=Math.floor(rr/(4*recBeatDur))+1;
+      setStatus("RECORDING // BAR "+bar+" \u2014 REC = KEEP, ESC = DISCARD"); tc.textContent=fmtTime(Math.max(0,rr));
       if (analyser) updateMeter(analyser, inMeterFill);
     }
     rafId=requestAnimationFrame(recLoop);
@@ -2017,7 +2018,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     recState="idle"; recTimers.forEach(clearTimeout); recTimers=[];
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
     recorder=null; analyser=null;
-    recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 bar count-in, 2 bars recording"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
+    recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 bar count-in, record until you press REC again (ESC discards)"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
     cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%";
   }
   async function handleStop(){
@@ -2026,8 +2027,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (wasAborted){ recAborted=false; return; }
     try {
       const raw=await ctxGet().decodeAudioData(await blob.arrayBuffer());
-      const fitted=fitToLength(raw, recLenCaptured);
-      loadDecodedBuffer(fitted, "CAPTURED // 2 BARS @ "+Math.round(P.chop.bpm)+" BPM", "mic");
+      const beats=Math.max(4, Math.round(raw.duration/recBeatDur));        // auf ganze Beats schnappen: sauberes Raster
+      const fitted=fitBufferToBeats(raw, beats, 60/recBeatDur);
+      const lbl=(beats%4===0) ? (beats/4)+" BARS" : beats+" BEATS";
+      loadDecodedBuffer(fitted, "CAPTURED // "+lbl+" @ "+Math.round(P.chop.bpm)+" BPM", "mic");
     } catch(e){ banner.classList.add("show"); banner.textContent="DECODE FAILED: "+e.message.toUpperCase(); }
   }
 
@@ -2639,10 +2642,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
     }
     if (defaultMaterial){                                    // Quellen-Hinweis, nur solange das Beispiel liegt
-      ectx.font="20px 'VT323',monospace"; ectx.fillStyle="#ff4532";
-      ectx.shadowColor="rgba(255,69,50,.55)"; ectx.shadowBlur=8;
       const dtx="RECORD AUDIO \u00B7 UPLOAD FILE \u00B7 IMPORT FROM AUDIOTOOL";
-      ectx.fillText(dtx, Math.max(8,(w-ectx.measureText(dtx).width)/2), 44);
+      ectx.font="20px 'VT323',monospace";
+      const tw=ectx.measureText(dtx).width, tx=Math.max(8,(w-tw)/2), ty=h/2+7;
+      ectx.fillStyle="rgba(0,0,0,.74)"; ectx.fillRect(tx-16, ty-22, tw+32, 32);   // Platte: lesbar mitten in der Wave
+      ectx.strokeStyle="rgba(255,69,50,.55)"; ectx.lineWidth=1; ectx.strokeRect(tx-16.5, ty-22.5, tw+33, 33);
+      ectx.fillStyle="#ff4532"; ectx.shadowColor="rgba(255,69,50,.55)"; ectx.shadowBlur=8;
+      ectx.fillText(dtx, tx, ty);
       ectx.shadowBlur=0;
     }
     if (playhead!=null){
