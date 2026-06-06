@@ -461,7 +461,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.48</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.49</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -995,7 +995,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.48";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.49";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3296,7 +3296,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = hear the slice under the cursor \u00B7 top strip: drag slips the content per slice (double-click = reset) \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
-  finCanvas.dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
+  $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
   $("#wave").dataset.desc="CHOPPER VIEW \u2014 the material as the chopper reads it; the highlight follows the playing chop";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
