@@ -88,7 +88,6 @@
   .edit-tools button { padding:7px 10px; font-size:10px; }
   .tbtn.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 12px rgba(255,234,0,.3), inset 0 0 6px rgba(255,234,0,.12); }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
-  #edSens { width:90px; }
   .edit-tools2 { margin-top:8px; }
   .etool { display:flex; flex-direction:column; gap:2px; flex:none; }
   .etool i { font-style:normal; font-size:10px; letter-spacing:.16em; color:rgba(189,250,255,.8); }
@@ -341,8 +340,6 @@
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
         <button id="edZoomIn" disabled title="Zoom in at view center (mouse wheel zooms at cursor)">ZOOM +</button>
         <button id="edFitBtn" disabled title="Show the whole material (Shift+drag pans when zoomed)">ALL</button>
-        <span class="edit-sep"></span>
-        <button id="edMkBtn" disabled title="Slice markers — auto-detect, set and move cut flags (popup)">MARKERS</button>
         <span class="edit-selinfo" id="editSelInfo"></span>
       </div>
       <div class="edit-panels">
@@ -436,7 +433,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.33</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.34</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -459,16 +456,6 @@
 <div class="note-pop src-pop hidden" id="srcPop">
   <button id="srcFile" title="Load an audio file from disk">FILE</button>
   <button id="srcAt" title="Import a sample from an Audiotool project timeline">AUDIOTOOL TIMELINE</button>
-</div>
-
-<div class="note-pop tx-pop hidden" id="mkPop">
-  <p class="tx-title">SLICE MARKERS</p>
-  <div class="tx-row">
-    <button id="edMkShow" title="Keep flags visible after closing this popup">SHOW</button>
-    <span class="etool"><i>SENSITIVITY</i><input type="range" id="edSens" min="0" max="100" value="50" title="Re-slices live while dragging (right = more markers)"></span>
-    <button id="edClrMk" title="Clear all markers (back to grid slicing)">CLR MK</button>
-  </div>
-  <p class="edit-panel-hint">FLAGS WHILE OPEN &mdash; DOUBLE-CLICK SET / REMOVE &middot; DRAG TO MOVE &middot; CLICK A SLICE TO HEAR IT</p>
 </div>
 
 <div class="note-pop tx-pop hidden" id="atUrlPop">
@@ -996,7 +983,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.33";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.34";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1093,23 +1080,13 @@ if (typeof exports === 'object' && typeof module === 'object') {
   const loopDur=()=>totalSteps()*stepDur();
   // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper nutzt (2 Takte).
   const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(totalSteps()*stepDur(), buffer.duration) : buffer.duration);
-  let markers=[];                                                 // REX-Marker (Material-Sekunden, sortiert)
-  const chopWin=()=>buffer?Math.min(totalSteps()*stepDur(), buffer.duration):0;
   function sliceTable(){
-    // Quelle aller Slices: ohne Marker das uniforme Raster (exakt wie bisher),
-    // mit Markern variable REX-Slices zwischen den Grenzen [0, ...marker, Fensterende].
+    // Quelle aller Slices: das uniforme Raster.
     if (!buffer) return [];
     const ssd=stepDur();
-    if (!markers.length){
-      const n=Math.max(0, Math.floor(buffer.duration/ssd + 0.001));
-      const out=new Array(n);
-      for (let i=0;i<n;i++) out[i]={ t0:i*ssd, dur:ssd };
-      return out;
-    }
-    const win=chopWin();
-    const ms=markers.filter((m)=>m>0.005 && m<win-0.005).sort((a,b)=>a-b);
-    const bounds=[0, ...ms, win], out=[];
-    for (let i=0;i<bounds.length-1;i++){ const d=bounds[i+1]-bounds[i]; if (d>0.01) out.push({ t0:bounds[i], dur:d }); }
+    const n=Math.max(0, Math.floor(buffer.duration/ssd + 0.001));
+    const out=new Array(n);
+    for (let i=0;i<n;i++) out[i]={ t0:i*ssd, dur:ssd };
     return out;
   }
   const sliceCount=()=>sliceTable().length;
@@ -1172,7 +1149,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
         const restart=!!playSource && deckEl.classList.contains("st-editor");
         const k=bufferFitBpm/target;                         // Zeitachsen-Faktor alt -> neu
         let resumeAt=restart ? straightPlayheadT() : null;
-        markers=markers.map((m)=>m*k);                       // Marker (Material-Sekunden) skalieren mit
         buffer=nb; bufferFitBpm=target;
         buildReversed(); pitchCache.clear();
         selection=null; editSel=null; editView=null;
@@ -1193,7 +1169,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
   }
 
   function loadDecodedBuffer(buf, msg, source){
-    editUndoStack=[]; editSel=null; markers=[]; editView=null;
+    editUndoStack=[]; editSel=null; editView=null;
     buffer=buf; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();      // EINE Uhr: Material liegt nach dem Laden im Grid-Tempo
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
@@ -1365,10 +1341,10 @@ if (typeof exports === 'object' && typeof module === 'object') {
 
   // ---------- Per-chop voice ----------
   const STUT_VALS=[0,16,32,64], STUT_LABELS=["AUS","1/16","1/32","1/64"];
-  function playChop(ac, n, chop, when, sd, tab, sink, maxPlay){
+  function playChop(ac, n, chop, when, sd, tab, sink){
     const sc=tab.length; if (!sc) return null;
-    const idx=chop.slice % sc, sl=tab[idx], sliceDur=sl.dur;  // uniform == stepDur (Tempo-Fit), Marker-Slices variabel
-    const room=(maxPlay && maxPlay>sd) ? maxPlay : sd;        // Platz bis zum naechsten Chop (lange Marker-Slices duerfen ausklingen)
+    const idx=chop.slice % sc, sl=tab[idx], sliceDur=sl.dur;  // uniform == stepDur (Tempo-Fit haelt das Raster)
+    const room=sd;                                            // jeder Chop besitzt exakt seinen Slot
     const stut=chop.stut||0;
     if (stut>0){
       // Re-Trigger des Chop-Anfangs im Notenraster (taktbezogen, RASTER-Zeit).
@@ -1388,8 +1364,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
     const useBuf=chop.reverse ? reversedBuffer : buffer;
     if (!useBuf) return null;
     const a=sl.t0, revA=Math.max(0, buffer.duration - a - sliceDur);
-    // Slot-Regel: uniforme Slices sitzen nach dem Tempo-Fit exakt im Raster (sliceDur == sd).
-    // Marker-Slices (kreatives Slicing) behalten ihre Laenge: laenger -> Slot/room kappt, kuerzer -> Luecke (Pause).
     // Gespielter Quellbereich: [a+st*ssd, a+len*ssd] — vorwärts wie rückwärts derselbe Bereich.
     const st=Math.max(0, Math.min(0.9, chop.st||0));
     const len=(chop.len==null)?1:chop.len;
@@ -1461,19 +1435,9 @@ if (typeof exports === 'object' && typeof module === 'object') {
     if (scatter) doScatter(); else drawGrid();
   }
   function fillOrdered(){
-    const ts=totalSteps(), tab=sliceTable(), ssd=stepDur();
+    const ts=totalSteps(), tab=sliceTable();
     arrangement=new Array(ts).fill(null);
-    if (!markers.length){
-      for (let i=0;i<ts;i++) arrangement[i]=(i<tab.length)?makeChop(i):null;
-    } else {
-      // REX: jeder Slice landet auf dem Step seiner Original-Position.
-      // Besetzter Step => Slice faellt weg (das Raster ist die Aufloesung) — KEIN Nach-rechts-Schieben,
-      // sonst staut sich dichtes Material und der Loop klingt wie verlangsamt.
-      for (let i=0;i<tab.length;i++){
-        const st=Math.max(0, Math.min(ts-1, Math.round(tab[i].t0/ssd)));
-        if (!arrangement[st]) arrangement[st]=makeChop(i);
-      }
-    }
+    for (let i=0;i<ts;i++) arrangement[i]=(i<tab.length)?makeChop(i):null;
     selectChop(null); drawGrid();
   }
   function doScatter(){
@@ -2034,7 +1998,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     });
     placePop(listPop, importBtn);
   }
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); if (!mkPop.classList.contains("hidden")){ mkPop.classList.add("hidden"); if (buffer) drawEditWave(); } } });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
     if (!listPop.classList.contains("hidden") && !listPop.contains(e.target)) listPop.classList.add("hidden");
@@ -2383,9 +2347,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     while (nextStepTime < look){
       const s=schedStep % ts, ch=arrangement[s];
       if (ch && tab.length>0){
-        let mp=sd;
-        if (markers.length){ let g=1; while (g<ts && !arrangement[(s+g)%ts]) g++; mp=g*sd; }  // REX: bis zum naechsten Chop ausklingen
-        const src=playChop(ac, liveFx, ch, nextStepTime, sd, tab, activeSources, mp); if (src){ activeSources.push(src); src.onended=()=>{ const k=activeSources.indexOf(src); if (k>=0) activeSources.splice(k,1); }; } }
+        const src=playChop(ac, liveFx, ch, nextStepTime, sd, tab, activeSources); if (src){ activeSources.push(src); src.onended=()=>{ const k=activeSources.indexOf(src); if (k>=0) activeSources.splice(k,1); }; } }
       if (P.metro && (s % spbeat===0)) scheduleClick(ac, nextStepTime, s % spb===0);
       nextStepTime+=sd; schedStep=(schedStep+1)%ts;
     }
@@ -2418,9 +2380,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
       const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off);
       for (let step=0; step<ts; step++){
         const ch=arrangement[step]; if (!ch || !tab.length) continue;
-        let mp=sd;
-        if (markers.length){ let g=1; while (g<ts && !arrangement[(step+g)%ts]) g++; mp=g*sd; }
-        playChop(off, n, ch, step*sd, sd, tab, null, mp);
+        playChop(off, n, ch, step*sd, sd, tab, null);
       }
       rendered=await off.startRendering();
     } else {
@@ -2552,20 +2512,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
       const bh=Math.max(1, Math.min(1, pk*norm)*(h*0.92));
       ectx.fillRect(x, mid-bh/2, 1, bh);
     }
-    // Slice-Zebra: die Schnittstuecke sichtbar machen (auf Abruf: MARKERS-Popup offen oder SHOW aktiv)
-    if (mkVisible() && markers.length){
-      const tab=sliceTable();
-      for (let i=0;i<tab.length;i++){
-        const x1=Math.max(0, t2px(tab[i].t0, w)), x2=Math.min(w, t2px(tab[i].t0+tab[i].dur, w));
-        if (x2<=0 || x1>=w) continue;
-        let shade=(i%2) ? "rgba(255,255,255,.045)" : null;
-        if (mDrag>=0){
-          const m=markers[mDrag];
-          if (Math.abs(tab[i].t0-m)<0.002 || Math.abs(tab[i].t0+tab[i].dur-m)<0.002) shade="rgba(255,234,0,.10)";  // die zwei Slices an der Fahne
-        }
-        if (shade){ ectx.fillStyle=shade; ectx.fillRect(x1,0,x2-x1,h); }
-      }
-    }
     // Chopfenster-Markierung (was der Chopper verwendet)
     const win=Math.min(totalSteps()*stepDur(), dur);
     const wx=t2px(win, w);
@@ -2582,16 +2528,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
     }
-    if (mkVisible() && markers.length){
-      for (const m of markers){
-        const mx=t2px(m,w);
-        if (mx<-6||mx>w+6) continue;
-        ectx.strokeStyle="rgba(255,234,0,.8)";
-        ectx.beginPath(); ectx.moveTo(mx,0); ectx.lineTo(mx,h); ectx.stroke();
-        ectx.fillStyle="#ffea00";
-        ectx.beginPath(); ectx.moveTo(mx-5,0); ectx.lineTo(mx+5,0); ectx.lineTo(mx,10); ectx.closePath(); ectx.fill();
-      }
-    }
     if (playhead!=null){
       const px=t2px(playhead,w);
       if (px>=0 && px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
@@ -2603,15 +2539,13 @@ if (typeof exports === 'object' && typeof module === 'object') {
     const hasSel=!!editSel, hasBuf=!!buffer;
     edTrim.disabled=edCut.disabled=edFadeIn.disabled=edFadeOut.disabled=!hasSel;
     edNorm.disabled=!hasBuf;
-    $("#edClrMk").disabled=!hasBuf || !markers.length;
-    edMkBtn.disabled=!hasBuf;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
     $("#edEqApply").disabled=$("#edDeEssApply").disabled=$("#eq8Apply").disabled=!hasBuf;
     $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
-  let editDrag=null, mDrag=-1, panDrag=null;
+  let editDrag=null, panDrag=null;
   function evtT(e){
     const r=editCanvas.getBoundingClientRect();
     return Math.max(0, Math.min(buffer.duration, px2t(e.clientX-r.left, r.width)));
@@ -2622,8 +2556,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
       panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
       editCanvas.setPointerCapture(e.pointerId); return;
     }
-    const hit=(typeof markerHit==="function") ? markerHit(e) : -1;
-    if (hit>=0){ mDrag=hit; editCanvas.setPointerCapture(e.pointerId); return; }
     editDrag={ a:evtT(e), x:e.clientX }; editSel=null; drawEditWave();
     editCanvas.setPointerCapture(e.pointerId);
   });
@@ -2638,7 +2570,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
       editView={ t0, t1:t0+len };
       drawEditWave(); return;
     }
-    if (mDrag>=0){ markers[mDrag]=evtT(e); drawEditWave(); return; }
     if (!editDrag) return;
     const t=evtT(e), a=Math.min(editDrag.a,t), b=Math.max(editDrag.a,t);
     editSel=(b-a>0.01)?{ a, b }:null;
@@ -2646,9 +2577,9 @@ if (typeof exports === 'object' && typeof module === 'object') {
   });
   editCanvas.addEventListener("pointerup",(e)=>{
     if (panDrag){ panDrag=null; return; }
-    if (mDrag>=0){ const m=markers[mDrag]; mDrag=-1; markersChanged("MARKER MOVED"); auditionSliceAt(m); return; }
-    // Klick (kein Drag) bei sichtbaren Fahnen: Slice unterm Cursor selektieren + sofort anspielen
-    if (editDrag && Math.abs(e.clientX-editDrag.x)<4 && mkVisible() && markers.length){
+    // Klick (kein Drag) im Chopfenster: Raster-Slice unterm Cursor selektieren + sofort anspielen.
+    // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
+    if (editDrag && Math.abs(e.clientX-editDrag.x)<4){
       const t=evtT(e), tab=sliceTable();
       const sl=tab.find((x)=>t>=x.t0 && t<x.t0+x.dur);
       if (sl){
@@ -2695,7 +2626,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
   const EDIT_UNDO_MAX=10, EDIT_UNDO_BYTES=80*1024*1024;
   function pushEditUndo(msg){
     const bytes=buffer.length*buffer.numberOfChannels*4;
-    editUndoStack.push({ buf:cloneBuffer(buffer), markers:markers.slice(), msg, bytes, bpm:bufferFitBpm });
+    editUndoStack.push({ buf:cloneBuffer(buffer), msg, bytes, bpm:bufferFitBpm });
     let total=editUndoStack.reduce((a,e)=>a+e.bytes, 0);
     while (editUndoStack.length>EDIT_UNDO_MAX || (total>EDIT_UNDO_BYTES && editUndoStack.length>1)){
       total-=editUndoStack.shift().bytes;                 // aelteste Stufe faellt raus
@@ -2719,13 +2650,11 @@ if (typeof exports === 'object' && typeof module === 'object') {
   edTrim.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("TRIM");
     const A=editSel.a, B=editSel.b;
-    markers=markers.map((m)=>m-A).filter((m)=>m>0.005 && m<(B-A)-0.005);   // Marker wandern mit
     applyEdit(subBuffer(buffer, A, B), "TRIMMED TO SELECTION", true, (p)=>p-A);
   });
   edCut.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("CUT");
     const A=editSel.a, B=editSel.b;
-    markers=markers.filter((m)=>m<A-0.005 || m>B+0.005).map((m)=>m>B ? m-(B-A) : m);  // Marker wandern mit
     applyEdit(concatBuffers(subBuffer(buffer,0,A), subBuffer(buffer,B,buffer.duration)), "SELECTION REMOVED", true, (p)=>p<A?p:(p>B?p-(B-A):A));
   });
   function applyFade(dir){
@@ -2750,9 +2679,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   function applyHalve(keepFirst){
     if (!buffer) return; pushEditUndo(keepFirst?"HALF A":"HALF B");
     const half=buffer.duration/2;
-    markers = keepFirst
-      ? markers.filter((m)=>m<half-0.005)
-      : markers.filter((m)=>m>half+0.005).map((m)=>m-half);
     applyEdit(keepFirst?subBuffer(buffer,0,half):subBuffer(buffer,half,buffer.duration),
       keepFirst?"KEPT FIRST HALF":"KEPT SECOND HALF", true, keepFirst?null:(p)=>p-half);
   }
@@ -2858,44 +2784,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
       src.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum); // S-Band komprimiert
       return sum;
     });
-  });
-  // ---------- REX-Marker: Onset-Erkennung + Handarbeit ----------
-  const edSens=$("#edSens"), edClrMk=$("#edClrMk");
-  function detectOnsets(buf, sens){
-    const sr=buf.sampleRate, d=buf.getChannelData(0);
-    const hop=256, frame=512, n=Math.floor((d.length-frame)/hop);
-    if (n<3) return [];
-    const e=new Float32Array(n); let maxE=0;
-    for (let i=0;i<n;i++){ let sum=0; const o=i*hop; for (let j=0;j<frame;j+=4){ const v=d[o+j]; sum+=v*v; } e[i]=Math.sqrt(sum/(frame/4)); if (e[i]>maxE) maxE=e[i]; }
-    if (maxE<1e-6) return [];
-    const flux=new Float32Array(n); for (let i=1;i<n;i++) flux[i]=Math.max(0, e[i]-e[i-1]);
-    const sorted=Array.from(flux).sort((a,b)=>a-b), med=sorted[Math.floor(n*0.5)]||0;
-    const sn=Math.max(0, Math.min(1, sens));
-    const k=6 - 4.8*sn;                                            // links streng, rechts empfindlich
-    const thr=Math.max(med*k, maxE*(0.05 - 0.044*sn));             // auch die absolute Schwelle folgt dem Regler
-    const minGap=Math.round(0.06*sr/hop);
-    const out=[]; let last=-minGap;
-    for (let i=1;i<n;i++){
-      if (flux[i]>thr && e[i]>maxE*0.05 && (i-last)>=minGap && flux[i]>=flux[i-1] && (i+1>=n || flux[i]>=flux[i+1])){
-        out.push(Math.max(0, (i*hop)/sr - 0.004)); last=i;
-      }
-    }
-    return out;
-  }
-  function markersChanged(msg){
-    markers.sort((a,b)=>a-b);
-    fillOrdered();                                             // Werkbank-Regel: neue Slices -> Hecksler frisch
-    drawEditWave(); drawWave();
-    setStatus(msg);
-  }
-  function autoDetect(){                                 // Hintergrund-Erkennung: Marker sind einfach da
-    if (!buffer) return;
-    markers=detectOnsets(buffer, (Number(edSens.value)||0)/100);
-  }
-  edSens.addEventListener("input", ()=>{
-    if (!buffer) return;
-    autoDetect();
-    markersChanged(markers.length ? (markers.length+" SLICES // SENS "+edSens.value) : "NO ONSETS // GRID SLICING");
   });
   function zoomBy(f){
     if (!buffer) return;
@@ -3063,26 +2951,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   $("#edZoomIn").addEventListener("click", ()=>zoomBy(1/1.5));
   $("#edZoomOut").addEventListener("click", ()=>zoomBy(1.5));
   $("#edFitBtn").addEventListener("click", ()=>{ editView=null; drawEditWave(); setStatus("ZOOM RESET"); });
-  edClrMk.addEventListener("click", ()=>{
-    if (!buffer || !markers.length) return;
-    pushEditUndo("CLR MK");
-    markers=[];
-    markersChanged("MARKERS CLEARED // GRID SLICING");
-  });
-  let markersVisible=false;
-  const edMkShow=$("#edMkShow");
-  const mkPop=$("#mkPop"), edMkBtn=$("#edMkBtn");
-  const mkVisible=()=>markersVisible || !mkPop.classList.contains("hidden");   // Popup auf = Fahnen sichtbar
-  edMkBtn.addEventListener("click",(e)=>{
-    if (mkPop.classList.contains("hidden")) placePop(mkPop, e.currentTarget);
-    else mkPop.classList.add("hidden");
-    drawEditWave();
-  });
-  edMkShow.addEventListener("click", ()=>{
-    markersVisible=!markersVisible;
-    edMkShow.classList.toggle("active", markersVisible);
-    drawEditWave();
-  });
   let auditionSrc=null;                                   // schnelle Klicks schneiden sich ab statt zu stapeln
   function auditionSlice(sl){
     if (!buffer || !sl || isPlaying()) return;            // laufendes Playback hat Vorrang
@@ -3099,32 +2967,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
     src.start(t, sl.t0, dur);
     auditionSrc=src; src.onended=()=>{ if (auditionSrc===src) auditionSrc=null; };
   }
-  function auditionSliceAt(m){
-    const tab=sliceTable();
-    auditionSlice(tab.find((x)=>Math.abs(x.t0-m)<0.003));
-  }
-  function markerHit(e){
-    if (!buffer || !markers.length || !mkVisible()) return -1;
-    const r=editCanvas.getBoundingClientRect();
-    const x=e.clientX-r.left, y=e.clientY-r.top;
-    if (y>22) return -1;
-    for (let i=0;i<markers.length;i++){
-      const mx=t2px(markers[i], r.width);
-      if (Math.abs(x-mx)<=6) return i;
-    }
-    return -1;
-  }
-  editCanvas.addEventListener("dblclick",(e)=>{
-    if (!buffer || !mkVisible()) return;
-    const hit=markerHit(e);
-    editDrag=null; editSel=null;
-    if (hit>=0){ markers.splice(hit,1); markersChanged("MARKER DELETED"); }
-    else {
-      const t=evtT(e);
-      markers.push(t); markersChanged("MARKER SET // "+t.toFixed(2)+"s");
-      auditionSliceAt(t);
-    }
-  });
   edNorm.addEventListener("click", ()=>{
     if (!buffer) return; pushEditUndo("NORMALIZE");
     const nb=cloneBuffer(buffer), sr=nb.sampleRate;
@@ -3140,7 +2982,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   edUndo.addEventListener("click", ()=>{
     if (!editUndoStack.length) return;
     const u=editUndoStack.pop();
-    markers=u.markers;
     if (u.bpm>=30 && u.bpm<=300 && Math.round(P.chop.bpm)!==u.bpm){  // Material kommt im damaligen Tempo zurueck
       P.chop.bpm=u.bpm; syncChopBtns();                              // -> Grid folgt (eine Uhr, keine Mischtempi)
     }
