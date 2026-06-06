@@ -465,14 +465,13 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.47</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
   <div class="pop-val" id="popVal"></div>
 </div>
 
-<button class="help-btn" id="helpBtn" title="MANUAL">?</button>
 
 <div class="note-pop hidden" id="notePop">
   <div class="np-notes">
@@ -526,26 +525,6 @@
   <div class="tx-row">
     <button id="txCancel" title="Close without sending">CANCEL</button>
     <button id="txSend" class="primary" title="Render and upload to Audiotool">TRANSMIT</button>
-  </div>
-</div>
-
-<div class="modal hidden" id="helpModal">
-  <div class="stage modal-box" data-tag="MANUAL">
-    <p class="panel-title">MANUAL // OPERATION</p>
-    <p class="help-intro">DRECKSLER &mdash; FROM GERMAN 'DRECHSELN': TO TURN RAW MATERIAL ON A LATHE, SHAPING IT. PLUS 'DRECK' &mdash; DIRT. ONE MACHINE. THREE STATIONS. THE SIGNAL CONTINUES.</p>
-    <div class="help-cols">
-      <div>
-        <p class="help-h">MOUSE</p>
-        <p>CLICK select<br>CTRL/CMD+CLICK multi<br>SHIFT+CLICK range<br>DRAG move<br>CTRL/CMD+DRAG copy<br>DRAG VERTICALLY volume<br>SHIFT+VERTICAL pitch<br>DRAG EDGES length (both sides)<br>MOUSE WHEEL pitch &plusmn;12<br>RIGHT-CLICK reverse<br>DOUBLE-CLICK delete / restore</p>
-      </div>
-      <div>
-        <p class="help-h">KEYBOARD</p>
-        <p>SPACE play/pause<br>&#8593;/&#8595; pitch<br>DEL/&#9003; delete<br>CTRL+Z undo<br>CTRL+SHIFT+Z redo</p>
-        <p class="help-h">COLORS</p>
-        <p>COLOR = LAST ACTION<br>YELLOW original<br>MAGENTA pitch<br>BLUE reverse<br>CYAN volume<br>GREEN moved<br>PURPLE duplicated<br>CORAL shortened<br>DOT fx active &middot; WIDTH = length</p>
-      </div>
-    </div>
-    <button id="helpClose" title="Close manual">CLOSE</button>
   </div>
 </div>
 
@@ -1020,7 +999,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.46";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.47";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1913,11 +1892,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   syncChopBtns();
 
   // ---------- Hilfe-Modal ----------
-  const helpBtn=$("#helpBtn"), helpModal=$("#helpModal"), helpClose=$("#helpClose");
-  helpBtn.addEventListener("click",()=>helpModal.classList.remove("hidden"));
-  helpClose.addEventListener("click",()=>helpModal.classList.add("hidden"));
-  helpModal.addEventListener("pointerdown",(e)=>{ if (e.target===helpModal) helpModal.classList.add("hidden"); });
-  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (recState==="recording"||recState==="countin"){ abortRecording(); return; } if (knobDrag) endKnob(e); hidePop(); closeNotePop(); helpModal.classList.add("hidden"); } });
+  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (recState==="recording"||recState==="countin"){ abortRecording(); return; } if (knobDrag) endKnob(e); hidePop(); closeNotePop(); } });
 
   document.querySelectorAll(".tg[data-tg]").forEach((btn)=>{
     const fx=btn.dataset.tg, stage=btn.closest(".stage");
@@ -3311,13 +3286,30 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
 
   // Hover-Beschreibung: Tooltips wandern ins Panel (nur wenn das Panel sichtbar ist)
+  let hoverTimer=null, hoverLast=null;
   function setHoverDesc(txt){
-    if (!featHover) return;
+    if (!featHover || txt===hoverLast) return;
+    hoverLast=txt;
+    if (hoverTimer){ clearInterval(hoverTimer); hoverTimer=null; }
     featHover.innerHTML="";
     const p=document.createElement("span"); p.className="f-p"; p.textContent="? ";
-    const s=document.createElement("span"); s.className=txt?"fh-txt":"f-c"; s.textContent=txt||"hover a control for details";
+    const s=document.createElement("span"); s.className=txt?"fh-txt":"f-c";
     featHover.appendChild(p); featHover.appendChild(s);
+    const full=txt||"hover a control for details";
+    let i=0;
+    hoverTimer=setInterval(()=>{                            // gleicher Tipp-Effekt wie die Tutorial-Zeilen
+      s.textContent+=full.slice(i, i+3); i+=3;
+      if (i>=full.length){ clearInterval(hoverTimer); hoverTimer=null; }
+    }, 12);
   }
+  // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
+  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = hear the slice under the cursor \u00B7 top strip: drag slips the content per slice (double-click = reset) \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
+  grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
+  eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
+  finCanvas.dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
+  $("#wave").dataset.desc="CHOPPER VIEW \u2014 the material as the chopper reads it; the highlight follows the playing chop";
+  document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
+  document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
     document.querySelectorAll("[title]").forEach((el)=>{
       if (el.closest(".feat-panel")) return;
