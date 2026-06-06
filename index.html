@@ -433,7 +433,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.37</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.38</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -983,7 +983,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.37";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.38";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2208,6 +2208,27 @@ if (typeof exports === 'object' && typeof module === 'object') {
   }));
 
   // ---------- Playback ----------
+  function handoverToChopper(){
+    const ac=audioCtx, sd=stepDur(), ts=totalSteps();
+    const ph=straightPlayheadT()||0;
+    let next=Math.floor(ph/sd)+1;
+    let delta=next*sd-ph;
+    if (delta<0.06){ next+=1; delta+=sd; }              // Mindestvorlauf: Scheduler braucht Anlauf
+    const tB=ac.currentTime+delta;                       // Wanduhr-Zeit der Step-Grenze
+    const oldSrc=playSource, oldFx=liveFx;
+    playSource=null; previewFx=null; liveFx=null; pauseState=null;
+    cancelAnimationFrame(rafId);
+    if (oldSrc){ oldSrc.onended=null; try{ oldSrc.stop(tB); }catch{} }   // sample-genau an der Grenze
+    setTimeout(()=>{ if (oldFx){ try{ oldFx.out.disconnect(); }catch{} try{ oldFx.analyser.disconnect(); }catch{} } }, Math.ceil((delta+0.25)*1000));
+    liveFx=buildChain(ac);
+    startChopper(ac, next%ts, tB);
+    if (oldSrc){                                         // STOP soll auch die auslaufende Quelle treffen
+      activeSources.push(oldSrc);
+      oldSrc.onended=()=>{ const k=activeSources.indexOf(oldSrc); if (k>=0) activeSources.splice(k,1); };
+    }
+    setPlayIcon(true);
+    setStatus("HANDOVER // CHOPPER LOOP");
+  }
   async function startMonitor(){
     if (!buffer) return;
     const resume=pauseState;
@@ -2326,8 +2347,9 @@ if (typeof exports === 'object' && typeof module === 'object') {
   }
   function startChopper(ac){
     const rs=arguments.length>1 ? (arguments[1]|0) : 0;
+    const t0=(arguments.length>2 && arguments[2]) ? arguments[2] : (ac.currentTime+0.08);
     schedStep=rs % totalSteps(); activeSources=[];
-    nextStepTime=ac.currentTime+0.08;
+    nextStepTime=t0;
     chopStartTime=nextStepTime - schedStep*stepDur();
     schedTimer=setInterval(chopScheduler, 25);
     (function follow(){ if (!schedTimer) return;
@@ -2469,12 +2491,8 @@ if (typeof exports === 'object' && typeof module === 'object') {
     $("#stFin").classList.toggle("active", st==="fin");
     if (st==="editor"){ drawEditWave(); drawEqGraph(); }
     if (st==="hecksler"){
-      // Uebergabe: laeuft die Editor-Vorschau, springt der Chopper-Loop phasentreu auf dem naechsten Step ein
-      if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)){
-        const ph=straightPlayheadT()||0, ts=totalSteps();
-        pauseState={ mode:"chop", step:(Math.floor(ph/stepDur())+1)%ts };
-        startMonitor();
-      }
+      // Nahtlose Uebergabe: Editor-Quelle laeuft bis zur naechsten Step-Grenze, der Chopper setzt exakt dort ein
+      if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)) handoverToChopper();
       drawWave(); drawGrid();                          // versteckte Canvases haben Breite 0 — frisch rendern
     }
     setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":"FINALIZER"));
