@@ -452,6 +452,7 @@
         <div class="modegrp">
           <button id="modeGrid" class="active" title="GRID — the classic chopper: fixed 1/8 slots">GRID</button>
           <button id="modeMark" title="MARK — carving mode: one continuous chop; mark regions in the wave to cut it apart, every piece takes the full chop FX">MARK</button>
+          <button id="markSetBtn" disabled style="display:none" title="Fix the marked region as a piece (Enter). Adjust the dashed edges first — drag them with the \u2194 cursor">SET</button>
         </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
@@ -471,7 +472,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.55</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.56</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1005,7 +1006,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.55";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.56";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1653,7 +1654,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         const s=markSegs[hit];
         const bx=s.trig/ld*w, bx2=(s.trig+segPlayDur(s))/ld*w, px=tlPx(e);
         let edge=null;
-        if (Math.abs(px-bx)<7) edge="L"; else if (Math.abs(px-bx2)<7) edge="R";
+        if (Math.abs(px-bx)<9) edge="L"; else if (Math.abs(px-bx2)<9) edge="R";
         segTlDrag={ i:hit, edge, mode:null, x0:e.clientX, y0:e.clientY,
           trig0:s.trig, st0:Math.max(0,s.st||0), len0:(s.len==null?1:s.len),
           gain0:(s.gain==null?1:s.gain), pitch0:(s.pitch||0),
@@ -1684,7 +1685,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   grid.addEventListener("pointermove",(e)=>{
     if (P.chop.mode==="mark"){
-      if (!segTlDrag) return;
+      if (!segTlDrag){                                           // Hover: \u2194 an Kanten, Hand auf dem Stueck
+        const r0=grid.getBoundingClientRect(), w0=r0.width, ld0=loopDur();
+        const px0=e.clientX-r0.left, t0h=tlT(e), hit0=segHit(t0h);
+        let cur="";
+        if (hit0>=0){
+          const s0=markSegs[hit0], bx=s0.trig/ld0*w0, bx2=(s0.trig+segPlayDur(s0))/ld0*w0;
+          cur=(Math.abs(px0-bx)<9||Math.abs(px0-bx2)<9)?"ew-resize":"grab";
+        }
+        grid.style.cursor=cur;
+        return;
+      }
       const d=segTlDrag, dx=e.clientX-d.x0, dy=e.clientY-d.y0;
       const r=grid.getBoundingClientRect(), ld=loopDur(), ssd=stepDur();
       const dt=dx/r.width*ld;
@@ -1836,7 +1847,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (P.chop.mode==="mark"){
       e.preventDefault();
       const hit=segHit(tlT(e));
-      if (hit>=0){ pushMark("rev"); const s=markSegs[hit]; s.reverse=!s.reverse; markOp(s,"rev",!s.reverse); markSel=hit; updateFxPanel(); drawGrid(); auditionSeg(s); }
+      if (hit>=0){ pushMark("rev"); const s=markSegs[hit]; s.reverse=!s.reverse; markOp(s,"rev",!s.reverse); markSel=hit; updateFxPanel(); drawGrid(); }
       return;
     }
     e.preventDefault();
@@ -1878,6 +1889,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); if (P.chop.mode==="mark") markRedo(); else redo(); return; }
+    if (e.key==="Enter" && P.chop.mode==="mark" && markPreview){ e.preventDefault(); fixPending(); return; }
     if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
@@ -2036,7 +2048,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   syncChopBtns();
 
   // ---------- Hilfe-Modal ----------
-  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (recState==="recording"||recState==="countin"){ abortRecording(); return; } if (knobDrag) endKnob(e); hidePop(); closeNotePop(); } });
+  window.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ if (recState==="recording"||recState==="countin"){ abortRecording(); return; } if (P.chop.mode==="mark" && markPreview){ markPreview=null; markDrag=null; $("#markSetBtn").disabled=true; drawWave(); setStatus("MARK CLEARED"); return; } if (knobDrag) endKnob(e); hidePop(); closeNotePop(); } });
 
   document.querySelectorAll(".tg[data-tg]").forEach((btn)=>{
     const fx=btn.dataset.tg, stage=btn.closest(".stage");
@@ -2370,6 +2382,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         const x1=(chopWin+markPreview.a)/vd*w, x2=(chopWin+markPreview.b)/vd*w;
         ctx.fillStyle="rgba(255,234,0,0.14)"; ctx.fillRect(x1,0,x2-x1,h);
         ctx.setLineDash([4,3]); ctx.strokeStyle="#ffea00"; ctx.strokeRect(x1+0.5,0.5,x2-x1-1,h-1); ctx.setLineDash([]);
+        ctx.fillStyle="#ffea00";                                 // Kanten-Griffe: hier packt der \u2194-Cursor an
+        ctx.fillRect(x1-1.5, h/2-9, 3, 18); ctx.fillRect(x2-1.5, h/2-9, 3, 18);
       }
     }
     if (dot!=null && dot.end>dot.start){
@@ -2567,7 +2581,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     markSegs=JSON.parse(markRedoStack.pop()); markSel=-1; markLastTag="";
     updateFxPanel(); drawGrid(); drawWave(); setStatus("REDO // "+markSegs.length+" PIECES");
   }
-  function resetMarkSegs(){ markSegs=buffer?[blankSeg(0, segEnd())]:[]; markSel=-1; markPreview=null; segTlDrag=null; }
+  function resetMarkSegs(){
+    markSegs=buffer?[blankSeg(0, segEnd())]:[]; markSel=-1; markPreview=null; segTlDrag=null;
+    const sb=$("#markSetBtn"); if (sb) sb.disabled=true;
+  }
   function segSplitAt(t){
     for (let i=0;i<markSegs.length;i++){ const s=markSegs[i];
       if (t>s.a+0.002 && t<s.b-0.002){
@@ -2615,6 +2632,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function setChopMode(m){
     if (P.chop.mode===m) return;
     P.chop.mode=m; markPreview=null; markDrag=null; segTlDrag=null;
+    $("#markSetBtn").style.display=(m==="mark")?"":"none"; $("#markSetBtn").disabled=true;
+    canvas.style.cursor=(m==="mark")?"default":""; grid.style.cursor="";
     if (m==="mark" && (!markSegs.length || Math.abs((markSegs[markSegs.length-1]||{b:0}).b-segEnd())>0.01)) resetMarkSegs();
     selectedStep=null; selectedSteps.clear(); markSel=-1;
     updateFxPanel(); syncModeBtns(); drawWave(); drawGrid();
@@ -2648,40 +2667,91 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       gctx.strokeStyle="#fff"; gctx.beginPath(); gctx.moveTo(px,0); gctx.lineTo(px,h); gctx.stroke();
     }
   }
-  // Schnitzen: Markieren in der Material-Wave (8tel-Raster, SHIFT = frei)
+  // Schnitzen 2.0: Drag = Markierung (rastet LIVE, bleibt stehen), Kanten per \u2194 justieren, SET fixiert.
+  // Kein Auto-Anspielen, Klicks erzeugen nichts.
   const waveT=(e)=>{ const r=canvas.getBoundingClientRect(); return Math.max(0, Math.min(viewDur(), (e.clientX-r.left)/r.width*viewDur())); };
   const loopTOfWave=(t)=>Math.max(0, Math.min(segEnd(), t-chopWin));
+  const waveX=(tLoop)=>{ const r=canvas.getBoundingClientRect(); return (chopWin+tLoop)/viewDur()*r.width; };
+  const markSetBtn=$("#markSetBtn");
+  function syncSetBtn(){ markSetBtn.disabled=!markPreview; }
+  function snapT(t, free){ const ssd=stepDur(); return free ? t : Math.round(t/ssd)*ssd; }
+  function pendEdgeAt(e){
+    if (!markPreview) return null;
+    const px=e.clientX-canvas.getBoundingClientRect().left;
+    if (Math.abs(px-waveX(markPreview.a))<8) return "L";
+    if (Math.abs(px-waveX(markPreview.b))<8) return "R";
+    return null;
+  }
+  function pendStatus(){
+    if (!markPreview) return;
+    const ssd=stepDur(), lenS=markPreview.b-markPreview.a;
+    setStatus("MARK // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS \u2014 SET = FIX");
+  }
+  function fixPending(){
+    if (!markPreview) return;
+    const se=segEnd();
+    const a=Math.max(0, Math.min(se-0.02, markPreview.a));
+    const b=Math.max(a+0.04, Math.min(se, markPreview.b));
+    pushMark("carve");
+    carve(a,b);
+    markPreview=null; syncSetBtn(); updateFxPanel();
+    setStatus("PIECE SET // "+markSegs.length+" PIECES");
+    drawWave(); drawGrid();
+  }
+  markSetBtn.addEventListener("click", fixPending);
+  canvas.addEventListener("pointermove",(e)=>{                  // Hover: \u2194 an den Kanten der Markierung
+    if (P.chop.mode!=="mark"){ return; }
+    if (!markDrag){
+      const edge=pendEdgeAt(e);
+      canvas.style.cursor= edge ? "ew-resize" : "default";
+      return;
+    }
+    const free=e.shiftKey, se=segEnd();
+    const t=loopTOfWave(waveT(e));
+    if (markDrag.mode==="new"){
+      if (Math.abs(t-markDrag.a0)>0.015) markDrag.moved=true;
+      if (!markDrag.moved) return;
+      let a=snapT(Math.min(markDrag.a0,t), free), b=snapT(Math.max(markDrag.a0,t), free);
+      if (!free && b-a<stepDur()*0.5) b=a+stepDur();             // rastet live: man sieht die echten Kanten
+      markPreview={ a:Math.max(0,a), b:Math.min(se, Math.max(a+0.04,b)) };
+    } else if (markDrag.mode==="L"){
+      markPreview.a=Math.max(0, Math.min(markPreview.b-0.04, snapT(t, free)));
+    } else if (markDrag.mode==="R"){
+      markPreview.b=Math.min(se, Math.max(markPreview.a+0.04, snapT(t, free)));
+    } else if (markDrag.mode==="move"){
+      const len=markDrag.len, nt=snapT(t-markDrag.grab, free);
+      markPreview.a=Math.max(0, Math.min(se-len, nt)); markPreview.b=markPreview.a+len;
+    }
+    pendStatus(); syncSetBtn(); drawWave();
+  });
   canvas.addEventListener("pointerdown",(e)=>{
     if (P.chop.mode!=="mark" || !buffer) return;
     e.preventDefault(); try{ canvas.setPointerCapture(e.pointerId); }catch{}
-    markDrag={ a:loopTOfWave(waveT(e)), moved:false, shift:e.shiftKey };
-    markPreview=null;
-  });
-  canvas.addEventListener("pointermove",(e)=>{
-    if (P.chop.mode!=="mark" || !markDrag) return;
     const t=loopTOfWave(waveT(e));
-    if (Math.abs(t-markDrag.a)>0.012) markDrag.moved=true;
-    markDrag.shift=e.shiftKey;
-    if (markDrag.moved){ markPreview={ a:Math.min(markDrag.a,t), b:Math.max(markDrag.a,t) }; drawWave(); }
+    const edge=pendEdgeAt(e);
+    if (edge){ markDrag={ mode:edge }; return; }                 // Kante nachziehen
+    if (markPreview && t>markPreview.a && t<markPreview.b){      // innen greifen = Markierung verschieben
+      markDrag={ mode:"move", grab:t-markPreview.a, len:markPreview.b-markPreview.a };
+      canvas.style.cursor="grabbing"; return;
+    }
+    markDrag={ mode:"new", a0:t, moved:false };                  // sonst: neue Markierung aufziehen
   });
   canvas.addEventListener("pointerup",(e)=>{
     if (P.chop.mode!=="mark" || !markDrag) return;
-    const ssd=stepDur(), free=markDrag.shift||e.shiftKey, se=segEnd();
-    if (markDrag.moved && markPreview){
-      let a=markPreview.a, b=markPreview.b;
-      if (!free){ a=Math.round(a/ssd)*ssd; b=Math.round(b/ssd)*ssd; if (b-a<ssd*0.5) b=a+ssd; }
-      a=Math.max(0, Math.min(se-0.02, a)); b=Math.max(a+(free?0.04:ssd*0.999), Math.min(se, b));
-      pushMark("carve");
-      carve(a,b);
-      updateFxPanel();
-      if (markSel>=0){ setStatus("CARVED // "+markSegs.length+" CHOPS"); auditionSeg(markSegs[markSel]); }
-    } else {
+    const wasNew=(markDrag.mode==="new"), moved=markDrag.moved;
+    markDrag=null; canvas.style.cursor="default";
+    if (wasNew && !moved){                                       // Klick: nur still selektieren, nichts erzeugen
       const t=loopTOfWave(waveT(e));
-      markSel=markSegs.findIndex((s)=>t>=s.a && t<s.b);
-      updateFxPanel();
-      if (markSel>=0) auditionSeg(markSegs[markSel]);
+      const hit=markSegs.findIndex((s)=>t>=s.a && t<s.b);
+      if (hit>=0 && hit!==markSel){ markSel=hit; updateFxPanel(); drawGrid(); }
+      drawWave(); return;
     }
-    markDrag=null; markPreview=null; drawWave(); drawGrid();
+    pendStatus(); syncSetBtn(); drawWave();
+  });
+  canvas.addEventListener("dblclick",(e)=>{                      // Doppelklick in die Markierung = SET
+    if (P.chop.mode!=="mark" || !markPreview) return;
+    const t=loopTOfWave(waveT(e));
+    if (t>=markPreview.a && t<=markPreview.b) fixPending();
   });
 
   function startChopper(ac){
@@ -3606,7 +3676,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["p","$ "],["k","fx"],["t",": "],["v","PITCH STUTTER TUBE CRUSH HP LP"]],
       [["p","$ "],["k","SCATTER"],["t"," + "],["v","DENS"],["t",": roll \u00B7 "],["v","RESET CLEAR"]],
       [["p","$ "],["k","grid"],["t",": "],["v","1/8"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
-      [["p","$ "],["k","MARK"],["t",": one chop \u2014 mark the wave to cut it"]],
+      [["p","$ "],["k","MARK"],["t",": drag a mark \u00B7 adjust edges \u00B7 "],["v","SET"]],
       [["c","# pieces = real chops: move copy trim fx"]],
       [["c","# ctrl+z undo \u00B7 RESET = back to one chop"]],
       [["c","# alt+drag BPM corrects the source bpm"]],
@@ -3672,7 +3742,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW \u2014 highlight follows the playing chop. MARK mode: drag here to carve the running chop into pieces (8th snap, SHIFT free). Pieces below behave like grid chops: drag = move, CTRL = copy, edges = trim, \u2195 = volume, SHIFT+\u2195 = pitch, right-click = reverse, double-click/DEL = delete, CTRL+Z = undo, RESET = one chop";
+  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps live, SHIFT free) \u2014 it STAYS: pull its edges with the \u2194 cursor, grab inside to move it, then SET / Enter / double-click fixes it as a piece. ESC clears the mark. Nothing plays automatically.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
