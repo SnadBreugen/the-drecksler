@@ -461,7 +461,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.51</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.52</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -995,7 +995,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.51";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.52";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2607,6 +2607,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         }
         ectx.strokeStyle="rgba(189,250,255,.25)";
         ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,16); ectx.stroke();
+        if (x2-x1>26){                                       // Griff-Symbol: hier laesst sich das Audio schieben
+          ectx.fillStyle=(i===chunkDrag.idx)?"#ffea00":"rgba(189,250,255,.55)";
+          ectx.font="11px 'Space Mono',monospace"; ectx.textAlign="center";
+          ectx.fillText("\u2194", (Math.max(0,x1)+Math.min(w,x2))/2, 12);
+          ectx.textAlign="left";
+        }
       }
       ectx.strokeStyle="rgba(189,250,255,.25)";
       ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
@@ -2664,6 +2670,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
+    if (buffer && P.chop.on && chunkDrag.idx<0 && !editDrag && !panDrag){
+      const crr=editCanvas.getBoundingClientRect();
+      editCanvas.style.cursor=((e.clientY-crr.top)<=16)?"ew-resize":"";   // Doppelpfeil ueber der Griff-Leiste
+    }
     if (chunkDrag.idx>=0){
       const r=editCanvas.getBoundingClientRect(), ssd=stepDur();
       const dt=px2t(e.clientX-r.left, r.width)-px2t(chunkDrag.x-r.left, r.width);
@@ -3203,6 +3213,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
 
+  // Klick ins Leere: Popups zu, Markierungen weg (Chassis-Klick = aufraeumen)
+  document.addEventListener("pointerdown",(e)=>{
+    const t=e.target;
+    if (t && t.closest && t.closest("button, input, select, label, canvas, .note-pop, .fx-panel, .feat-panel, .status, .meter, a")) return;
+    closeNotePop(); closeTxPop(); hidePop();
+    if (editSel){ editSel=null; if (deckEl.classList.contains("st-editor")) drawEditWave(); }
+    if (selectedStep!=null || selectedSteps.size){ selectedStep=null; selectedSteps.clear(); updateFxPanel(); drawGrid(); }
+  });
   window.addEventListener("resize", ()=>{ drawWave(); drawGrid(); });
   drawGrid();
 
