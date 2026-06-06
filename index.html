@@ -452,7 +452,7 @@
         <div class="modegrp">
           <button id="modeGrid" class="active" title="GRID — the classic chopper: fixed 1/8 slots">GRID</button>
           <button id="modeMark" title="MARK — carving mode: one continuous chop; mark regions in the wave to cut it apart, every piece takes the full chop FX">MARK</button>
-          <button id="markSetBtn" disabled style="display:none" title="Fix the marked region as a piece (Enter). Adjust the dashed edges first — drag them with the \u2194 cursor">SET</button>
+          <button id="markSetBtn" disabled style="display:none" title="Fix the marked region as a piece (Enter). Edges drag FREELY for fine-tuning beyond the 8th grid (SHIFT = snap)">SET</button>
         </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
@@ -472,7 +472,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.56</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.58</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1006,7 +1006,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.56";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.58";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1656,9 +1656,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         let edge=null;
         if (Math.abs(px-bx)<9) edge="L"; else if (Math.abs(px-bx2)<9) edge="R";
         segTlDrag={ i:hit, edge, mode:null, x0:e.clientX, y0:e.clientY,
-          trig0:s.trig, st0:Math.max(0,s.st||0), len0:(s.len==null?1:s.len),
+          trig0:s.trig, a0:s.a, b0:s.b,
           gain0:(s.gain==null?1:s.gain), pitch0:(s.pitch||0),
-          dup:(e.ctrlKey||e.altKey||e.metaKey), shift:e.shiftKey, moved:false, snapped:false };
+          dup:(e.ctrlKey||e.altKey||e.metaKey), shift:e.shiftKey, moved:false };
       }
       updateFxPanel(); drawGrid(); drawWave();
       if (hit>=0 && !e.shiftKey && !segTlDrag.edge) auditionSeg(markSegs[hit]);
@@ -1726,16 +1726,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         s.trig=Math.max(0, Math.min(ld-0.02, nt));
       }
       else if (d.mode==="resize"){
-        if (d.edge==="L"){                                       // links kuerzen: Inhalt + Start wandern
-          let cut=Math.max(-d.st0*srcD, Math.min((d.len0-0.05-d.st0)*srcD, dt));
-          if (!e.shiftKey) cut=Math.round((d.trig0+cut)/ssd)*ssd-d.trig0;
-          cut=Math.max(-d.st0*srcD, Math.min((d.len0-0.05-d.st0)*srcD, cut));
-          s.st=d.st0+cut/srcD; s.trig=Math.max(0, d.trig0+cut);
-        } else {                                                 // rechts kuerzen/verlaengern bis Quelle
-          let end=d.len0*srcD+dt;
-          if (!e.shiftKey) end=Math.round((d.trig0+(d.st0*srcD)+ (end-d.st0*srcD))/ssd)*ssd-d.trig0;
-          s.len=Math.max((s.st||0)+0.05, Math.min(1, end/srcD));
+        // Kanten = Quellfenster direkt: vergroessern holt echtes Material dazu.
+        // FREI per Default (Feinjustage ueber die 8tel hinaus), SHIFT rastet in Loop-Zeit.
+        const se=segEnd();
+        if (d.edge==="L"){
+          let na=d.a0+dt;
+          if (e.shiftKey){ const nt=Math.round((d.trig0+(na-d.a0))/ssd)*ssd; na=d.a0+(nt-d.trig0); }
+          na=Math.max(0, Math.min(d.b0-0.04, na));
+          s.a=na; s.trig=Math.max(0, Math.min(ld-0.02, d.trig0+(na-d.a0)));
+        } else {
+          let nb=d.b0+dt;
+          if (e.shiftKey){ const ne=Math.round((d.trig0+(nb-d.a0))/ssd)*ssd; nb=d.a0+(ne-d.trig0); }
+          s.b=Math.max(s.a+0.04, Math.min(se, nb));
         }
+        s.st=0; s.len=1;
       }
       drawGrid();
       return;
@@ -2715,9 +2719,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (!free && b-a<stepDur()*0.5) b=a+stepDur();             // rastet live: man sieht die echten Kanten
       markPreview={ a:Math.max(0,a), b:Math.min(se, Math.max(a+0.04,b)) };
     } else if (markDrag.mode==="L"){
-      markPreview.a=Math.max(0, Math.min(markPreview.b-0.04, snapT(t, free)));
+      // Kanten = FEINJUSTAGE: frei per Default (ueber die 8tel hinaus), SHIFT rastet
+      markPreview.a=Math.max(0, Math.min(markPreview.b-0.04, snapT(t, !e.shiftKey)));
     } else if (markDrag.mode==="R"){
-      markPreview.b=Math.min(se, Math.max(markPreview.a+0.04, snapT(t, free)));
+      markPreview.b=Math.min(se, Math.max(markPreview.a+0.04, snapT(t, !e.shiftKey)));
     } else if (markDrag.mode==="move"){
       const len=markDrag.len, nt=snapT(t-markDrag.grab, free);
       markPreview.a=Math.max(0, Math.min(se-len, nt)); markPreview.b=markPreview.a+len;
@@ -3742,7 +3747,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps live, SHIFT free) \u2014 it STAYS: pull its edges with the \u2194 cursor, grab inside to move it, then SET / Enter / double-click fixes it as a piece. ESC clears the mark. Nothing plays automatically.";
+  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps to 8ths) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. ESC clears the mark. Nothing plays automatically.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
