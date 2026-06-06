@@ -49,6 +49,8 @@
   .feat-cur { display:inline-block; width:8px; height:14px; background:#ffea00; vertical-align:-2px; margin-left:2px;
     box-shadow:0 0 7px rgba(255,234,0,.6); animation:featBlink 1.1s steps(1) infinite; }
   @keyframes featBlink { 50% { opacity:0; } }
+  .feat-hover { margin-top:20px; padding-top:14px; border-top:1px solid rgba(189,250,255,.18); min-height:4em; }
+  .fh-txt { color:#ffea00; text-shadow:0 0 6px rgba(255,234,0,.35); }
   .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
@@ -310,7 +312,10 @@
 </style>
 </head>
 <body>
-<aside class="feat-panel" id="featPanel" aria-hidden="true"></aside>
+<aside class="feat-panel" id="featPanel" aria-hidden="true">
+  <div id="featLines"></div>
+  <div class="feat-hover" id="featHover"></div>
+</aside>
 <div class="deck st-editor">
   <header class="deck-head">
     <div class="dh-brand">
@@ -460,7 +465,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.45</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1015,7 +1020,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.45";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.46";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3278,15 +3283,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["c","// the signal continues"]],
     ],
   };
-  const featPanel=$("#featPanel");
+  const featPanel=$("#featPanel"), featLines=$("#featLines"), featHover=$("#featHover");
   let featTimer=null;
   function showFeatures(st){
-    const lines=FEAT[st]; if (!lines || !featPanel) return;
+    const lines=FEAT[st]; if (!lines || !featLines) return;
     if (featTimer){ clearInterval(featTimer); featTimer=null; }
-    featPanel.innerHTML="";
+    featLines.innerHTML="";
     const queue=[];
     for (const line of lines){
-      const ln=document.createElement("div"); ln.className="feat-line"; featPanel.appendChild(ln);
+      const ln=document.createElement("div"); ln.className="feat-line"; featLines.appendChild(ln);
       for (const seg of line){
         const sp=document.createElement("span"); sp.className="f-"+seg[0]; ln.appendChild(sp);
         for (const ch of seg[1]) queue.push({ sp, ch });
@@ -3301,9 +3306,29 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         const q=queue[qi++]; q.sp.textContent+=q.ch;
         if (cur.parentElement!==q.sp.parentElement) q.sp.parentElement.appendChild(cur);
       }
-      if (qi>=queue.length){ clearInterval(featTimer); featTimer=null; featPanel.appendChild(cur); }
+      if (qi>=queue.length){ clearInterval(featTimer); featTimer=null; featLines.appendChild(cur); }
     }, 16);
   }
+
+  // Hover-Beschreibung: Tooltips wandern ins Panel (nur wenn das Panel sichtbar ist)
+  function setHoverDesc(txt){
+    if (!featHover) return;
+    featHover.innerHTML="";
+    const p=document.createElement("span"); p.className="f-p"; p.textContent="? ";
+    const s=document.createElement("span"); s.className=txt?"fh-txt":"f-c"; s.textContent=txt||"hover a control for details";
+    featHover.appendChild(p); featHover.appendChild(s);
+  }
+  if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
+    document.querySelectorAll("[title]").forEach((el)=>{
+      if (el.closest(".feat-panel")) return;
+      el.dataset.desc=el.title; el.removeAttribute("title");   // native Tooltips aus, Panel uebernimmt
+    });
+    document.addEventListener("mouseover",(e)=>{
+      const t=(e.target && e.target.closest) ? e.target.closest("[data-desc]") : null;
+      setHoverDesc(t ? t.dataset.desc : null);
+    });
+  }
+  setHoverDesc(null);
 
   // ---------- Finalizer Pre-Version: Presets + Ergebnis-Welle ----------
   const FIN_DESC={ RAW:"UNTOUCHED // PURE SUM", POLISH:"CLEAN LIFT // GENTLE GLUE", THICK:"COMPRESSED // SATURATED", WIDE:"AIR + STEREO SPREAD" };
