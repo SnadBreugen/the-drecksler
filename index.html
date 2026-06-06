@@ -433,7 +433,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.34</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.35</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -983,7 +983,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.34";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.35";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2861,20 +2861,26 @@ if (typeof exports === 'object' && typeof module === 'object') {
     eqg.fillStyle="rgba(189,250,255,.75)"; eqg.font="11px 'Space Mono',monospace";
     eqg.fillText("+12",4,db2y(12,hh)+4); eqg.fillText("-12",4,db2y(-12,hh)+4); eqg.fillText("0 DB",4,y0-4);
     for (let i=0;i<EQ8F.length;i++) eqg.fillText(EQ8LBL[i], fx2x(EQ8F[i],w)-eqg.measureText(EQ8LBL[i]).width/2, hh-5);
-    // Live-Spektrum des Materials (tuerkis, hinter der Kurve)
+    // Live-Spektrum des Materials (Alarmrot, hinter der Kurve)
     if (previewFx && previewFx.specAn && audioCtx){
       const an=previewFx.specAn, n=an.frequencyBinCount;
       if (!eqSpecBuf || eqSpecBuf.length!==n) eqSpecBuf=new Uint8Array(n);
       an.getByteFrequencyData(eqSpecBuf);
       const binHz=audioCtx.sampleRate/2/n;
-      eqg.fillStyle="rgba(64,201,221,.20)";
-      eqg.beginPath(); eqg.moveTo(0,hh);
+      const pts=[];                                          // Kontur einmal rechnen, zweimal zeichnen
       for (let x=0;x<=w;x+=2){
         const bi=Math.min(n-1, Math.max(0, Math.round(x2f(x,w)/binHz)));
         const v=eqSpecBuf[bi]/255;
-        eqg.lineTo(x, hh-(v*v)*(hh-6));
+        pts.push([x, hh-(v*v)*(hh-6)]);
       }
+      eqg.fillStyle="rgba(255,69,50,.30)";                   // Spektrum in Alarmrot (Signalfarbe), deutlich heller
+      eqg.beginPath(); eqg.moveTo(0,hh);
+      for (const p of pts) eqg.lineTo(p[0],p[1]);
       eqg.lineTo(w,hh); eqg.closePath(); eqg.fill();
+      eqg.strokeStyle="rgba(255,110,90,.8)"; eqg.lineWidth=1; // leuchtende Konturlinie obendrauf
+      eqg.beginPath();
+      for (let k=0;k<pts.length;k++){ if (k===0) eqg.moveTo(pts[k][0],pts[k][1]); else eqg.lineTo(pts[k][0],pts[k][1]); }
+      eqg.stroke();
     }
     // ECHTE Summenkurve (Anzeige-Gelb mit Glow)
     const curve=eqCurveDb();
