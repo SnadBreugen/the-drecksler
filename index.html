@@ -442,10 +442,6 @@
 
     <section class="stage fxstage island-chop" id="stageChop" data-tag="CHOPPER">
       <div class="chopbar">
-        <div class="res">
-          <button class="res-btn active" data-res="0.5" title="Grid: 8 slots per bar">1/8</button>
-          <button class="res-btn" data-res="0.25" title="Grid: 16 slots per bar">1/16</button>
-        </div>
         <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically; on release the material is stretched to fit. ALT+drag corrects the source BPM (re-label, no stretch)">120 BPM</button>
         <span class="cb-flex"></span>
         <div class="scat-grp">
@@ -465,7 +461,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.47</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.48</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -999,7 +995,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.47";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.48";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1899,12 +1895,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const sync=()=>{ btn.classList.toggle("active", P[fx].on); btn.textContent=P[fx].on?"ON":"OFF"; if (stage) stage.classList.toggle("off", !P[fx].on); };
     btn.addEventListener("click", ()=>{ P[fx].on=!P[fx].on; sync(); applyLive(); });
     sync();
-  });
-  document.querySelectorAll(".res-btn").forEach((btn)=>{
-    btn.addEventListener("click", ()=>{
-      document.querySelectorAll(".res-btn").forEach((b)=>b.classList.remove("active"));
-      btn.classList.add("active"); P.chop.res=+btn.dataset.res; schedStep=0; if (buffer) fillOrdered(); else rebuildGrid(false);
-    });
   });
   metroBtn.addEventListener("click", ()=>{ P.metro=!P.metro; metroBtn.classList.toggle("active", P.metro); syncMetroNote(); });
   const metroNote=$("#metroNote"), notePop=$("#notePop");
@@ -3243,7 +3233,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["p","$ "],["k","DEL"],["t",": clear selection \u00B7 "],["k","ctrl+z/y"],["t",": undo"]],
       [["p","$ "],["k","fx"],["t",": "],["v","PITCH STUTTER TUBE CRUSH HP LP"]],
       [["p","$ "],["k","SCATTER"],["t"," + "],["v","DENS"],["t",": roll \u00B7 "],["v","RESET CLEAR"]],
-      [["p","$ "],["k","grid"],["t",": "],["v","1/8 1/16"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
+      [["p","$ "],["k","grid"],["t",": "],["v","1/8"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
       [["c","# alt+drag BPM corrects the source bpm"]],
       [["c","# colors = what changed on each chop"]],
       [["c","# switching from EDITOR hands the loop over"]],
