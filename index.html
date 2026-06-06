@@ -477,7 +477,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.69</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.70</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1011,7 +1011,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.69";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.70";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1696,6 +1696,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   grid.addEventListener("pointermove",(e)=>{
     if (P.chop.mode==="mark"){
+      if (segTlDrag && e.buttons===0){ segTlDrag=null; grid.style.cursor=""; drawGrid(); return; }   // verlorenes pointerup
       if (!segTlDrag){                                           // Hover: \u2194 an Kanten, Hand auf dem Stueck
         const r0=grid.getBoundingClientRect(), w0=r0.width, ld0=loopDur();
         const px0=e.clientX-r0.left, t0h=tlT(e), hit0=segHit(t0h);
@@ -1885,7 +1886,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     endGridDrag(e);
   });
-  grid.addEventListener("pointercancel", ()=>{ gridDrag=null; drawGrid(); });
+  grid.addEventListener("pointercancel", ()=>{ gridDrag=null; segTlDrag=null; drawGrid(); });
+  grid.addEventListener("lostpointercapture", ()=>{ segTlDrag=null; });
+  canvas.addEventListener("pointercancel", ()=>{ markDrag=null; canvas.style.cursor="default"; });
+  canvas.addEventListener("lostpointercapture", ()=>{ markDrag=null; });
 
   function deleteSelected(){
     if (!selectedSteps.size) return;
@@ -2768,6 +2772,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       canvas.style.cursor= edge ? "ew-resize" : "default";
       return;
     }
+    if (e.buttons===0){ markDrag=null; canvas.style.cursor="default"; return; }   // verlorenes pointerup: Drag ist vorbei
     const free=e.shiftKey, se=segEnd();
     const t=loopTOfWave(waveT(e));
     if (markDrag.mode==="new"){
