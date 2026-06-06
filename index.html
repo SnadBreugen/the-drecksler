@@ -433,7 +433,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.36</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.37</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -983,7 +983,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.36";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.37";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1080,13 +1080,18 @@ if (typeof exports === 'object' && typeof module === 'object') {
   const loopDur=()=>totalSteps()*stepDur();
   // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper nutzt (2 Takte).
   const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(totalSteps()*stepDur(), buffer.duration) : buffer.duration);
+  let sliceOff=[];                                  // Slip-Justage: Versatz pro Slice als Bruchteil der Step-Laenge
   function sliceTable(){
-    // Quelle aller Slices: das uniforme Raster.
+    // Quelle aller Slices: das uniforme Raster. Grenzen stehen fest, das Material darunter ist je Slice verschiebbar.
     if (!buffer) return [];
     const ssd=stepDur();
     const n=Math.max(0, Math.floor(buffer.duration/ssd + 0.001));
     const out=new Array(n);
-    for (let i=0;i<n;i++) out[i]={ t0:i*ssd, dur:ssd };
+    for (let i=0;i<n;i++){
+      let t0=i*ssd + (sliceOff[i]||0)*ssd;
+      t0=Math.max(0, Math.min(buffer.duration-ssd, t0));
+      out[i]={ t0, dur:ssd };
+    }
     return out;
   }
   const sliceCount=()=>sliceTable().length;
@@ -1169,7 +1174,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
   }
 
   function loadDecodedBuffer(buf, msg, source){
-    editUndoStack=[]; editSel=null; editView=null;
+    editUndoStack=[]; editSel=null; editView=null; sliceOff=[];
     buffer=buf; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();      // EINE Uhr: Material liegt nach dem Laden im Grid-Tempo
     hint.style.display="none"; drawWave(); tc.textContent=fmtTime(buffer.duration); setStatus(msg);
@@ -2536,6 +2541,23 @@ if (typeof exports === 'object' && typeof module === 'object') {
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
     }
+    // Chunk-Leiste: feste Slice-Grenzen oben, justierte Slices leuchten gelb
+    if (buffer && P.chop.on){
+      const tab=sliceTable(), ssd=stepDur();
+      ectx.fillStyle="rgba(0,0,0,.35)"; ectx.fillRect(0,0,w,16);
+      for (let i=0;i<tab.length;i++){
+        const x1=t2px(i*ssd,w), x2=t2px((i+1)*ssd,w);
+        if (x2<0||x1>w) continue;
+        if (Math.abs(sliceOff[i]||0)>0.001){
+          ectx.fillStyle=(i===chunkDrag.idx)?"rgba(255,234,0,.45)":"rgba(255,234,0,.22)";
+          ectx.fillRect(Math.max(0,x1),0,Math.min(w,x2)-Math.max(0,x1),16);
+        }
+        ectx.strokeStyle="rgba(189,250,255,.25)";
+        ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,16); ectx.stroke();
+      }
+      ectx.strokeStyle="rgba(189,250,255,.25)";
+      ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
+    }
     if (playhead!=null){
       const px=t2px(playhead,w);
       if (px>=0 && px<=w){ ectx.strokeStyle="#fff"; ectx.beginPath(); ectx.moveTo(px,0); ectx.lineTo(px,h); ectx.stroke(); }
@@ -2554,6 +2576,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     edUndo.disabled=!editUndoStack.length;
   }
   let editDrag=null, panDrag=null;
+  let chunkDrag={ idx:-1 };
   function evtT(e){
     const r=editCanvas.getBoundingClientRect();
     return Math.max(0, Math.min(buffer.duration, px2t(e.clientX-r.left, r.width)));
@@ -2564,11 +2587,28 @@ if (typeof exports === 'object' && typeof module === 'object') {
       panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
       editCanvas.setPointerCapture(e.pointerId); return;
     }
+    const cr=editCanvas.getBoundingClientRect();
+    if (P.chop.on && (e.clientY-cr.top)<=16){              // Chunk-Leiste: Material im Slice greifen
+      const ssd=stepDur(), idx=Math.floor(evtT(e)/ssd);
+      if (idx>=0 && idx<sliceTable().length){
+        chunkDrag={ idx, x:e.clientX, frac:(sliceOff[idx]||0) };
+        editCanvas.setPointerCapture(e.pointerId);
+        return;
+      }
+    }
     editDrag={ a:evtT(e), x:e.clientX }; editSel=null; drawEditWave();
     editCanvas.setPointerCapture(e.pointerId);
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
+    if (chunkDrag.idx>=0){
+      const r=editCanvas.getBoundingClientRect(), ssd=stepDur();
+      const dt=px2t(e.clientX-r.left, r.width)-px2t(chunkDrag.x-r.left, r.width);
+      const frac=Math.max(-1, Math.min(1, chunkDrag.frac - dt/ssd));   // Inhalt folgt der Hand
+      sliceOff[chunkDrag.idx]=Math.abs(frac)<0.002?0:frac;
+      setStatus("SLICE "+(chunkDrag.idx+1)+" // SHIFT "+Math.round(sliceOff[chunkDrag.idx]*ssd*1000)+" MS");
+      drawEditWave(); return;
+    }
     if (panDrag){
       const r=editCanvas.getBoundingClientRect();
       const dt=-(e.clientX-panDrag.x)/r.width*(panDrag.t1-panDrag.t0);
@@ -2585,6 +2625,13 @@ if (typeof exports === 'object' && typeof module === 'object') {
   });
   editCanvas.addEventListener("pointerup",(e)=>{
     if (panDrag){ panDrag=null; return; }
+    if (chunkDrag.idx>=0){                                  // Loslassen = sofort hoeren
+      const idx=chunkDrag.idx; chunkDrag={ idx:-1 };
+      const tab=sliceTable();
+      drawEditWave(); drawWave();
+      if (tab[idx]) auditionSlice(tab[idx]);
+      return;
+    }
     // Klick (kein Drag) im Chopfenster: Raster-Slice unterm Cursor selektieren + sofort anspielen.
     // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
     if (editDrag && Math.abs(e.clientX-editDrag.x)<4){
@@ -2599,6 +2646,17 @@ if (typeof exports === 'object' && typeof module === 'object') {
       }
     }
     editDrag=null; drawEditWave();
+  });
+  editCanvas.addEventListener("dblclick",(e)=>{            // Doppelklick auf die Leiste: Justage auf Null
+    if (!buffer || !P.chop.on) return;
+    const cr=editCanvas.getBoundingClientRect();
+    if ((e.clientY-cr.top)>16) return;
+    const idx=Math.floor(evtT(e)/stepDur()), tab0=sliceTable();
+    if (idx<0 || idx>=tab0.length) return;
+    sliceOff[idx]=0;
+    setStatus("SLICE "+(idx+1)+" // SHIFT RESET");
+    drawEditWave(); drawWave();
+    const tab=sliceTable(); if (tab[idx]) auditionSlice(tab[idx]);
   });
   editCanvas.addEventListener("wheel",(e)=>{
     if (!buffer) return;
@@ -2646,6 +2704,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
     buffer=nb; buildReversed(); pitchCache.clear();
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();  // Edit = neuer Material-Stand -> frischer Stretch-Snapshot
     if (rebuild) editView=null;                          // Laenge geaendert -> Zoom zuruecksetzen
+    if (rebuild) sliceOff=[];                           // neue Zeitachse -> Justage zuruecksetzen
     if (rebuild) fillOrdered();                         // Werkbank-Regel: Materialaenderung -> Hecksler frisch
     if (rebuild){ selection=null; editSel=null; }       // gleiche Laenge -> Auswahl bleibt stehen (weiter faden/tweaken)
     drawWave(); drawEditWave(); setStatus(msg);
