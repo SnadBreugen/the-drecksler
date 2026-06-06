@@ -373,7 +373,7 @@
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
-        <button id="edZoomIn" disabled title="Zoom in at view center (mouse wheel zooms at cursor)">ZOOM +</button>
+        <button id="edZoomIn" disabled title="Zoom in. With an active selection: the selection fills the view. Mouse wheel zooms at cursor, Shift+drag pans">ZOOM +</button>
         <button id="edFitBtn" disabled title="Show the whole material (Shift+drag pans when zoomed)">ALL</button>
         <span class="win-grp"><button id="winPrev" disabled title="Chop window: jump 2 bars back">&#9664; WIN</button><span id="winLbl" class="win-lbl"></span><button id="winNext" disabled title="Chop window: jump 2 bars forward — the dashed frame marks what the chopper chops">WIN &#9654;</button></span>
         <span class="edit-selinfo" id="editSelInfo"></span>
@@ -471,7 +471,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.53</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.54</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1005,7 +1005,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.53";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.54";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1147,6 +1147,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // kein Qualitaetsverlust beim Knopf-Wackeln. Loads und Edits erneuern den Snapshot.
   let tempoRef=null, bufferFitBpm=120, tempoFitBusy=false, tempoFitPending=false;
   let defaultMaterial=false;                                 // Beispiel-Sample geladen? -> Quellen-Hinweis ueber der Wave
+  let sourceHintGone=false;                                  // erster Klick irgendwo -> Hinweis weg
   function setTempoRef(){ tempoRef = buffer ? { buf:cloneBuffer(buffer), bpm:Math.round(P.chop.bpm) } : null; }
   async function stretchBufferRate(buf, rate){
     // rate > 1 = schneller/kuerzer. Vorlauf gegen Engine-Latenz: geplant wird bei LEAD,
@@ -2828,8 +2829,16 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     hg.addColorStop(0,"#bdfaff"); hg.addColorStop(0.5,"#3fc9e0"); hg.addColorStop(1,"#062831");
     ectx.fillStyle=hg;
     const sppx=vd*sr/w;                                  // Samples pro Pixel im View
+    const jTab=(P.chop.on && sliceOff.some((o)=>Math.abs(o||0)>0.0001)) ? sliceTable() : null;
+    const jSsd=stepDur();
+    const srcT=(t)=>{                                    // Justage sichtbar: Pixelzeit -> verschobene Material-Zeit
+      if (!jTab) return t;
+      const idx=Math.floor(t/jSsd);
+      if (idx<0 || idx>=jTab.length) return t;
+      return jTab[idx].t0 + (t - idx*jSsd);
+    };
     for (let x=0;x<w;x++){
-      const i0=Math.floor((v0+(x/w)*vd)*sr);
+      const i0=Math.floor(srcT(v0+(x/w)*vd)*sr);
       if (i0>=data.length) break;
       let pk=0;
       const lim=Math.min(i0+Math.max(1,Math.floor(sppx)), data.length);
@@ -2877,7 +2886,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ectx.strokeStyle="rgba(189,250,255,.25)";
       ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
     }
-    if (defaultMaterial){                                    // Quellen-Hinweis, nur solange das Beispiel liegt
+    if (defaultMaterial && !sourceHintGone){                 // Quellen-Hinweis, nur bis zum ersten Klick
       const dtx="RECORD AUDIO \u00B7 UPLOAD FILE \u00B7 IMPORT FROM AUDIOTOOL";
       ectx.font="20px 'VT323',monospace";
       const tw=ectx.measureText(dtx).width, tx=Math.max(8,(w-tw)/2), ty=h/2+7;
@@ -2958,11 +2967,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   editCanvas.addEventListener("pointerup",(e)=>{
     if (panDrag){ panDrag=null; return; }
-    if (chunkDrag.idx>=0){                                  // Loslassen = sofort hoeren
+    if (chunkDrag.idx>=0){                                  // Loslassen: nur Status, kein Auto-Anspielen
       const idx=chunkDrag.idx; chunkDrag={ idx:-1 };
-      const tab=sliceTable();
       drawEditWave(); drawWave();
-      if (tab[idx]) auditionSlice(tab[idx]);
+      setStatus("SLICE "+(idx+1)+" SHIFTED // "+Math.round((sliceOff[idx]||0)*stepDur()*1000)+" MS");
       return;
     }
     // Klick (kein Drag) im Chopfenster: Raster-Slice unterm Cursor selektieren + sofort anspielen.
@@ -3342,7 +3350,16 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let i=0;i<8;i++) eq8Gains[i]=0;
     updatePreviewFx(); drawEqGraph(); setStatus("CHAIN FLAT");
   });
-  $("#edZoomIn").addEventListener("click", ()=>zoomBy(1/1.5));
+  $("#edZoomIn").addEventListener("click", ()=>{
+    if (editSel && buffer && (editSel.b-editSel.a)>=0.02){     // Auswahl vorhanden -> exakt darauf zoomen
+      const pad=(editSel.b-editSel.a)*0.04;
+      const t0=Math.max(0, editSel.a-pad), t1=Math.min(buffer.duration, editSel.b+pad);
+      editView={ t0, t1 }; drawEditWave();
+      setStatus("ZOOMED TO SELECTION");
+      return;
+    }
+    zoomBy(1/1.5);
+  });
   $("#edZoomOut").addEventListener("click", ()=>zoomBy(1.5));
   $("#edFitBtn").addEventListener("click", ()=>{ editView=null; drawEditWave(); setStatus("ZOOM RESET"); });
   let auditionSrc=null;                                   // schnelle Klicks schneiden sich ab statt zu stapeln
@@ -3474,6 +3491,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
 
+  document.addEventListener("pointerdown", function hintOnce(){
+    if (!sourceHintGone){ sourceHintGone=true; if (defaultMaterial && deckEl.classList.contains("st-editor")) drawEditWave(); }
+    document.removeEventListener("pointerdown", hintOnce);
+  });
   // Klick ins Leere: Popups zu, Markierungen weg (Chassis-Klick = aufraeumen)
   document.addEventListener("pointerdown",(e)=>{
     const t=e.target;
