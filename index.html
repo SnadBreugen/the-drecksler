@@ -433,7 +433,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.35</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.36</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -983,7 +983,7 @@ if (typeof exports === 'object' && typeof module === 'object') {
 (() => {
   "use strict";
 
-  const REV="2.35";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.36";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2463,7 +2463,15 @@ if (typeof exports === 'object' && typeof module === 'object') {
     $("#stHecksler").classList.toggle("active", st==="hecksler");
     $("#stFin").classList.toggle("active", st==="fin");
     if (st==="editor"){ drawEditWave(); drawEqGraph(); }
-    if (st==="hecksler"){ drawWave(); drawGrid(); }    // versteckte Canvases haben Breite 0 — frisch rendern
+    if (st==="hecksler"){
+      // Uebergabe: laeuft die Editor-Vorschau, springt der Chopper-Loop phasentreu auf dem naechsten Step ein
+      if (playSource && audioCtx && P.chop.on && arrangement.some((x)=>x!=null)){
+        const ph=straightPlayheadT()||0, ts=totalSteps();
+        pauseState={ mode:"chop", step:(Math.floor(ph/stepDur())+1)%ts };
+        startMonitor();
+      }
+      drawWave(); drawGrid();                          // versteckte Canvases haben Breite 0 — frisch rendern
+    }
     setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":"FINALIZER"));
   }
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
