@@ -477,7 +477,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.68</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.69</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1011,7 +1011,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.68";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.69";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3173,7 +3173,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       setStatus("SLICE "+(idx+1)+" SHIFTED // "+Math.round((sliceOff[idx]||0)*stepDur()*1000)+" MS");
       return;
     }
-    // Klick (kein Drag) im Chopfenster: Raster-Slice unterm Cursor selektieren + sofort anspielen.
+    // Klick (kein Drag): Raster-Slice still selektieren. Hoeren NUR per ALT+Klick (Geraete-Konvention).
     // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
     if (editDrag && Math.abs(e.clientX-editDrag.x)<4){
       const t=evtT(e), tab=sliceTable();
@@ -3181,8 +3181,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (sl){
         editSel={ a:sl.t0, b:Math.min(buffer.duration, sl.t0+sl.dur) };
         editDrag=null; drawEditWave();
-        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S");
-        auditionSlice(sl);
+        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S"+(e.altKey?"":" \u2014 ALT+CLICK = HEAR"));
+        if (e.altKey) auditionSlice(sl);
         return;
       }
     }
@@ -3810,7 +3810,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }, 12);
   }
   // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
-  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = hear the slice under the cursor \u00B7 top strip: drag slips the content per slice (double-click = reset) \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
+  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 top strip: drag slips the content per slice (double-click = reset) \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
