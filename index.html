@@ -375,7 +375,7 @@
         <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
-        <button id="edQuant" disabled title="Auto-quantize: detects the rhythmic onsets and snaps each one to the 8th grid at the current BPM. Tight material works best; soft attacks barely need it anyway. Undo with Ctrl+Z">QUANTIZE</button>
+        <button id="edQuant" disabled title="Auto-quantize: detects the rhythmic onsets and snaps each one to the 1/16 grid at the current BPM. Tight material works best; soft attacks barely need it anyway. Undo with Ctrl+Z">QUANTIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
@@ -478,7 +478,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.72</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.73</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1012,7 +1012,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.72";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.73";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3290,10 +3290,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (!onsets.length){ setStatus("NO CLEAR ONSETS // NOTHING TO QUANTIZE"); return; }
     pushEditUndo("QUANTIZE");
     const chs=[]; for (let c=0;c<nc;c++) chs.push(buffer.getChannelData(c));
-    const { out, maxShift, moved }=renderQuantized(chs, sr, len, stepDur(), onsets);
+    const { out, maxShift, moved }=renderQuantized(chs, sr, len, stepDur()/2, onsets);   // 1/16-Raster: fein genug fuer Timing, grob genug fuer Groove
     const nb=cloneBuffer(buffer);
     for (let c=0;c<nc;c++) nb.getChannelData(c).set(out[c]);
-    applyEdit(nb, "QUANTIZED // "+onsets.length+" ONSETS \u00B7 "+moved+" MOVED \u00B7 MAX "+Math.round(maxShift*1000)+" MS", false, null);
+    applyEdit(nb, "QUANTIZED 1/16 // "+onsets.length+" ONSETS \u00B7 "+moved+" MOVED \u00B7 MAX "+Math.round(maxShift*1000)+" MS", false, null);
   });
   edTrim.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("TRIM");
