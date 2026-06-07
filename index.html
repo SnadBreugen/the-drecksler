@@ -266,9 +266,10 @@
   .grid-wrap { position:relative; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   .fx-panel { flex:0 0 235px; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
   .claim-set { position:absolute; bottom:6px; transform:translateX(-50%); z-index:4;
-    padding:5px 16px; font-size:11px; letter-spacing:.16em; color:#ff6a00;
-    background:rgba(0,0,0,.8); border:1px solid rgba(255,106,0,.7); border-radius:4px;
-    box-shadow:0 0 10px rgba(255,106,0,.3); text-shadow:0 0 5px rgba(255,106,0,.4); }
+    padding:7px 20px; font-size:11px; letter-spacing:.16em; color:#ff6a00;
+    background:rgba(0,0,0,.85); border:1px solid rgba(255,106,0,.8); border-radius:4px;
+    box-shadow:0 0 12px rgba(255,106,0,.35); text-shadow:0 0 5px rgba(255,106,0,.5); }
+  .claim-set:hover { background:rgba(30,24,0,.9); }
   .claim-set:hover { background:rgba(30,24,0,.9); }
   .tune-key { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .tune-key .tk-label { font-size:10px; letter-spacing:.16em; color:var(--info); }
@@ -503,8 +504,8 @@
         </div>
       </div>
       <div class="wave-wrap" id="waveWrap">
-        <button id="markSetBtn" class="claim-set" style="display:none" title="Apply the CLAIM (Enter): fixes a new piece, or new bounds for the selected one. Edges drag freely (SHIFT = snap)">SET</button>
         <canvas class="wave" id="wave"></canvas>
+        <button id="markSetBtn" class="claim-set" style="display:none" title="Apply the CLAIM (Enter works too): fixes a new piece, or new bounds for the selected one">SET</button>
         <div class="hint" id="hint">NO MATERIAL &mdash; CAPTURE OR IMPORT IN THE EDITOR</div>
       </div>
       <input type="file" id="fileInput" accept="audio/*" class="hidden" />
@@ -560,7 +561,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.07</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.10</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1116,7 +1117,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.07";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.10";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2894,10 +2895,24 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const sel=(i===markSel);
       const g=Math.max(0, Math.min(1.5, s.gain==null?1:s.gain));
       const bh=(h-16)*(0.25+0.5*(g/1.5)), by=h-8-bh;             // Hoehe = Volume, wie im Grid
-      gctx.fillStyle=chopColor(s, 0).replace(",1)", ",.88)");    // Farbsprache wie im Grid: gruen=mov, violett=dup, blau=rev ...
+      const pcol=chopColor(s, 0);
+      gctx.shadowColor=pcol.replace(",1)",",0.5)"); gctx.shadowBlur=6;   // Kachel mit Glut-Kante, wie im Grid
+      gctx.fillStyle=pcol.replace(",1)", ",.92)");
+      gctx.fillRect(x+0.5, by, bw, bh);
+      gctx.shadowBlur=0;
+      const pgloss=gctx.createLinearGradient(0, by, 0, by+bh);
+      pgloss.addColorStop(0,"rgba(255,255,255,0.28)"); pgloss.addColorStop(0.35,"rgba(255,255,255,0.05)");
+      pgloss.addColorStop(0.75,"rgba(0,0,0,0)"); pgloss.addColorStop(1,"rgba(0,0,0,0.22)");
+      gctx.fillStyle=pgloss;
       gctx.fillRect(x+0.5, by, bw, bh);
       gctx.strokeStyle="rgba(0,0,0,.55)"; gctx.lineWidth=1;      // dunkle Kontur: Ueberlappungen bleiben lesbar
       gctx.strokeRect(x+1, by+0.5, Math.max(1,bw-1), bh-1);
+      if (bw>=20 && bh>=18){                                     // Stueck-Nummer gross in der Kachel
+        gctx.fillStyle="rgba(10,6,4,0.85)";
+        gctx.font="bold "+Math.min(20, Math.max(13, bh*0.42))+"px 'VT323', monospace";
+        gctx.textAlign="center";
+        gctx.fillText(String(i+1).padStart(2,"0")+(s.reverse?" \u25C4":""), x+bw/2, by+bh/2+6);
+      }
       if (sel){
         gctx.strokeStyle="#ffffff"; gctx.lineWidth=1.5;
         gctx.shadowColor="rgba(255,255,255,.6)"; gctx.shadowBlur=6;
@@ -2926,7 +2941,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     markSetBtn.disabled=false;
     const r=canvas.getBoundingClientRect();
     const cx=((chopWin+(markPreview.a+markPreview.b)/2)/viewDur())*r.width;
-    markSetBtn.style.left=Math.max(34, Math.min(r.width-34, cx))+"px";
+    markSetBtn.style.left=Math.max(40, Math.min(r.width-40, cx))+"px";
   }
   function snapT(t, free){ const ssd=stepDur(); return free ? t : Math.round(t/ssd)*ssd; }
   const markFree=(e)=>((P.chop.snapMode==="hand") !== !!e.shiftKey);   // SHIFT kehrt den aktiven Modus um
@@ -3033,6 +3048,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     if (!buffer) return;
     e.preventDefault(); try{ canvas.setPointerCapture(e.pointerId); }catch{}
+    if (markPreview && markSetBtn.style.display!=="none"){       // Fangzone um SET: Beinahe-Treffer = SET, nie ein neuer Claim
+      const br=markSetBtn.getBoundingClientRect();
+      if (e.clientX>br.left-12 && e.clientX<br.right+12 && e.clientY>br.top-8){
+        fixPending(); return;
+      }
+    }
     const t=loopTOfWave(waveT(e));
     const edge=pendEdgeAt(e);
     if (edge){ markDrag={ mode:edge }; return; }                 // Kante nachziehen
@@ -3058,13 +3079,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       return { a, b:Math.min(ld, a+q) };
     };
     if (ref<0.01) return fallback();                             // ins Leere geklickt
-    const thr=ref*0.18, maxHalf=Math.round(q*1.5*sr2);
+    const thr=ref*0.27, maxHalf=Math.round(q*1.0*sr2);
     let ka=c, kb=c;
     while (ka>c-maxHalf && ka>hop && rmsAt(ka)>thr) ka-=hop;
     while (kb<c+maxHalf && kb<d.length-hop && rmsAt(kb)>thr) kb+=hop;
     let a=ka/sr2-chopWin, b=kb/sr2-chopWin;
     a=Math.max(0, a); b=Math.min(ld, b);
-    if (b-a<0.045 || b-a>q*3.05) return fallback();              // zu winzig oder ausgelaufen: Viertel
+    if (b-a<0.045 || b-a>q*2.05) return fallback();              // zu winzig oder ausgelaufen: Viertel
     return { a, b };
   }
   canvas.addEventListener("pointerup",(e)=>{
@@ -3073,13 +3094,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     markDrag=null; canvas.style.cursor="default";
     if (wasNew && !moved){                                       // Klick: Stueck waehlen -> Claim legt sich drum
       const t=loopTOfWave(waveT(e));
-      const hit=markSegs.findIndex((s)=>t>=s.a && t<s.b);
-      if (hit>=0){
-        selectPiece(hit);
-        setStatus("PIECE "+(hit+1)+" // ADJUST THE CLAIM, SET = APPLY");
-        return;
-      }
-      let reg;                                                   // Klick ins Freie: Arbeitsbereich um das Klickziel
+      let reg;                                                   // Wave-Klick = IMMER Arbeitsbereich (Stuecke waehlt die Timeline)
       try { reg=smartRegionAt(t); }
       catch(err){ const q=stepDur()*2, a0=Math.max(0, Math.min(loopDur()-q, t-q*0.15)); reg={ a:a0, b:Math.min(loopDur(), a0+q) }; }
       markSel=-1; markEditIdx=-1;
@@ -4671,7 +4686,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. FREE mode: drag = dashed CLAIM (MAGNET snaps to 8ths, HAND moves sample-fine \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
+  $("#wave").dataset.desc="CHOPPER VIEW. FREE mode: drag = dashed CLAIM (MAGNET snaps to 8ths, HAND moves sample-fine \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click the wave: a work area forms around the hit (a quarter if unclear). Click a piece in the TIMELINE below to edit it. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
