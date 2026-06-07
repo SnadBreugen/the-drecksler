@@ -80,6 +80,7 @@
   .deck.st-editor #stEditor { color:#ffea00; border-color:rgba(255,234,0,.75); text-shadow:0 0 8px rgba(255,234,0,.6); box-shadow:0 0 12px rgba(255,234,0,.28), inset 0 0 8px rgba(255,234,0,.10); }
   .deck.st-hecksler #stHecksler { color:#ff9488; border-color:rgba(255,148,136,.8); text-shadow:0 0 8px rgba(255,120,100,.65); box-shadow:0 0 12px rgba(255,120,100,.3), inset 0 0 8px rgba(255,148,136,.12); }
   .deck.st-fin #stFin { color:#6bff8c; border-color:rgba(107,255,140,.7); text-shadow:0 0 8px rgba(107,255,140,.55); box-shadow:0 0 12px rgba(107,255,140,.25), inset 0 0 8px rgba(107,255,140,.10); }
+  .deck.st-tune #stTune { color:#ff5bd0; border-color:rgba(255,91,208,.75); text-shadow:0 0 8px rgba(255,91,208,.6); box-shadow:0 0 12px rgba(255,91,208,.28), inset 0 0 8px rgba(255,91,208,.10); }
   .island-fin::before { color:#6bff8c !important; text-shadow:0 0 7px rgba(107,255,140,.5); }
   .island-editor::before { color:#ffea00 !important; text-shadow:0 0 7px rgba(255,234,0,.55); }
   .edit-wrap { position:relative; flex:1 1 auto; min-height:180px; margin-top:12px; }
@@ -119,11 +120,13 @@
   .fin-wave-wrap canvas { width:100%; height:100%; display:block; }
   .fin-note { text-align:center; font-size:12px; letter-spacing:.3em; line-height:2.4; color:rgba(189,250,255,.7); text-transform:uppercase; }
   .fin-note span { color:var(--info); text-shadow:0 0 8px rgba(255,234,0,.45); }
-  .island-editor, .island-fin { grid-row:1 / 3; grid-column:1 / -1; }
+  .island-editor, .island-fin, .island-tune { grid-row:1 / 3; grid-column:1 / -1; }
   .deck:not(.st-editor) .island-editor { visibility:hidden; }
   .deck:not(.st-fin) .island-fin { visibility:hidden; }
+  .deck:not(.st-tune) .island-tune { visibility:hidden; }
   .deck.st-editor .island-wave, .deck.st-editor .island-chop, .deck.st-editor .island-fx,
-  .deck.st-fin .island-wave, .deck.st-fin .island-chop, .deck.st-fin .island-fx { visibility:hidden; }
+  .deck.st-fin .island-wave, .deck.st-fin .island-chop, .deck.st-fin .island-fx,
+  .deck.st-tune .island-wave, .deck.st-tune .island-chop, .deck.st-tune .island-fx { visibility:hidden; }
   .island-wave { grid-area:wave; margin-bottom:0; }
   .island-fx { grid-area:fx; margin-bottom:0; display:flex; flex-direction:column; transition:border-color .25s ease, box-shadow .25s ease; }
   .island-fx.lit { border-color:rgba(255,234,0,.75); box-shadow:0 0 0 1px rgba(255,234,0,.55), 0 0 20px rgba(255,234,0,.34), inset 0 0 12px rgba(255,234,0,.08); animation:tubeOn .45s ease-out; }
@@ -253,6 +256,12 @@
     background:rgba(0,0,0,.8); border:1px solid rgba(255,234,0,.7); border-radius:4px;
     box-shadow:0 0 10px rgba(255,234,0,.3); text-shadow:0 0 5px rgba(255,234,0,.4); }
   .claim-set:hover { background:rgba(30,24,0,.9); }
+  #tuneCanvas { width:100%; height:300px; display:block; background:#0a0805; border:1px solid var(--line); border-radius:6px; }
+  .tune-bar { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+  .tune-bar label { font-size:10px; letter-spacing:.16em; color:var(--info); }
+  .tune-bar select { background:rgba(0,0,0,.5); color:#ffea00; border:1px solid rgba(255,234,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
+  #tuneInfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#ffea00; text-shadow:0 0 7px rgba(255,234,0,.5); letter-spacing:.08em; }
+  .iconbtn { padding:4px 9px 2px; line-height:0; }
   .modegrp { display:flex; gap:4px; }
   .modegrp button { padding:8px 12px; font-size:10px; letter-spacing:.1em; }
   .modegrp button.active { color:#ffea00 !important; border-color:rgba(255,234,0,.75) !important; box-shadow:0 0 8px rgba(255,234,0,.25), inset 0 0 5px rgba(255,234,0,.10); }
@@ -342,7 +351,7 @@
   <div class="banner" id="banner"></div>
 
   <div class="station-tabs">
-    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">EDITOR</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">CHOPPER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
+    <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">EDITOR</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">CHOPPER</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button><button id="stTune" data-st="tune" title="Pitch discipline unit — track the melody, snap it to a scale">TUNE</button>
   </div>
   <div class="deck-grid">
     <section class="stage island-editor" data-tag="EDITOR">
@@ -416,6 +425,25 @@
       </div>
     </section>
 
+    <section class="stage island-tune" data-tag="TUNE">
+      <div class="fin-inner">
+        <p class="edit-panel-title">PITCH DISCIPLINE // MELODY &rarr; SCALE</p>
+        <canvas id="tuneCanvas" data-desc="TUNE VIEW \u2014 cyan curve = detected melody (YIN tracking), yellow curve = the corrected result on the note lanes. In-scale lanes glow faintly. Changes to ROOT / SCALE / HARDNESS update the yellow curve instantly"></canvas>
+        <div class="tune-bar">
+          <label>ROOT</label><select id="tuneRoot" title="Root note of the target scale"></select>
+          <label>SCALE</label><select id="tuneScale" title="Allowed notes: CHROMATIC = every semitone, MAJOR/MINOR lock to the key">
+            <option value="chrom">CHROMATIC</option><option value="maj">MAJOR</option><option value="min">MINOR</option>
+          </select>
+          <label>HARDNESS</label><input id="tuneHard" type="range" min="0" max="100" value="88" style="width:170px" title="Snap speed: 100% = instant robotic snap (T-Pain), lower = gentle glide toward the note">
+          <span id="tuneHardV" style="font-family:'Space Mono',monospace;font-size:11px;color:#ffea00">88%</span>
+          <button id="tunePrev" title="Render and listen without touching the material">PREVIEW</button>
+          <button id="tuneApply" class="primary" title="Render the correction into the material (Ctrl+Z undoes)">APPLY</button>
+          <span id="tuneInfo">&mdash;</span>
+        </div>
+        <p class="edit-panel-hint">CYAN = DETECTED MELODY &middot; YELLOW = THE RESULT &middot; HARDNESS 100 = INSTANT SNAP &middot; APPLY IS DESTRUCTIVE &middot; CTRL+Z UNDOES</p>
+      </div>
+    </section>
+
     <section class="stage island-wave" data-tag="CHOPPER VIEW">
       <div class="cap-head">
         <div class="transport">
@@ -457,10 +485,10 @@
         <button class="pbtn" id="bpmBtn" title="Tempo — drag vertically; on release the material is stretched to fit. ALT+drag corrects the source BPM (re-label, no stretch)">120 BPM</button>
         <div class="modegrp">
           <button id="modeGrid" class="active" title="GRID — the classic chopper: fixed 1/8 slots">GRID</button>
-          <button id="modeMark" title="MARK — carving mode: one continuous chop; mark regions in the wave to cut it apart, every piece takes the full chop FX">MARK</button>
+          <button id="modeMark" title="FREE — carving mode: one continuous chop; claim regions in the wave to cut it apart, every piece takes the full chop FX">FREE</button>
           <span class="edit-sep" id="snapSep" style="display:none"></span>
-          <button id="snapHand" style="display:none" title="HAND — everything moves freely, sample-fine (SHIFT = snap for a moment)">HAND</button>
-          <button id="snapMag" style="display:none" title="MAGNET — marks and moves snap to the 8th grid (SHIFT = free for a moment)">MAGNET</button>
+          <button id="snapHand" class="iconbtn" style="display:none" title="HAND — everything moves freely, sample-fine (SHIFT = snap for a moment)" aria-label="HAND"><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M5.6 14.2c-1.1-1.2-2.7-3.2-2.7-4.3 0-.9 1.1-1.3 1.7-.6l.8.9V4c0-1.1 1.5-1.1 1.5 0v3.4h.5V2.9c0-1.1 1.5-1.1 1.5 0V7.4h.5V3.5c0-1.1 1.4-1.1 1.4 0V7.4h.5V4.8c0-1 1.3-1 1.3 0v4.7c0 2.2-1.1 4.7-2.6 4.7H5.6z"/></svg></button>
+          <button id="snapMag" class="iconbtn" style="display:none" title="MAGNET — claims and moves snap to the 8th grid (SHIFT = free for a moment)" aria-label="MAGNET"><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3.2 2h3.4v6a1.4 1.4 0 0 0 2.8 0V2h3.4v6a4.8 4.8 0 0 1-9.6 0V2zM3.2 2h3.4v2.2H3.2zM9.4 2h3.4v2.2H9.4z" fill-rule="evenodd"/><path d="M4 2.4h1.8v1.4H4zM10.2 2.4H12v1.4h-1.8z" fill="rgba(0,0,0,.55)"/></svg></button>
         </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
@@ -480,7 +508,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.78</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.80</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1014,7 +1042,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.78";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.80";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1921,7 +1949,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); if (P.chop.mode==="mark") markRedo(); else redo(); return; }
     if (e.key==="Enter" && P.chop.mode==="mark" && markPreview){ e.preventDefault(); fixPending(); return; }
-    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
+    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")||deckEl.classList.contains("st-tune")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
     if (e.key==="Delete"||e.key==="Backspace"){
@@ -2681,7 +2709,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     selectedStep=null; selectedSteps.clear(); markSel=-1; markEditIdx=-1;
     updateFxPanel(); syncModeBtns(); drawWave(); drawGrid();
     if (m==="mark") resumeMarkMidLoop();                       // kein Loch bis zum Loop-Anfang
-    setStatus(m==="mark" ? "MARK MODE // ONE CHOP \u2014 MARK THE WAVE TO CUT IT" : "GRID MODE // 16 SLOTS");
+    setStatus(m==="mark" ? "FREE MODE // ONE CHOP \u2014 CLAIM THE WAVE TO CUT IT" : "GRID MODE // 16 SLOTS");
   }
   modeGridBtn.addEventListener("click", ()=>setChopMode("grid"));
   modeMarkBtn.addEventListener("click", ()=>setChopMode("mark"));
@@ -2753,7 +2781,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function pendStatus(){
     if (!markPreview) return;
     const ssd=stepDur(), lenS=markPreview.b-markPreview.a;
-    setStatus("MARK // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS \u2014 SET = FIX");
+    setStatus("CLAIM // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS \u2014 SET = FIX");
   }
   function resolveDrop(i){
     // Abgelegtes Stueck beansprucht [A,B): ueberdeckte Stuecke fliegen, angeschnittene werden gekuerzt,
@@ -3022,13 +3050,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // ---------- Stationen (DRECKSLER-Werkbank: Editor / Hecksler / Finalizer) ----------
   const deckEl=document.querySelector(".deck");
   function setStation(st){
-    deckEl.classList.remove("st-editor","st-hecksler","st-fin");
+    deckEl.classList.remove("st-editor","st-hecksler","st-fin","st-tune");
     deckEl.classList.add("st-"+st);
     $("#stEditor").classList.toggle("active", st==="editor");
     $("#stHecksler").classList.toggle("active", st==="hecksler");
     $("#stFin").classList.toggle("active", st==="fin");
+    $("#stTune").classList.toggle("active", st==="tune");
     if (st==="editor"){ drawEditWave(); drawEqGraph(); }
     if (st==="fin") renderFinWave();
+    if (st==="tune") enterTuneStation(); else if (typeof tuneLeave==="function") tuneLeave();
     showFeatures(st);
     if (st==="hecksler"){
       (async ()=>{
@@ -3038,11 +3068,281 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         drawWave(); drawGrid();                        // versteckte Canvases haben Breite 0 — frisch rendern
       })();
     }
-    setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":"FINALIZER"));
+    setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":st==="tune"?"TUNE":"FINALIZER"));
   }
+  $("#stTune").addEventListener("click", ()=>setStation("tune"));
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
   $("#stHecksler").addEventListener("click", ()=>setStation("hecksler"));
   $("#stFin").addEventListener("click", ()=>setStation("fin"));
+
+  // ===================== STATION 4: TUNE // PITCH DISCIPLINE =====================
+  // [TUNE-DSP-BEGIN] — reine Funktionen, von test_tune.js direkt mitgetestet
+  function yinPitch(frame, sr){
+    const n=frame.length, half=n>>1;
+    let rms=0; for (let i=0;i<n;i++) rms+=frame[i]*frame[i];
+    if (Math.sqrt(rms/n)<1e-4) return { f0:0, conf:0 };
+    const minTau=Math.max(2, Math.floor(sr/1000));
+    const maxTau=Math.min(half-2, Math.floor(sr/65));
+    const d=new Float32Array(maxTau+2);
+    for (let tau=1; tau<=maxTau+1; tau++){
+      let s=0;
+      for (let i=0;i<half;i++){ const df=frame[i]-frame[i+tau]; s+=df*df; }
+      d[tau]=s;
+    }
+    const cm=new Float32Array(maxTau+2); cm[0]=1; let run=0;
+    for (let tau=1; tau<=maxTau+1; tau++){ run+=d[tau]; cm[tau]=d[tau]*tau/(run||1e-12); }
+    let tau=-1;
+    for (let t=minTau; t<=maxTau; t++){ if (cm[t]<0.12 && cm[t]<=cm[t+1]){ tau=t; break; } }
+    if (tau<0){
+      let best=1e9, bi=-1;
+      for (let t=minTau; t<=maxTau; t++){ if (cm[t]<best){ best=cm[t]; bi=t; } }
+      if (best<0.35) tau=bi; else return { f0:0, conf:0 };
+    }
+    let t0=tau;
+    if (tau>1 && tau<maxTau+1){
+      const a=cm[tau-1], b=cm[tau], c2=cm[tau+1], den=a-2*b+c2;
+      if (Math.abs(den)>1e-12) t0=tau+0.5*(a-c2)/den;
+    }
+    return { f0:sr/t0, conf:1-cm[tau] };
+  }
+  const f2m=(f)=>69+12*Math.log2(f/440);
+  const m2f=(m)=>440*Math.pow(2,(m-69)/12);
+  const TUNE_SCALES={ chrom:[0,1,2,3,4,5,6,7,8,9,10,11], maj:[0,2,4,5,7,9,11], min:[0,2,3,5,7,8,10] };
+  function snapMidi(m, rootPc, ivs){
+    let best=0, bd=1e9;
+    const base=Math.round(m);
+    for (let k=base-3; k<=base+3; k++){
+      const pc=((k-rootPc)%12+12)%12;
+      if (ivs.indexOf(pc)<0) continue;
+      const dd=Math.abs(k-m);
+      if (dd<bd){ bd=dd; best=k; }
+    }
+    return best;
+  }
+  function tuneCorrCurve(f0s, confs, sr, hop, rootPc, ivs, hardness){
+    const n=f0s.length, raw=new Float32Array(n), out=new Float32Array(n);
+    let last=0;
+    for (let i=0;i<n;i++){
+      if (f0s[i]>0 && confs[i]>0.5){
+        const m=f2m(f0s[i]);
+        last=snapMidi(m, rootPc, ivs)-m;
+      }
+      raw[i]=last;
+    }
+    const hh=Math.max(0, Math.min(1, hardness));
+    if (hh>=0.999){ out.set(raw); return out; }
+    const hopT=hop/sr, tc=(1-hh)*(1-hh)*0.4+0.003;
+    const alpha=1-Math.exp(-hopT/tc);
+    let cur=0;
+    for (let i=0;i<n;i++){ cur+=alpha*(raw[i]-cur); out[i]=cur; }
+    return out;
+  }
+  function resampleLin(ch, a, b, r){
+    const n=Math.max(1, Math.floor((b-a)/r));
+    const out=new Float32Array(n);
+    for (let i=0;i<n;i++){
+      const sp=a+i*r, s0=Math.floor(sp), fr=sp-s0;
+      out[i]=(s0>=0 && s0<ch.length-1) ? ch[s0]*(1-fr)+ch[s0+1]*fr : 0;
+    }
+    return out;
+  }
+  function wsolaStretch(x, outLen, sr){
+    if (x.length===outLen) return x.slice(0, outLen);
+    const N=Math.min(Math.max(512, Math.round(0.03*sr)), Math.max(64, x.length-4));
+    const Hs=N>>1, search=Math.min(Math.round(0.008*sr), Hs-1);
+    const win=new Float32Array(N);
+    for (let j=0;j<N;j++) win[j]=0.5-0.5*Math.cos(2*Math.PI*j/(N-1));
+    const out=new Float32Array(outLen), norm=new Float32Array(outLen);
+    const ratio=x.length/outLen;
+    let prevPos=-1;
+    for (let k=0; k*Hs<outLen; k++){
+      const oc=k*Hs;
+      let pos=Math.round(oc*ratio);
+      if (prevPos>=0 && search>0){
+        const ref=prevPos+Hs;
+        let best=-1e18, bo=0;
+        const lo=Math.max(0, pos-search), hi=Math.min(x.length-N, pos+search);
+        for (let p=lo; p<=hi; p+=2){
+          let cc=0;
+          for (let j=0;j<Hs;j+=2){
+            const rv=(ref+j<x.length)?x[ref+j]:0;
+            cc+=rv*x[p+j];
+          }
+          if (cc>best){ best=cc; bo=p; }
+        }
+        pos=bo;
+      }
+      pos=Math.max(0, Math.min(Math.max(0,x.length-N), pos));
+      for (let j=0;j<N;j++){
+        const oi=oc+j; if (oi>=outLen) break;
+        out[oi]+=x[pos+j]*win[j]; norm[oi]+=win[j];
+      }
+      prevPos=pos;
+    }
+    for (let i=0;i<outLen;i++) out[i]/=(norm[i]||1);
+    return out;
+  }
+  function renderTuned(ch, sr, corr, hop){
+    const len=ch.length, out=new Float32Array(len);
+    const segs=[];
+    let s0=0, v0=corr[0]||0;
+    const maxSeg=Math.round(0.8*sr/hop);
+    for (let i=1;i<=corr.length;i++){
+      const v=(i<corr.length)?corr[i]:1e9;
+      if (Math.abs(v-v0)>0.03 || i-s0>=maxSeg || i===corr.length){
+        segs.push({ a:s0*hop, b:Math.min(len, i*hop), semi:v0 });
+        s0=i; v0=v;
+      } else { v0=0.7*v0+0.3*v; }
+    }
+    if (!segs.length || segs[segs.length-1].b<len) segs.push({ a:segs.length?segs[segs.length-1].b:0, b:len, semi:corr[corr.length-1]||0 });
+    const fade=Math.round(0.006*sr);
+    for (const sg of segs){
+      const n=sg.b-sg.a; if (n<=0) continue;
+      const ext=(sg.b<len)?fade:0;
+      let y;
+      if (Math.abs(sg.semi)<0.01){ y=ch.slice(sg.a, Math.min(len, sg.b+ext)); }
+      else {
+        const r=Math.pow(2, sg.semi/12);
+        const ctx0=Math.max(0, sg.a-512), ctxOff=Math.round((sg.a-ctx0)/r);
+        const rs=resampleLin(ch, ctx0, Math.min(len, sg.b+ext+512), r);
+        const body=rs.subarray(Math.min(ctxOff, Math.max(0,rs.length-1)));
+        y=wsolaStretch(body, n+ext, sr);
+      }
+      for (let i=0;i<y.length && i<n+ext;i++){
+        const oi=sg.a+i; if (oi>=len) break;
+        let g=1;
+        if (sg.a>0 && i<fade) g*=i/fade;
+        if (ext>0 && i>=n) g*=Math.max(0, 1-(i-n)/ext);
+        out[oi]+=y[i]*g;
+      }
+    }
+    return out;
+  }
+  // [TUNE-DSP-END]
+
+  const tuneCv=$("#tuneCanvas"), tuneCtx2=tuneCv.getContext("2d");
+  const tuneRootSel=$("#tuneRoot"), tuneScaleSel=$("#tuneScale"), tuneHard=$("#tuneHard"), tuneHardV=$("#tuneHardV"), tuneInfo=$("#tuneInfo");
+  const TUNE_NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  TUNE_NOTES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; tuneRootSel.appendChild(o); });
+  const TUNE_HOP=1024, TUNE_FRAME=2048;
+  let tuneF0=null, tuneConf=null, tuneSr=44100, tuneBusy=false, tunePrevSrc=null, tuneBufRef=null;
+  function tuneLeave(){ if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; } }
+  function enterTuneStation(){
+    if (!buffer){ tuneInfo.textContent="NO MATERIAL // FEED THE UNIT"; drawTune(); return; }
+    if (tuneBufRef!==buffer){ tuneAnalyze(); } else drawTune();
+  }
+  function tuneMono(){
+    const len=buffer.length, nc=buffer.numberOfChannels, mono=new Float32Array(len);
+    for (let c=0;c<nc;c++){ const dd=buffer.getChannelData(c); for (let i=0;i<len;i++) mono[i]+=dd[i]/nc; }
+    return mono;
+  }
+  function tuneAnalyze(){
+    if (tuneBusy) return;
+    tuneBusy=true; tuneSr=buffer.sampleRate; tuneBufRef=buffer;
+    const mono=tuneMono(), nF=Math.max(0, Math.floor((mono.length-TUNE_FRAME)/TUNE_HOP)+1);
+    tuneF0=new Float32Array(nF); tuneConf=new Float32Array(nF);
+    let i=0;
+    const step=()=>{
+      const lim=Math.min(nF, i+36);
+      for (; i<lim; i++){
+        const r=yinPitch(mono.subarray(i*TUNE_HOP, i*TUNE_HOP+TUNE_FRAME), tuneSr);
+        tuneF0[i]=(r.f0>=65 && r.f0<=1000)?r.f0:0; tuneConf[i]=r.conf;
+      }
+      tuneInfo.textContent="ANALYZING // "+Math.round(i/Math.max(1,nF)*100)+"%";
+      if (i<nF){ setTimeout(step, 0); return; }
+      tuneBusy=false;
+      const voiced=tuneF0.reduce((a2,v)=>a2+(v>0?1:0),0);
+      tuneInfo.textContent=voiced?("TRACKED // "+voiced+" FRAMES VOICED"):"NO PITCH FOUND";
+      drawTune();
+    };
+    tuneInfo.textContent="ANALYZING // 0%"; setTimeout(step, 16);
+  }
+  function tuneCurves(){
+    const ivs=TUNE_SCALES[tuneScaleSel.value]||TUNE_SCALES.chrom;
+    return tuneCorrCurve(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, (+tuneHard.value)/100);
+  }
+  function drawTune(){
+    const dpr=window.devicePixelRatio||1, w=tuneCv.clientWidth, hh=tuneCv.clientHeight;
+    if (!w||!hh) return;
+    tuneCv.width=w*dpr; tuneCv.height=hh*dpr; tuneCtx2.setTransform(dpr,0,0,dpr,0,0);
+    const g=tuneCtx2;
+    g.fillStyle="#0a0805"; g.fillRect(0,0,w,hh);
+    if (!tuneF0){ return; }
+    const ms=[];
+    for (let i=0;i<tuneF0.length;i++) if (tuneF0[i]>0) ms.push(f2m(tuneF0[i]));
+    if (!ms.length){
+      g.fillStyle="#776"; g.font="20px 'VT323',monospace";
+      g.fillText("NO PITCH FOUND \u2014 THE UNIT NEEDS A MELODY", 24, hh/2);
+      return;
+    }
+    ms.sort((a,b)=>a-b);
+    const med=ms[ms.length>>1];
+    const mLo=Math.floor(med-9), mHi=Math.ceil(med+9);
+    const yOf=(m)=>hh-((m-mLo)/(mHi-mLo))*hh;
+    const ivs=TUNE_SCALES[tuneScaleSel.value]||TUNE_SCALES.chrom, rootPc=+tuneRootSel.value;
+    for (let m=mLo; m<=mHi; m++){
+      const pc=((m-rootPc)%12+12)%12, inS=ivs.indexOf(pc)>=0;
+      g.fillStyle=inS?"rgba(255,234,0,.07)":"rgba(255,255,255,.02)";
+      g.fillRect(0, yOf(m+0.5), w, Math.max(1, yOf(m-0.5)-yOf(m+0.5)));
+      g.fillStyle=inS?"rgba(255,234,0,.5)":"rgba(255,255,255,.18)";
+      g.font="11px 'Space Mono',monospace";
+      g.fillText(TUNE_NOTES[((m%12)+12)%12]+(Math.floor(m/12)-1), 6, yOf(m)+4);
+    }
+    const corr=tuneCurves();
+    const xOf=(i)=>i/(tuneF0.length-1||1)*w;
+    g.strokeStyle="rgba(63,201,224,.85)"; g.lineWidth=1.5; g.beginPath();
+    let pen=false;
+    for (let i=0;i<tuneF0.length;i++){
+      if (tuneF0[i]<=0){ pen=false; continue; }
+      const yy=yOf(f2m(tuneF0[i]));
+      if (!pen){ g.moveTo(xOf(i),yy); pen=true; } else g.lineTo(xOf(i),yy);
+    }
+    g.stroke();
+    g.strokeStyle="#ffea00"; g.lineWidth=1.8;
+    g.shadowColor="rgba(255,234,0,.55)"; g.shadowBlur=6; g.beginPath(); pen=false;
+    for (let i=0;i<tuneF0.length;i++){
+      if (tuneF0[i]<=0){ pen=false; continue; }
+      const yy=yOf(f2m(tuneF0[i])+corr[i]);
+      if (!pen){ g.moveTo(xOf(i),yy); pen=true; } else g.lineTo(xOf(i),yy);
+    }
+    g.stroke(); g.shadowBlur=0;
+  }
+  [tuneRootSel, tuneScaleSel].forEach((el)=>el.addEventListener("change", drawTune));
+  tuneHard.addEventListener("input", ()=>{ tuneHardV.textContent=tuneHard.value+"%"; drawTune(); });
+  function tuneRender(){
+    const corr=tuneCurves(), nc=buffer.numberOfChannels, chs=[];
+    for (let c=0;c<nc;c++) chs.push(renderTuned(buffer.getChannelData(c), tuneSr, corr, TUNE_HOP));
+    return chs;
+  }
+  $("#tunePrev").addEventListener("click", ()=>{
+    if (!buffer || tuneBusy || !tuneF0) return;
+    tuneInfo.textContent="RENDERING \u2026";
+    setTimeout(()=>{
+      const chs=tuneRender(), ac=ctxGet();
+      const nb=ac.createBuffer(chs.length, buffer.length, tuneSr);
+      for (let c=0;c<chs.length;c++) nb.getChannelData(c).set(chs[c]);
+      tuneLeave();
+      const src=ac.createBufferSource(); src.buffer=nb;
+      const gg=ac.createGain(); gg.gain.value=0.95;
+      src.connect(gg); gg.connect(ac.destination);
+      src.start(); tunePrevSrc=src;
+      tuneInfo.textContent="PREVIEW // LISTEN";
+    }, 30);
+  });
+  $("#tuneApply").addEventListener("click", ()=>{
+    if (!buffer || tuneBusy || !tuneF0) return;
+    tuneInfo.textContent="RENDERING \u2026";
+    setTimeout(()=>{
+      pushEditUndo("TUNE");
+      const chs=tuneRender();
+      const nb=cloneBuffer(buffer);
+      for (let c=0;c<nb.numberOfChannels;c++) nb.getChannelData(c).set(chs[c]);
+      tuneLeave();
+      applyEdit(nb, "TUNED // "+TUNE_NOTES[+tuneRootSel.value]+" "+tuneScaleSel.value.toUpperCase()+" \u00B7 HARDNESS "+tuneHard.value+"%", false, null);
+      tuneBufRef=null; enterTuneStation();                       // frische Analyse: die gelbe Linie wird zur cyanen
+    }, 30);
+  });
+  // ===================== /TUNE =====================
 
   // ---------- Editor: grosse Waveform + Selektion + destruktive Werkzeuge ----------
   const editCanvas=$("#editCanvas"), editHint=$("#editHint"), editSelInfo=$("#editSelInfo");
@@ -3711,6 +4011,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Feature-Panel: tippt die Tutorial-Zeilen der aktiven Station (Snad-Code-Schrift) ----------
   const FEAT={
+    tune:[
+      [["p","> "],["k","TUNE"],["t"," // pitch discipline unit"]],
+      [["p","$ "],["k","track"],["t",": melody auto-detected on entry"]],
+      [["p","$ "],["k","cyan"],["t"," = detected \u00B7 "],["v","yellow"],["t"," = result"]],
+      [["p","$ "],["k","ROOT/SCALE"],["t",": choose the allowed notes"]],
+      [["p","$ "],["k","HARDNESS"],["t",": "],["v","100%"],["t"," = instant snap, low = glide"]],
+      [["p","$ "],["k","PREVIEW"],["t",": listen first \u00B7 "],["v","APPLY"],["t"," burns it in"]],
+      [["c","# ctrl+z undoes \u00B7 monophonic by nature"]],
+    ],
     editor:[
       [["p","> "],["k","EDITOR"],["t"," // prep the material"]],
       [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t"," \u2014 count-in, "],["v","2 bars"],["t"," auto"]],
@@ -3737,7 +4046,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["p","$ "],["k","fx"],["t",": "],["v","PITCH STUTTER TUBE CRUSH HP LP"]],
       [["p","$ "],["k","SCATTER"],["t"," + "],["v","DENS"],["t",": roll \u00B7 "],["v","RESET CLEAR"]],
       [["p","$ "],["k","grid"],["t",": "],["v","1/8"],["t"," \u00B7 "],["k","BPM drag"],["t",": tempo-fit"]],
-      [["p","$ "],["k","MARK"],["t",": drag a mark \u00B7 adjust edges \u00B7 "],["v","SET"]],
+      [["p","$ "],["k","FREE"],["t",": drag a claim \u00B7 adjust edges \u00B7 "],["v","SET"]],
       [["c","# pieces = real chops: move copy trim fx"]],
       [["c","# ctrl+z undo \u00B7 RESET = back to one chop"]],
       [["c","# alt+drag BPM corrects the source bpm"]],
@@ -3803,7 +4112,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (MAGNET snaps to 8ths, HAND is free \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
+  $("#wave").dataset.desc="CHOPPER VIEW. FREE mode: drag = dashed CLAIM (MAGNET snaps to 8ths, HAND moves sample-fine \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
