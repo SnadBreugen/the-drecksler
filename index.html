@@ -474,13 +474,15 @@
           <span class="tk-label" style="margin-left:16px">VOC</span>
           <button class="tune-chip vc-mode" data-vm="follow" title="Carrier follows the sung melody — the chord moves with you (needs a tracked take)">FOLLOW</button>
           <button class="tune-chip vc-mode" data-vm="drone" title="Carrier holds the KEY chord — static machine drone">DRONE</button>
+          <button class="tune-chip vc-chr" data-vc="classic" title="Smooth machine body — the warm vocoder">CLASSIC</button>
+          <button class="tune-chip vc-chr" data-vc="daft" title="Talkbox bite: hard bright carrier, resonant bands, crisp consonants — Harder Better Faster Stronger">DAFT</button>
           <button class="tune-chip vc-reg" data-vr="-24" title="Carrier two octaves down — subterranean">SUB</button>
           <button class="tune-chip vc-reg" data-vr="-12" title="Carrier one octave down">LOW</button>
           <button class="tune-chip vc-reg" data-vr="0" title="Carrier at spoken register">MID</button>
         </div>
         <div class="tune-tiles">
-          <button class="tune-tile" id="tileHard" title="Full snap to the scale — every note locks flat. Tap = render + hear"><b>HARD</b><span>full snap &middot; machine lock</span></button>
-          <button class="tune-tile" id="tileSoft" title="Gentle pull toward the note — polish, not effect. Tap = render + hear"><b>SOFT</b><span>gentle pull &middot; polish</span></button>
+          <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly — T-Pain territory. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
+          <button class="tune-tile" id="tileSoft" title="Full correction with musical smoothing — notes lock, phrasing survives. Tap = render + hear"><b>SOFT</b><span>full pull &middot; musical</span></button>
           <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note — monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; daft</span></button>
           <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier — Daft Punk machine talk. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
         </div>
@@ -558,7 +560,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.16</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.17</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1111,7 +1113,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.16";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.17";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3386,7 +3388,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return med;
   }
-  function tuneNoteSegs(f0s, confs, sr, hop, rootPc, ivs, strength, maxPull){
+  function tuneNoteSegs(f0s, confs, sr, hop, rootPc, ivs, strength, maxPull, minNoteS){
     // EIN Segment = EINE Note: konstanter Zug zur Zielnote (Vibrato bleibt, Wechsel snappen).
     // Kein Frame-Gewackel mehr -> kein Gurgeln. strength skaliert den Zug (1 = volle Disziplin).
     const n=f0s.length, segs=[];
@@ -3410,7 +3412,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ms.push(m);
     }
     flush(n);
-    const minLen=0.09*sr;                                       // unter ~90ms ist es keine Note, sondern Sprech-Jitter
+    const minLen=(minNoteS==null?0.09:minNoteS)*sr;             // Merge-Schwelle: SOFT 90ms (Jitter weg), HARD 35ms (Snaps leben)
     let changed=true;
     while (changed && segs.length>1){
       changed=false;
@@ -3479,7 +3481,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return marks;
   }
-  function psolaRender(chs, sr, f0s, hop, segs, strength, maxPull){
+  function psolaRender(chs, sr, f0s, hop, segs, strength, maxPull, rampS){
     // TD-PSOLA: Zwei-Perioden-Hann-Koerner an den Pitch-Marken, neu gesetzt im Ziel-Abstand.
     // Tonhoehe = Abstand der Koerner -> brettflache Plateaus moeglich, Formanten bleiben stehen.
     const n=chs[0].length;
@@ -3493,7 +3495,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const st=Math.max(0, Math.min(1, strength));
     const segIdxAt=(p)=>{ for (let s2=0;s2<segs.length;s2++){ if (p>=segs[s2].a && p<segs[s2].b) return s2; } return -1; };
     const flatOf=(sg)=>sg.med + Math.max(-lim, Math.min(lim, sg.note-sg.med));
-    const ramp=Math.round(0.012*sr);
+    const ramp=Math.max(8, Math.round((rampS==null?0.012:rampS)*sr));   // HARD: 2.5ms = der Snap. SOFT: 12ms = kein Ruck.
     const tgtF=(p)=>{                                            // Ziel-Frequenz am Punkt p (null = naturbelassen)
       const si=segIdxAt(p); if (si<0) return null;
       const sg=segs[si];
@@ -3623,14 +3625,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     let mono=chs[0];
     if (chs.length>1){ mono=new Float32Array(n); for (let c=0;c<chs.length;c++){ const d=chs[c]; for (let k=0;k<n;k++) mono[k]+=d[k]/chs.length; } }
     const nb=20, fLo=80, fHi=Math.min(8000, sr*0.42);
-    const ratio=Math.pow(fHi/fLo, 1/(nb-1)), Q=4.0;
+    const daft=(typeof vocDaft!=="undefined" && vocDaft);
+    if (daft){ let pre=0; for (let i=0;i<n;i++){ const v=Math.tanh(3.2*car[i]); car[i]=v-0.72*pre; pre=v; } }   // Talkbox-Biss: harter Clip + steile Praeemphase
+    const ratio=Math.pow(fHi/fLo, 1/(nb-1)), Q=daft?8.0:4.0;     // DAFT: enge, resonante Baender
     const acc=new Float32Array(n);
     for (let b=0;b<nb;b++){
       const fc=fLo*Math.pow(ratio,b);
       const co=biquadBP(fc, Q, sr);
       const mB=runBiquad(mono, co), cB=runBiquad(car, co);
       const env=envFollow(mB, sr, 3, 40);                         // 3ms Attack: Konsonanten-Einsaetze
-      const tilt=Math.min(7, Math.max(0.6, Math.pow(fc/180, 0.8)));   // Whitening: Mitten/Hoehen formen die Worte
+      let tilt=Math.min(daft?10:7, Math.max(0.6, Math.pow(fc/180, daft?1.15:0.8)));  // Whitening; DAFT: deutlich heller
+      if (daft && fc<160) tilt*=0.45;                            // Talkbox hat keinen Sub — Bauch raus, Biss rein
       for (let i=0;i<n;i++) acc[i]+=cB[i]*env[i]*tilt;
     }
     const hpA=1-Math.exp(-2*Math.PI*5000/sr);                    // Zischlaut-Pfad v2: steil (3x) + Gate
@@ -3643,8 +3648,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     const eH=envFollow(hf, sr, 2, 25), eA=envFollow(mono, sr, 2, 25);
     for (let i=0;i<n;i++){
-      const g2=Math.max(0, Math.min(1, (eH[i]/(eA[i]+1e-9)-0.32)/0.25));   // zu bei Vokalen, auf bei S/T/F
-      acc[i]+=hf[i]*g2*0.9;
+      const g2=Math.max(0, Math.min(1, (eH[i]/(eA[i]+1e-9)-(daft?0.26:0.32))/0.25));   // zu bei Vokalen, auf bei S/T/F; DAFT artikuliert schaerfer
+      acc[i]+=hf[i]*g2*(daft?1.15:0.9);
     }
     let ri=0, ra=0;
     for (let i=0;i<n;i++){ ri+=mono[i]*mono[i]; ra+=acc[i]*acc[i]; }
@@ -3705,11 +3710,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     };
     tuneInfo.textContent="ANALYZING // 0%"; setTimeout(step, 16);
   }
+  function tuneParams(){
+    // HARD = Trap-Snap: kein Mini-Noten-Merge (35ms), 2.5ms-Grenzen, weiter Zug -> hoerbares Einrasten.
+    // SOFT = das musikalische ehem. HARD: voller Zug, 90ms-Merge, 12ms-Rampen — Politur statt Effekt.
+    if (tuneMode==="hard") return { strength:1, maxPull:5, minNote:0.035, ramp:0.0025 };
+    if (tuneMode==="soft") return { strength:1, maxPull:3, minNote:0.09,  ramp:0.012  };
+    return { strength:1, maxPull:7, minNote:0.09, ramp:0.012 };  // robot: weit ziehen, Glitch=Aesthetik
+  }
   function tuneSegsNow(){
     const ivs=(tuneMode==="robot") ? [0] : (TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom);   // ROBOT: nur der Grundton
-    const strength=(tuneMode==="soft") ? 0.45 : 1;
-    const maxPull=(tuneMode==="robot") ? 7 : 3;                  // der Robot darf weit ziehen
-    return tuneNoteSegs(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, strength, maxPull);
+    const tp=tuneParams();
+    return tuneNoteSegs(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, tp.strength, tp.maxPull, tp.minNote);
   }
   function drawTune(playT){
     const dpr=window.devicePixelRatio||1, w=tuneCv.clientWidth, hh=tuneCv.clientHeight;
@@ -3828,10 +3839,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
   tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); });
   const VOC_CHORDS={ maj:[0,4,7,12], min:[0,3,7,12], chrom:[0,7,12] };   // chrom = Power-Akkord
-  let vocFollow=true, vocReg=-12;                                // Default: der Melodie folgen, eine Oktave tief
+  let vocFollow=true, vocReg=-12, vocDaft=false;                 // Default: der Melodie folgen, eine Oktave tief, CLASSIC
   function syncVocUi(){
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
+    document.querySelectorAll(".vc-chr").forEach((b)=>b.classList.toggle("active", (b.dataset.vc==="daft")===vocDaft));
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
@@ -3840,6 +3852,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   document.querySelectorAll(".vc-reg").forEach((b)=>b.addEventListener("click", ()=>{
     vocReg=+b.dataset.vr; syncVocUi();
     if (tuneMode==="vocoder") tunePlayPreview();
+  }));
+  document.querySelectorAll(".vc-chr").forEach((b)=>b.addEventListener("click", ()=>{
+    vocDaft=(b.dataset.vc==="daft"); syncVocUi();
   }));
   syncVocUi();                                                   // NACH den Deklarationen (TDZ!)
   function tuneRender(){
@@ -3856,9 +3871,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       return vocoderRender(chs, tuneSr, car);
     }
     const segs=tuneSegsNow();
-    const strength=(tuneMode==="soft") ? 0.45 : 1;
-    const maxPull=(tuneMode==="robot") ? 7 : 3;
-    return psolaRender(chs, tuneSr, tuneF0, TUNE_HOP, segs, strength, maxPull);
+    const tp=tuneParams();
+    return psolaRender(chs, tuneSr, tuneF0, TUNE_HOP, segs, tp.strength, tp.maxPull, tp.ramp);
   }
   $("#tuneApply").addEventListener("click", ()=>{
     if (!buffer || tuneBusy || (!tuneF0 && tuneMode!=="vocoder")) return;
