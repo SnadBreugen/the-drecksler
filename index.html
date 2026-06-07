@@ -478,7 +478,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.73</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.74</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1012,7 +1012,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.73";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.74";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3254,31 +3254,36 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return on;
   }
   function renderQuantized(chs, sr, len, ssd, onsets){
-    // Stueck zwischen zwei Onsets wandert geschlossen auf die naechste 8tel-Linie; 5ms-Faden gegen Klicks.
+    // Warp statt Schnipsel: jede Region (Onset bis Onset) wird minimal umgetastet, bis sie exakt
+    // zum naechsten Rasterziel reicht. Lueckenlos, ohne Geister-Transienten, Naehte sample-kontinuierlich.
     const out=chs.map(()=>new Float32Array(len));
-    const fade=Math.max(8, Math.round(0.005*sr));
-    const head=Math.max(0, Math.min(len, Math.round(onsets[0]*sr)));
-    for (let c=0;c<chs.length;c++) out[c].set(chs[c].subarray(0, head), 0);
-    const bounds=onsets.concat([len/sr]);
-    let maxShift=0, moved=0;
+    const tg=[]; let maxShift=0, moved=0;
     for (let k=0;k<onsets.length;k++){
-      const o=onsets[k], tgt=Math.max(0, Math.round(o/ssd)*ssd);
-      const shift=tgt-o; if (Math.abs(shift)>0.0015) moved++;
-      maxShift=Math.max(maxShift, Math.abs(shift));
-      const s0=Math.round(o*sr), s1=Math.min(len, Math.round(bounds[k+1]*sr));
-      const d0=Math.round(tgt*sr), nn=Math.min(s1-s0, len-d0);
-      if (nn<=0) continue;
+      let t=Math.max(0, Math.round(onsets[k]/ssd)*ssd);
+      if (Math.abs(t-onsets[k])<0.004) t=onsets[k];            // Mini-Versatz: nicht anfassen
+      if (k>0) t=Math.max(t, tg[k-1]+0.03);
+      tg.push(t);
+      const sh=Math.abs(t-onsets[k]);
+      if (sh>0.0015) moved++;
+      maxShift=Math.max(maxShift, sh);
+    }
+    const sB=[0].concat(onsets).concat([len/sr]);             // Quell-Grenzen
+    const oB=[0].concat(tg).concat([len/sr]);                 // Ziel-Grenzen
+    for (let k=0;k<sB.length-1;k++){
+      const srcA=sB[k]*sr, srcSpan=(sB[k+1]-sB[k])*sr;
+      const outA=Math.round(oB[k]*sr), outBnd=Math.round(oB[k+1]*sr);
+      const span=outBnd-outA;
+      if (span<=0 || srcSpan<=0) continue;
+      const rate=srcSpan/span;
       for (let c=0;c<chs.length;c++){
         const src=chs[c], dst=out[c];
-        for (let i=0;i<nn;i++){
-          let g=1;
-          if (i<fade) g=i/fade;
-          else if (i>nn-fade) g=Math.max(0,(nn-i)/fade);
-          dst[d0+i]+=src[s0+i]*g;
+        for (let i=0;i<span;i++){
+          const sp=srcA+i*rate, s0=Math.floor(sp), fr=sp-s0;
+          if (s0>=len-1 || outA+i>=len) break;
+          dst[outA+i]=src[s0]*(1-fr)+src[s0+1]*fr;            // lineare Interpolation reicht hier voellig
         }
       }
     }
-    for (let c=0;c<out.length;c++){ const d=out[c]; for (let i=0;i<len;i++){ if (d[i]>1) d[i]=1; else if (d[i]<-1) d[i]=-1; } }
     return { out, maxShift, moved };
   }
   edQuant.addEventListener("click", ()=>{
