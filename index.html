@@ -375,6 +375,7 @@
         <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
+        <button id="edQuant" disabled title="Auto-quantize: detects the rhythmic onsets and snaps each one to the 8th grid at the current BPM. Tight material works best; soft attacks barely need it anyway. Undo with Ctrl+Z">QUANTIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
@@ -477,7 +478,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.70</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.72</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1011,7 +1012,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.70";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.72";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1113,18 +1114,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const loopDur=()=>totalSteps()*stepDur();
   // Ansichtsfenster der Waveform: im Chopper-Modus nur der Teil, den der Chopper nutzt (2 Takte).
   const viewDur=()=>!buffer ? 0 : (P.chop.on ? Math.min(totalSteps()*stepDur(), buffer.duration) : buffer.duration);
-  let sliceOff=[];                                  // Slip-Justage: Versatz pro Slice als Bruchteil der Step-Laenge
   function sliceTable(){
-    // Quelle aller Slices: das uniforme Raster. Grenzen stehen fest, das Material darunter ist je Slice verschiebbar.
+    // Quelle aller Slices: das uniforme 8tel-Raster ueber dem Material.
     if (!buffer) return [];
     const ssd=stepDur();
     const n=Math.max(0, Math.floor(buffer.duration/ssd + 0.001));
     const out=new Array(n);
-    for (let i=0;i<n;i++){
-      let t0=i*ssd + (sliceOff[i]||0)*ssd;
-      t0=Math.max(0, Math.min(buffer.duration-ssd, t0));
-      out[i]={ t0, dur:ssd };
-    }
+    for (let i=0;i<n;i++) out[i]={ t0:Math.max(0, Math.min(buffer.duration-ssd, i*ssd)), dur:ssd };
     return out;
   }
   const sliceCount=()=>sliceTable().length;
@@ -1211,7 +1207,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
 
   function loadDecodedBuffer(buf, msg, source){
-    editUndoStack=[]; editSel=null; editView=null; sliceOff=[];
+    editUndoStack=[]; editSel=null; editView=null;
     buffer=buf; bufferSource=source||"file"; selection=null; setEditingEnabled(true);
     defaultMaterial=false;                                   // echtes Material schlaegt das Beispiel
     chopWin=0; markSegs=[]; markSel=-1; markPreview=null;    // neues Material: Fenster vor, Segmente verfallen
@@ -1881,6 +1877,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (d && d.cloneOf!=null && markSegs[d.i] && Math.abs(markSegs[d.i].trig-d.trig0)<1e-6){
         markSegs.splice(d.i,1); markSel=d.cloneOf;             // Kopie nie bewegt -> verwerfen statt Doppel
         updateFxPanel(); drawGrid(); setStatus("COPY DISCARDED // DRAG TO PLACE IT");
+        return;
+      }
+      if (d && d.mode==="move" && d.moved && markSegs[d.i]){
+        if (e.altKey){ setStatus("OVERLAY // PIECES STACK"); }   // ALT beim Loslassen: bewusst stapeln
+        else {
+          const n=resolveDrop(d.i);
+          if (n>0) setStatus("PLACED // REPLACED "+n+" PIECE"+(n>1?"S":""));
+        }
+        updateFxPanel(); drawGrid(); drawWave();
       }
       return;
     }
@@ -2739,6 +2744,32 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const ssd=stepDur(), lenS=markPreview.b-markPreview.a;
     setStatus("MARK // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS \u2014 SET = FIX");
   }
+  function resolveDrop(i){
+    // Abgelegtes Stueck beansprucht [A,B): ueberdeckte Stuecke fliegen, angeschnittene werden gekuerzt,
+    // ein komplett darunterliegendes wird verdraengt (in Links- und Rechts-Rest gespalten).
+    const sObj=markSegs[i]; if (!sObj) return 0;
+    const EPS=1e-4, A=sObj.trig, B=sObj.trig+segPlayDur(sObj);
+    const setPlayLen=(P,D)=>{ const sd=segSrcDur(P); P.len=Math.min(1, Math.max((P.st||0)+0.01, (P.st||0)+D/sd)); };
+    let touched=0;
+    for (let j=markSegs.length-1; j>=0; j--){
+      if (markSegs[j]===sObj) continue;
+      const P=markSegs[j], pA=P.trig, pB=P.trig+segPlayDur(P);
+      if (pB<=A+EPS || pA>=B-EPS) continue;                      // keine Ueberlappung
+      touched++;
+      if (pA>=A-EPS && pB<=B+EPS){ markSegs.splice(j,1); continue; }     // voll ueberdeckt -> weg
+      const sd=segSrcDur(P);
+      if (pA<A-EPS && pB>B+EPS){                                  // Ziel liegt MITTEN im Stueck -> verdraengen
+        const right=JSON.parse(JSON.stringify(P));
+        right.st=(P.st||0)+(B-pA)/sd; right.trig=B; markOp(right,"len",false);
+        setPlayLen(P, A-pA); markOp(P,"len",false);
+        markSegs.push(right); continue;
+      }
+      if (pA<A-EPS){ setPlayLen(P, A-pA); markOp(P,"len",false); }       // rechts angeschnitten -> Ende kuerzen
+      else { const dlt=B-pA; P.st=(P.st||0)+dlt/sd; P.trig=B; markOp(P,"len",false); }  // links angeschnitten -> Anfang kuerzen
+    }
+    markSel=markSegs.indexOf(sObj);
+    return touched;
+  }
   function selectPiece(i){
     markSel=i; markEditIdx=i;
     const s=(i>=0)?markSegs[i]:null;
@@ -3004,7 +3035,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Editor: grosse Waveform + Selektion + destruktive Werkzeuge ----------
   const editCanvas=$("#editCanvas"), editHint=$("#editHint"), editSelInfo=$("#editSelInfo");
-  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo");
+  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo"), edQuant=$("#edQuant");
   const ectx=editCanvas.getContext("2d");
   let editSel=null, editUndoStack=[];                 // Mehrstufen-Undo mit Speicher-Budget
   let editView=null;                                   // {t0,t1} Zoom-Fenster, null = ganzes Material
@@ -3034,16 +3065,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     hg.addColorStop(0,"#bdfaff"); hg.addColorStop(0.5,"#3fc9e0"); hg.addColorStop(1,"#062831");
     ectx.fillStyle=hg;
     const sppx=vd*sr/w;                                  // Samples pro Pixel im View
-    const jTab=(P.chop.on && sliceOff.some((o)=>Math.abs(o||0)>0.0001)) ? sliceTable() : null;
-    const jSsd=stepDur();
-    const srcT=(t)=>{                                    // Justage sichtbar: Pixelzeit -> verschobene Material-Zeit
-      if (!jTab) return t;
-      const idx=Math.floor(t/jSsd);
-      if (idx<0 || idx>=jTab.length) return t;
-      return jTab[idx].t0 + (t - idx*jSsd);
-    };
     for (let x=0;x<w;x++){
-      const i0=Math.floor(srcT(v0+(x/w)*vd)*sr);
+      const i0=Math.floor((v0+(x/w)*vd)*sr);
       if (i0>=data.length) break;
       let pk=0;
       const lim=Math.min(i0+Math.max(1,Math.floor(sppx)), data.length);
@@ -3068,28 +3091,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
     }
-    // Chunk-Leiste: feste Slice-Grenzen oben, justierte Slices leuchten gelb
+    // Slice-Leiste: ruhige 8tel-Grenzen als Orientierung (Feinrhythmik macht QUANTIZE)
     if (buffer && P.chop.on){
       const tab=sliceTable(), ssd=stepDur();
-      ectx.fillStyle="rgba(0,0,0,.35)"; ectx.fillRect(0,0,w,16);
+      ectx.fillStyle="rgba(0,0,0,.35)"; ectx.fillRect(0,0,w,10);
       for (let i=0;i<tab.length;i++){
-        const x1=t2px(i*ssd,w), x2=t2px((i+1)*ssd,w);
-        if (x2<0||x1>w) continue;
-        if (Math.abs(sliceOff[i]||0)>0.001){
-          ectx.fillStyle=(i===chunkDrag.idx)?"rgba(255,234,0,.45)":"rgba(255,234,0,.22)";
-          ectx.fillRect(Math.max(0,x1),0,Math.min(w,x2)-Math.max(0,x1),16);
-        }
+        const x1=t2px(i*ssd,w);
+        if (x1<0||x1>w) continue;
         ectx.strokeStyle="rgba(189,250,255,.25)";
-        ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,16); ectx.stroke();
-        if (x2-x1>26){                                       // Griff-Symbol: hier laesst sich das Audio schieben
-          ectx.fillStyle=(i===chunkDrag.idx)?"#ffea00":"rgba(189,250,255,.55)";
-          ectx.font="11px 'Space Mono',monospace"; ectx.textAlign="center";
-          ectx.fillText("\u2194", (Math.max(0,x1)+Math.min(w,x2))/2, 12);
-          ectx.textAlign="left";
-        }
+        ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,10); ectx.stroke();
       }
       ectx.strokeStyle="rgba(189,250,255,.25)";
-      ectx.beginPath(); ectx.moveTo(0,16.5); ectx.lineTo(w,16.5); ectx.stroke();
+      ectx.beginPath(); ectx.moveTo(0,10.5); ectx.lineTo(w,10.5); ectx.stroke();
     }
     if (defaultMaterial && !sourceHintGone){                 // Quellen-Hinweis, nur bis zum ersten Klick
       const dtx="RECORD AUDIO \u00B7 UPLOAD FILE \u00B7 IMPORT FROM AUDIOTOOL";
@@ -3112,6 +3125,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const hasSel=!!editSel, hasBuf=!!buffer;
     edTrim.disabled=edCut.disabled=edFadeIn.disabled=edFadeOut.disabled=!hasSel;
     edNorm.disabled=!hasBuf;
+  edQuant.disabled=!hasBuf;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
     $("#eq8Apply").disabled=!hasBuf;
@@ -3119,7 +3133,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     edUndo.disabled=!editUndoStack.length;
   }
   let editDrag=null, panDrag=null;
-  let chunkDrag={ idx:-1 };
   function evtT(e){
     const r=editCanvas.getBoundingClientRect();
     return Math.max(0, Math.min(buffer.duration, px2t(e.clientX-r.left, r.width)));
@@ -3130,32 +3143,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
       editCanvas.setPointerCapture(e.pointerId); return;
     }
-    const cr=editCanvas.getBoundingClientRect();
-    if (P.chop.on && (e.clientY-cr.top)<=16){              // Chunk-Leiste: Material im Slice greifen
-      const ssd=stepDur(), idx=Math.floor(evtT(e)/ssd);
-      if (idx>=0 && idx<sliceTable().length){
-        chunkDrag={ idx, x:e.clientX, frac:(sliceOff[idx]||0) };
-        editCanvas.setPointerCapture(e.pointerId);
-        return;
-      }
-    }
     editDrag={ a:evtT(e), x:e.clientX }; editSel=null; drawEditWave();
     editCanvas.setPointerCapture(e.pointerId);
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
-    if (buffer && P.chop.on && chunkDrag.idx<0 && !editDrag && !panDrag){
-      const crr=editCanvas.getBoundingClientRect();
-      editCanvas.style.cursor=((e.clientY-crr.top)<=16)?"ew-resize":"";   // Doppelpfeil ueber der Griff-Leiste
-    }
-    if (chunkDrag.idx>=0){
-      const r=editCanvas.getBoundingClientRect(), ssd=stepDur();
-      const dt=px2t(e.clientX-r.left, r.width)-px2t(chunkDrag.x-r.left, r.width);
-      const frac=Math.max(-1, Math.min(1, chunkDrag.frac - dt/ssd));   // Inhalt folgt der Hand
-      sliceOff[chunkDrag.idx]=Math.abs(frac)<0.002?0:frac;
-      setStatus("SLICE "+(chunkDrag.idx+1)+" // SHIFT "+Math.round(sliceOff[chunkDrag.idx]*ssd*1000)+" MS");
-      drawEditWave(); return;
-    }
     if (panDrag){
       const r=editCanvas.getBoundingClientRect();
       const dt=-(e.clientX-panDrag.x)/r.width*(panDrag.t1-panDrag.t0);
@@ -3172,12 +3164,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   editCanvas.addEventListener("pointerup",(e)=>{
     if (panDrag){ panDrag=null; return; }
-    if (chunkDrag.idx>=0){                                  // Loslassen: nur Status, kein Auto-Anspielen
-      const idx=chunkDrag.idx; chunkDrag={ idx:-1 };
-      drawEditWave(); drawWave();
-      setStatus("SLICE "+(idx+1)+" SHIFTED // "+Math.round((sliceOff[idx]||0)*stepDur()*1000)+" MS");
-      return;
-    }
     // Klick (kein Drag): Raster-Slice still selektieren. Hoeren NUR per ALT+Klick (Geraete-Konvention).
     // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
     if (editDrag && Math.abs(e.clientX-editDrag.x)<4){
@@ -3192,17 +3178,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       }
     }
     editDrag=null; drawEditWave();
-  });
-  editCanvas.addEventListener("dblclick",(e)=>{            // Doppelklick auf die Leiste: Justage auf Null
-    if (!buffer || !P.chop.on) return;
-    const cr=editCanvas.getBoundingClientRect();
-    if ((e.clientY-cr.top)>16) return;
-    const idx=Math.floor(evtT(e)/stepDur()), tab0=sliceTable();
-    if (idx<0 || idx>=tab0.length) return;
-    sliceOff[idx]=0;
-    setStatus("SLICE "+(idx+1)+" // SHIFT RESET");
-    drawEditWave(); drawWave();
-    const tab=sliceTable(); if (tab[idx]) auditionSlice(tab[idx]);
   });
   editCanvas.addEventListener("wheel",(e)=>{
     if (!buffer) return;
@@ -3250,7 +3225,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     buffer=nb; buildReversed(); pitchCache.clear();
     bufferFitBpm=Math.round(P.chop.bpm); setTempoRef();  // Edit = neuer Material-Stand -> frischer Stretch-Snapshot
     if (rebuild) editView=null;                          // Laenge geaendert -> Zoom zuruecksetzen
-    if (rebuild) sliceOff=[];                           // neue Zeitachse -> Justage zuruecksetzen
     if (rebuild){ clampChopWin(); if (P.chop.mode==="mark") resetMarkSegs(); }   // Fenster/Segmente folgen dem Material
     if (rebuild) fillOrdered();                         // Werkbank-Regel: Materialaenderung -> Hecksler frisch
     if (rebuild){ selection=null; editSel=null; }       // gleiche Laenge -> Auswahl bleibt stehen (weiter faden/tweaken)
@@ -3261,6 +3235,66 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       stopPlayback(); startPreview(resumeAt);
     }
   }
+  function detectOnsets(data, sr){
+    // Energie-Hüllkurve -> positiver Fluss -> Peaks ueber adaptiver Schwelle. Bewusst simpel und robust.
+    const frame=512, hop=256;
+    const nF=Math.max(0, Math.floor((data.length-frame)/hop));
+    if (nF<4) return [];
+    const env=new Float32Array(nF);
+    for (let i=0;i<nF;i++){ let s=0; const o=i*hop; for (let j=0;j<frame;j+=4){ const v=data[o+j]; s+=v*v; } env[i]=Math.sqrt(s/(frame/4)); }
+    const flux=new Float32Array(nF);
+    for (let i=1;i<nF;i++) flux[i]=Math.max(0, env[i]-env[i-1]);
+    let m=0; for (let i=0;i<nF;i++) m+=flux[i]; m/=nF;
+    let vv=0; for (let i=0;i<nF;i++){ const d=flux[i]-m; vv+=d*d; }
+    const thr=m+1.3*Math.sqrt(vv/nF), minGap=Math.max(1, Math.round(0.07*sr/hop));
+    const on=[]; let last=-minGap;
+    for (let i=1;i<nF-1;i++){
+      if (flux[i]>thr && flux[i]>=flux[i-1] && flux[i]>=flux[i+1] && i-last>=minGap){ on.push(i*hop/sr); last=i; }
+    }
+    return on;
+  }
+  function renderQuantized(chs, sr, len, ssd, onsets){
+    // Stueck zwischen zwei Onsets wandert geschlossen auf die naechste 8tel-Linie; 5ms-Faden gegen Klicks.
+    const out=chs.map(()=>new Float32Array(len));
+    const fade=Math.max(8, Math.round(0.005*sr));
+    const head=Math.max(0, Math.min(len, Math.round(onsets[0]*sr)));
+    for (let c=0;c<chs.length;c++) out[c].set(chs[c].subarray(0, head), 0);
+    const bounds=onsets.concat([len/sr]);
+    let maxShift=0, moved=0;
+    for (let k=0;k<onsets.length;k++){
+      const o=onsets[k], tgt=Math.max(0, Math.round(o/ssd)*ssd);
+      const shift=tgt-o; if (Math.abs(shift)>0.0015) moved++;
+      maxShift=Math.max(maxShift, Math.abs(shift));
+      const s0=Math.round(o*sr), s1=Math.min(len, Math.round(bounds[k+1]*sr));
+      const d0=Math.round(tgt*sr), nn=Math.min(s1-s0, len-d0);
+      if (nn<=0) continue;
+      for (let c=0;c<chs.length;c++){
+        const src=chs[c], dst=out[c];
+        for (let i=0;i<nn;i++){
+          let g=1;
+          if (i<fade) g=i/fade;
+          else if (i>nn-fade) g=Math.max(0,(nn-i)/fade);
+          dst[d0+i]+=src[s0+i]*g;
+        }
+      }
+    }
+    for (let c=0;c<out.length;c++){ const d=out[c]; for (let i=0;i<len;i++){ if (d[i]>1) d[i]=1; else if (d[i]<-1) d[i]=-1; } }
+    return { out, maxShift, moved };
+  }
+  edQuant.addEventListener("click", ()=>{
+    if (!buffer) return;
+    const sr=buffer.sampleRate, len=buffer.length, nc=buffer.numberOfChannels;
+    const mono=new Float32Array(len);
+    for (let c=0;c<nc;c++){ const d=buffer.getChannelData(c); for (let i=0;i<len;i++) mono[i]+=d[i]/nc; }
+    const onsets=detectOnsets(mono, sr);
+    if (!onsets.length){ setStatus("NO CLEAR ONSETS // NOTHING TO QUANTIZE"); return; }
+    pushEditUndo("QUANTIZE");
+    const chs=[]; for (let c=0;c<nc;c++) chs.push(buffer.getChannelData(c));
+    const { out, maxShift, moved }=renderQuantized(chs, sr, len, stepDur(), onsets);
+    const nb=cloneBuffer(buffer);
+    for (let c=0;c<nc;c++) nb.getChannelData(c).set(out[c]);
+    applyEdit(nb, "QUANTIZED // "+onsets.length+" ONSETS \u00B7 "+moved+" MOVED \u00B7 MAX "+Math.round(maxShift*1000)+" MS", false, null);
+  });
   edTrim.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("TRIM");
     const A=editSel.a, B=editSel.b;
@@ -3815,11 +3849,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }, 12);
   }
   // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
-  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 top strip: drag slips the content per slice (double-click = reset) \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
+  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed \u00B7 rhythmic clean-up: the QUANTIZE button";
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps to 8ths) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. ALT+click a piece below = hear it, double-click/DEL = delete.";
+  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps to 8ths) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
