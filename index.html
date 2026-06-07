@@ -266,10 +266,10 @@
   .grid-wrap { position:relative; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   .fx-panel { flex:0 0 235px; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
   .claim-set { position:absolute; bottom:6px; transform:translateX(-50%); z-index:4;
-    padding:7px 20px; font-size:11px; letter-spacing:.16em; color:#ff6a00;
-    background:rgba(0,0,0,.85); border:1px solid rgba(255,106,0,.8); border-radius:4px;
-    box-shadow:0 0 12px rgba(255,106,0,.35); text-shadow:0 0 5px rgba(255,106,0,.5); }
-  .claim-set:hover { background:rgba(30,24,0,.9); }
+    padding:8px 22px; font-size:11px; letter-spacing:.16em; color:#ff6a00; cursor:pointer;
+    background:rgba(0,0,0,.88); border:1px solid rgba(255,106,0,.85); border-radius:4px;
+    box-shadow:0 0 12px rgba(255,106,0,.4); text-shadow:0 0 5px rgba(255,106,0,.5); }
+  .claim-set:hover { background:rgba(30,24,0,.92); }
   .claim-set:hover { background:rgba(30,24,0,.9); }
   .tune-key { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .tune-key .tk-label { font-size:10px; letter-spacing:.16em; color:var(--info); }
@@ -421,10 +421,7 @@
       <div class="edit-tools edit-tools2">
         <span class="src-grp">
           <button id="srcBpmBtn" disabled title="Material BPM — drag vertically to correct a wrong detection (re-label, no stretch; the grid follows the material)">SRC // 120 BPM</button>
-          <button class="srcfix" data-f="2" disabled title="Detection was an octave low (half-time trap): double it">&times;2</button>
-          <button class="srcfix" data-f="0.5" disabled title="Detection was an octave high: halve it">&divide;2</button>
-          <button class="srcfix" data-f="0.75" disabled title="Triplet confusion: take three quarters">&times;&frac34;</button>
-          <button class="srcfix" data-f="0.6667" disabled title="Triplet confusion the other way: take two thirds">&times;&#8532;</button>
+          <button class="srcfix" data-f="2" disabled title="Half-time material (dubstep & co): the detector hears half speed — this doubles it">&times;2 // HALF-TIME</button>
         </span>
         <span class="edit-sep"></span>
         <button id="edBarsBtn" disabled title="Bar grid: selections snap to whole bars from the downbeat anchor (orange triangle on top — drag it if the ONE sits elsewhere). TRIM then cuts a bar-exact loop">BARS</button>
@@ -516,7 +513,7 @@
       <div class="fx-panel disabled" id="fxPanel">
         <p class="fxp-title" id="fxpTitle">CHOP FX // &mdash;</p>
         <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Pitch ±12 semitones"></div>
-        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-trigger on the note grid (trap stutter)"><button data-sv="0" disabled>AUS</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
+        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-trigger on the note grid (trap stutter)"><button data-sv="0" disabled>OFF</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
         <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube saturation"></div>
         <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bitcrusher"></div>
         <div class="fx-filters">
@@ -561,7 +558,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.10</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.16</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1095,12 +1092,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         <div class="ip-card">
           <p class="ip-title">MATERIAL INTAKE</p>
           <p class="ip-name" id="ipName">&mdash;</p>
-          <div class="ip-row">
+          <div class="ip-row" id="ipBpmRow">
             <button id="ipBpmBtn" title="Detected tempo of the material — drag vertically to correct it">128 BPM</button>
-            <button class="ipfix" data-f="2" title="Detection an octave low: double it">&times;2</button>
-            <button class="ipfix" data-f="0.5" title="Detection an octave high: halve it">&divide;2</button>
-            <button class="ipfix" data-f="0.75" title="Triplet confusion: three quarters">&times;&frac34;</button>
-            <button class="ipfix" data-f="0.6667" title="Triplet confusion: two thirds">&times;&#8532;</button>
+            <button class="ipfix" data-f="2" title="Half-time material (dubstep & co): the detector hears half speed — this doubles it">&times;2 // HALF-TIME</button>
           </div>
           <div class="ip-row">
             <button id="ipLoop" class="ip-mode" title="Cut to whole bars at this BPM and stretch to the project tempo">LOOP</button>
@@ -1117,7 +1111,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.10";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.16";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1338,7 +1332,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const hp=c.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=f.lowcut; hp.Q.value=0.707;
     const pres=c.createBiquadFilter(); pres.type="peaking"; pres.frequency.value=3000; pres.Q.value=1; pres.gain.value=f.pres;
     const air=c.createBiquadFilter(); air.type="highshelf"; air.frequency.value=9000; air.gain.value=f.air;
-    input.connect(hp); hp.connect(pres); pres.connect(air);
+    input.connect(hp); hp.connect(pres); pres.connect(air);   // hp = Kopf der Kette (Rueckgabe fuer Heisstausch)
     let node=air;
     if (f.comp){
       const cp=c.createDynamicsCompressor(); cp.threshold.value=f.comp.th; cp.ratio.value=f.comp.ratio; cp.attack.value=0.008; cp.release.value=0.18; cp.knee.value=20;
@@ -1361,6 +1355,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       sL.connect(merger,0,0); sR.connect(merger,0,1);
     }
     merger.connect(c.destination);
+    return hp;
   }
   function buildChain(c){
     const n={};
@@ -1368,7 +1363,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     n.input.connect(n.out);
     n.analyser=c.createAnalyser(); n.analyser.fftSize=512;
     n.out.connect(n.analyser);
-    buildFinisher(c, n.out);
+    n.finHead=buildFinisher(c, n.out);
+    n._fin=P.finisher;
     applyOut(n);
     return n; // input = n.input
   }
@@ -1384,7 +1380,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     _meterLevels.set(el, lvl);
     el.style.width=lvl.toFixed(1)+"%";
   }
-  const applyLive=()=>{ if (liveFx) applyOut(liveFx); };
+  const applyLive=()=>{
+    if (!liveFx) return;
+    applyOut(liveFx);
+    if (liveFx._fin!==P.finisher && liveFx.finHead){           // Heisstausch: alter Strang ab, neuer dran — Loop laeuft weiter
+      try {
+        liveFx.out.disconnect(liveFx.finHead);
+        liveFx.finHead.disconnect();
+        liveFx.finHead=buildFinisher(liveFx.out.context, liveFx.out);
+        liveFx._fin=P.finisher;
+      } catch(e){ console.warn("[FIN HOTSWAP]", e); }
+    }
+  };
 
   // ---------- Pitch shift (duration-preserving WSOLA + anti-aliased resample) ----------
   function hann(N){ const w=new Float32Array(N); for (let i=0;i<N;i++) w[i]=0.5-0.5*Math.cos(2*Math.PI*i/(N-1)); return w; }
@@ -1487,7 +1494,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
 
   // ---------- Per-chop voice ----------
-  const STUT_VALS=[0,16,32,64], STUT_LABELS=["AUS","1/16","1/32","1/64"];
+  const STUT_VALS=[0,16,32,64], STUT_LABELS=["OFF","1/16","1/32","1/64"];
   function playChop(ac, n, chop, when, sd, tab, sink){
     const sc=tab.length; if (!sc) return null;
     const idx=chop.slice % sc, sl=tab[idx], sliceDur=sl.dur;  // uniform == stepDur (Tempo-Fit haelt das Raster)
@@ -1737,9 +1744,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       vFxStut.textContent=STUT_LABELS[Math.max(0, STUT_VALS.indexOf(ch.stut||0))];
       vFxTube.textContent=Math.round((ch.tube||0)*100)+"%";
       vFxCrush.textContent=Math.round((ch.crush||0)*100)+"%";
-      vFxHp.textContent= hp<=0.001 ? "AUS" : fmtHz(hpFreq(hp));
+      vFxHp.textContent= hp<=0.001 ? "OFF" : fmtHz(hpFreq(hp));
       vFxHpQ.textContent=Math.round((ch.hpq||0)*100)+"%";
-      vFxLp.textContent= lp>=0.999 ? "AUS" : fmtHz(lpFreq(lp));
+      vFxLp.textContent= lp>=0.999 ? "OFF" : fmtHz(lpFreq(lp));
       vFxLpQ.textContent=Math.round((ch.lpq||0)*100)+"%";
     } else {
       fxpTitle.textContent="CHOP FX // \u2014";
@@ -2134,9 +2141,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }));
   bindFx(fxTube,"tube",vFxTube,(v)=>Math.round(v*100)+"%");
   bindFx(fxCrush,"crush",vFxCrush,(v)=>Math.round(v*100)+"%");
-  bindFx(fxHp,"hp",vFxHp,(v)=> v<=0.001 ? "AUS" : fmtHz(hpFreq(v)));
+  bindFx(fxHp,"hp",vFxHp,(v)=> v<=0.001 ? "OFF" : fmtHz(hpFreq(v)));
   bindFx(fxHpQ,"hpq",vFxHpQ,(v)=>Math.round(v*100)+"%");
-  bindFx(fxLp,"lp",vFxLp,(v)=> v>=0.999 ? "AUS" : fmtHz(lpFreq(v)));
+  bindFx(fxLp,"lp",vFxLp,(v)=> v>=0.999 ? "OFF" : fmtHz(lpFreq(v)));
   bindFx(fxLpQ,"lpq",vFxLpQ,(v)=>Math.round(v*100)+"%");
 
   // ---------- FX UI (slider bindings) ----------
@@ -2435,6 +2442,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     ipBpmBtn.textContent=Math.round(ipState.bpm)+" BPM";
     ipLoop.classList.toggle("active", ipState.mode==="loop");
     ipShot.classList.toggle("active", ipState.mode==="oneshot");
+    $("#ipBpmRow").style.display=(ipState.mode==="loop")?"":"none";   // Oneshots haben kein Tempo — Zeile weg
   }
   function showIntake(name, detBpm){
     return new Promise((resolve)=>{
@@ -2941,7 +2949,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     markSetBtn.disabled=false;
     const r=canvas.getBoundingClientRect();
     const cx=((chopWin+(markPreview.a+markPreview.b)/2)/viewDur())*r.width;
-    markSetBtn.style.left=Math.max(40, Math.min(r.width-40, cx))+"px";
+    markSetBtn.style.left=Math.max(44, Math.min(r.width-44, cx))+"px";
   }
   function snapT(t, free){ const ssd=stepDur(); return free ? t : Math.round(t/ssd)*ssd; }
   const markFree=(e)=>((P.chop.snapMode==="hand") !== !!e.shiftKey);   // SHIFT kehrt den aktiven Modus um
@@ -3016,7 +3024,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     setStatus("PIECE SET // "+markSegs.length+" PIECES");
     drawWave(); drawGrid();
   }
-  markSetBtn.addEventListener("click", fixPending);
+  markSetBtn.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); e.preventDefault(); fixPending(); });
+  markSetBtn.addEventListener("click", (e)=>{ e.stopPropagation(); });
   canvas.addEventListener("pointermove",(e)=>{                  // Hover: \u2194 an den Kanten der Markierung
     if (P.chop.mode!=="mark"){ return; }
     if (!markDrag){
@@ -4593,7 +4602,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["c","# vocoder: FOLLOW tracks your melody \u00B7 SUB/LOW/MID = register"]],
     ],
     editor:[
-      [["p","$ "],["k","SRC BPM"],["t",": drag to fix a wrong detection \u00B7 "],["v","\u00D72/\u00F72"],["t"," for octave traps"]],
+      [["p","$ "],["k","SRC BPM"],["t",": drag to fix a wrong detection \u00B7 "],["v","\u00D72 HALF-TIME"],["t"," for the dubstep trap"]],
       [["p","$ "],["k","BARS"],["t",": grid on \u00B7 selections = whole bars \u00B7 "],["v","TRIM"],["t"," = loop cut"]],
       [["p","> "],["k","EDITOR"],["t"," // prep the material"]],
       [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t"," \u2014 count-in, "],["v","2 bars"],["t"," auto"]],
