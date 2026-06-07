@@ -375,7 +375,6 @@
         <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
         <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
-        <button id="edQuant" disabled title="Auto-quantize: detects the rhythmic onsets and snaps each one to the 1/16 grid at the current BPM. Tight material works best; soft attacks barely need it anyway. Undo with Ctrl+Z">QUANTIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
@@ -459,6 +458,9 @@
         <div class="modegrp">
           <button id="modeGrid" class="active" title="GRID — the classic chopper: fixed 1/8 slots">GRID</button>
           <button id="modeMark" title="MARK — carving mode: one continuous chop; mark regions in the wave to cut it apart, every piece takes the full chop FX">MARK</button>
+          <span class="edit-sep" id="snapSep" style="display:none"></span>
+          <button id="snapHand" style="display:none" title="HAND — everything moves freely, sample-fine (SHIFT = snap for a moment)">HAND</button>
+          <button id="snapMag" style="display:none" title="MAGNET — marks and moves snap to the 8th grid (SHIFT = free for a moment)">MAGNET</button>
         </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
@@ -478,7 +480,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.74</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.76</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1012,12 +1014,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.74";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.76";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ffea00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
   const P = {
-    chop: { on:true,  bpm:120, res:0.5, density:0.6, mode:"grid" }, // mode: grid = feste 1/8-Slots, mark = Schnitzen
+    chop: { on:true,  bpm:120, res:0.5, density:0.6, mode:"grid", snapMode:"mag" }, // mode: grid|mark; snapMode: mag = rastet, hand = frei
     out:  { gain:0 },
     metro:false, metroRoot:69,                          // A4 (MIDI), Bereich C3..C5 = 48..72
     finisher:"RAW",
@@ -1732,7 +1734,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       }
       else if (d.mode==="move"){
         let nt=d.trig0+dt;
-        if (!e.shiftKey) nt=Math.round(nt/ssd)*ssd;             // 8tel-Snap, SHIFT = frei
+        if (!markFree(e)) nt=Math.round(nt/ssd)*ssd;            // MAGNET rastet, HAND frei, SHIFT kehrt um
         s.trig=Math.max(0, Math.min(ld-0.02, nt));
       }
       else if (d.mode==="resize"){
@@ -2660,7 +2662,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function setChopMode(m){
     if (P.chop.mode===m) return;
     P.chop.mode=m; markPreview=null; markDrag=null; segTlDrag=null;
-    syncSetBtn();
+    syncSetBtn(); syncSnapBtns();
     canvas.style.cursor=(m==="mark")?"default":""; grid.style.cursor="";
     if (m==="mark" && (!markSegs.length || Math.abs((markSegs[markSegs.length-1]||{b:0}).b-segEnd())>0.01)) resetMarkSegs();
     if (m==="mark" && schedTimer && audioCtx && liveFx && markSegs.length){
@@ -2732,6 +2734,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     markSetBtn.style.left=Math.max(34, Math.min(r.width-34, cx))+"px";
   }
   function snapT(t, free){ const ssd=stepDur(); return free ? t : Math.round(t/ssd)*ssd; }
+  const markFree=(e)=>((P.chop.snapMode==="hand") !== !!e.shiftKey);   // SHIFT kehrt den aktiven Modus um
+  function syncSnapBtns(){
+    const mk=(P.chop.mode==="mark");
+    ["snapSep","snapHand","snapMag"].forEach((id)=>{ $("#"+id).style.display=mk?"":"none"; });
+    $("#snapHand").classList.toggle("active", P.chop.snapMode==="hand");
+    $("#snapMag").classList.toggle("active", P.chop.snapMode!=="hand");
+  }
+  $("#snapHand").addEventListener("click",()=>{ P.chop.snapMode="hand"; syncSnapBtns(); setStatus("HAND // FREE, SAMPLE-FINE"); });
+  $("#snapMag").addEventListener("click",()=>{ P.chop.snapMode="mag"; syncSnapBtns(); setStatus("MAGNET // SNAPS TO 8THS"); });
   function pendEdgeAt(e){
     if (!markPreview) return null;
     const px=e.clientX-canvas.getBoundingClientRect().left;
@@ -2804,7 +2815,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       return;
     }
     if (e.buttons===0){ markDrag=null; canvas.style.cursor="default"; return; }   // verlorenes pointerup: Drag ist vorbei
-    const free=e.shiftKey, se=segEnd();
+    const free=markFree(e), se=segEnd();
     const t=loopTOfWave(waveT(e));
     if (markDrag.mode==="new"){
       if (Math.abs(e.clientX-markDrag.px0)>7) markDrag.moved=true;   // satte Pixel-Schwelle: Wackel-Klicks ziehen nichts auf
@@ -3035,7 +3046,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Editor: grosse Waveform + Selektion + destruktive Werkzeuge ----------
   const editCanvas=$("#editCanvas"), editHint=$("#editHint"), editSelInfo=$("#editSelInfo");
-  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo"), edQuant=$("#edQuant");
+  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo");
   const ectx=editCanvas.getContext("2d");
   let editSel=null, editUndoStack=[];                 // Mehrstufen-Undo mit Speicher-Budget
   let editView=null;                                   // {t0,t1} Zoom-Fenster, null = ganzes Material
@@ -3125,7 +3136,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const hasSel=!!editSel, hasBuf=!!buffer;
     edTrim.disabled=edCut.disabled=edFadeIn.disabled=edFadeOut.disabled=!hasSel;
     edNorm.disabled=!hasBuf;
-  edQuant.disabled=!hasBuf;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
     $("#edSil").disabled=!hasSel;
     $("#eq8Apply").disabled=!hasBuf;
@@ -3235,71 +3245,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       stopPlayback(); startPreview(resumeAt);
     }
   }
-  function detectOnsets(data, sr){
-    // Energie-Hüllkurve -> positiver Fluss -> Peaks ueber adaptiver Schwelle. Bewusst simpel und robust.
-    const frame=512, hop=256;
-    const nF=Math.max(0, Math.floor((data.length-frame)/hop));
-    if (nF<4) return [];
-    const env=new Float32Array(nF);
-    for (let i=0;i<nF;i++){ let s=0; const o=i*hop; for (let j=0;j<frame;j+=4){ const v=data[o+j]; s+=v*v; } env[i]=Math.sqrt(s/(frame/4)); }
-    const flux=new Float32Array(nF);
-    for (let i=1;i<nF;i++) flux[i]=Math.max(0, env[i]-env[i-1]);
-    let m=0; for (let i=0;i<nF;i++) m+=flux[i]; m/=nF;
-    let vv=0; for (let i=0;i<nF;i++){ const d=flux[i]-m; vv+=d*d; }
-    const thr=m+1.3*Math.sqrt(vv/nF), minGap=Math.max(1, Math.round(0.07*sr/hop));
-    const on=[]; let last=-minGap;
-    for (let i=1;i<nF-1;i++){
-      if (flux[i]>thr && flux[i]>=flux[i-1] && flux[i]>=flux[i+1] && i-last>=minGap){ on.push(i*hop/sr); last=i; }
-    }
-    return on;
-  }
-  function renderQuantized(chs, sr, len, ssd, onsets){
-    // Warp statt Schnipsel: jede Region (Onset bis Onset) wird minimal umgetastet, bis sie exakt
-    // zum naechsten Rasterziel reicht. Lueckenlos, ohne Geister-Transienten, Naehte sample-kontinuierlich.
-    const out=chs.map(()=>new Float32Array(len));
-    const tg=[]; let maxShift=0, moved=0;
-    for (let k=0;k<onsets.length;k++){
-      let t=Math.max(0, Math.round(onsets[k]/ssd)*ssd);
-      if (Math.abs(t-onsets[k])<0.004) t=onsets[k];            // Mini-Versatz: nicht anfassen
-      if (k>0) t=Math.max(t, tg[k-1]+0.03);
-      tg.push(t);
-      const sh=Math.abs(t-onsets[k]);
-      if (sh>0.0015) moved++;
-      maxShift=Math.max(maxShift, sh);
-    }
-    const sB=[0].concat(onsets).concat([len/sr]);             // Quell-Grenzen
-    const oB=[0].concat(tg).concat([len/sr]);                 // Ziel-Grenzen
-    for (let k=0;k<sB.length-1;k++){
-      const srcA=sB[k]*sr, srcSpan=(sB[k+1]-sB[k])*sr;
-      const outA=Math.round(oB[k]*sr), outBnd=Math.round(oB[k+1]*sr);
-      const span=outBnd-outA;
-      if (span<=0 || srcSpan<=0) continue;
-      const rate=srcSpan/span;
-      for (let c=0;c<chs.length;c++){
-        const src=chs[c], dst=out[c];
-        for (let i=0;i<span;i++){
-          const sp=srcA+i*rate, s0=Math.floor(sp), fr=sp-s0;
-          if (s0>=len-1 || outA+i>=len) break;
-          dst[outA+i]=src[s0]*(1-fr)+src[s0+1]*fr;            // lineare Interpolation reicht hier voellig
-        }
-      }
-    }
-    return { out, maxShift, moved };
-  }
-  edQuant.addEventListener("click", ()=>{
-    if (!buffer) return;
-    const sr=buffer.sampleRate, len=buffer.length, nc=buffer.numberOfChannels;
-    const mono=new Float32Array(len);
-    for (let c=0;c<nc;c++){ const d=buffer.getChannelData(c); for (let i=0;i<len;i++) mono[i]+=d[i]/nc; }
-    const onsets=detectOnsets(mono, sr);
-    if (!onsets.length){ setStatus("NO CLEAR ONSETS // NOTHING TO QUANTIZE"); return; }
-    pushEditUndo("QUANTIZE");
-    const chs=[]; for (let c=0;c<nc;c++) chs.push(buffer.getChannelData(c));
-    const { out, maxShift, moved }=renderQuantized(chs, sr, len, stepDur()/2, onsets);   // 1/16-Raster: fein genug fuer Timing, grob genug fuer Groove
-    const nb=cloneBuffer(buffer);
-    for (let c=0;c<nc;c++) nb.getChannelData(c).set(out[c]);
-    applyEdit(nb, "QUANTIZED 1/16 // "+onsets.length+" ONSETS \u00B7 "+moved+" MOVED \u00B7 MAX "+Math.round(maxShift*1000)+" MS", false, null);
-  });
   edTrim.addEventListener("click", ()=>{
     if (!editSel||!buffer) return; pushEditUndo("TRIM");
     const A=editSel.a, B=editSel.b;
@@ -3854,11 +3799,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }, 12);
   }
   // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
-  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed \u00B7 rhythmic clean-up: the QUANTIZE button";
+  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
   grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
   eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
   $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (snaps to 8ths) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
+  $("#wave").dataset.desc="CHOPPER VIEW. MARK mode: drag = dashed mark (MAGNET snaps to 8ths, HAND is free \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click a piece: the CLAIM wraps it \u2014 pull its edges, SET applies the new bounds. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
   document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
   document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
