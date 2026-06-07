@@ -520,7 +520,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 2.83</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 2.84</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1054,7 +1054,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="2.83";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="2.84";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3155,23 +3155,30 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return med;
   }
-  function tuneCorrCurve(f0s, confs, sr, hop, rootPc, ivs, hardness){
-    const n=f0s.length, raw=new Float32Array(n), out=new Float32Array(n);
-    let last=0;
-    for (let i=0;i<n;i++){
-      if (f0s[i]>0 && confs[i]>0.5){
-        const m=f2m(f0s[i]);
-        last=Math.max(-3, Math.min(3, snapMidi(m, rootPc, ivs)-m));   // nie mehr als 3 Halbtoene ziehen
-      }
-      raw[i]=last;
+  function tuneNoteSegs(f0s, confs, sr, hop, rootPc, ivs, strength){
+    // EIN Segment = EINE Note: konstanter Zug zur Zielnote (Vibrato bleibt, Wechsel snappen).
+    // Kein Frame-Gewackel mehr -> kein Gurgeln. strength skaliert den Zug (1 = volle Disziplin).
+    const n=f0s.length, segs=[];
+    let segA=-1, segNote=0, ms=[];
+    const flush=(end)=>{
+      if (segA<0 || !ms.length) return;
+      const srt=ms.slice().sort((a,b)=>a-b), med=srt[srt.length>>1];
+      let semi=(segNote-med)*Math.max(0, Math.min(1, strength));
+      semi=Math.max(-3, Math.min(3, semi));
+      segs.push({ a:segA*hop, b:end*hop, semi, note:segNote });
+      segA=-1; ms=[];
+    };
+    for (let i2=0;i2<n;i2++){
+      const voiced=(f0s[i2]>0);
+      if (!voiced){ flush(i2); continue; }
+      const m=f2m(f0s[i2]);
+      const note=snapMidi(m, rootPc, ivs);
+      if (segA<0){ segA=i2; segNote=note; }
+      else if (note!==segNote){ flush(i2); segA=i2; segNote=note; }
+      ms.push(m);
     }
-    const hh=Math.max(0, Math.min(1, hardness));
-    if (hh>=0.999){ out.set(raw); return out; }
-    const hopT=hop/sr, tc=(1-hh)*(1-hh)*0.4+0.003;
-    const alpha=1-Math.exp(-hopT/tc);
-    let cur=0;
-    for (let i=0;i<n;i++){ cur+=alpha*(raw[i]-cur); out[i]=cur; }
-    return out;
+    flush(n);
+    return segs;
   }
   function resampleLin(ch, a, b, r){
     const n=Math.max(1, Math.floor((b-a)/r));
@@ -3218,38 +3225,25 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let i=0;i<outLen;i++) out[i]/=(norm[i]||1);
     return out;
   }
-  function renderTuned(ch, sr, corr, hop){
-    const len=ch.length, out=new Float32Array(len);
-    const segs=[];
-    let s0=0, v0=corr[0]||0;
-    const maxSeg=Math.round(0.8*sr/hop);
-    for (let i=1;i<=corr.length;i++){
-      const v=(i<corr.length)?corr[i]:1e9;
-      if (Math.abs(v-v0)>0.03 || i-s0>=maxSeg || i===corr.length){
-        segs.push({ a:s0*hop, b:Math.min(len, i*hop), semi:v0 });
-        s0=i; v0=v;
-      } else { v0=0.7*v0+0.3*v; }
-    }
-    if (!segs.length || segs[segs.length-1].b<len) segs.push({ a:segs.length?segs[segs.length-1].b:0, b:len, semi:corr[corr.length-1]||0 });
+  function renderTunedSegs(ch, sr, segs){
+    // Basis = unangetastetes Original; jedes Noten-Segment wird konstant gezogen und
+    // mit 6ms-Blenden gegen die Basis uebernommen. Unvoiced bleibt naturbelassen.
+    const len=ch.length, out=ch.slice(0, len);
     const fade=Math.round(0.006*sr);
     for (const sg of segs){
-      const n=sg.b-sg.a; if (n<=0) continue;
-      const ext=(sg.b<len)?fade:0;
-      let y;
-      if (Math.abs(sg.semi)<0.01){ y=ch.slice(sg.a, Math.min(len, sg.b+ext)); }
-      else {
-        const r=Math.pow(2, sg.semi/12);
-        const ctx0=Math.max(0, sg.a-512), ctxOff=Math.round((sg.a-ctx0)/r);
-        const rs=resampleLin(ch, ctx0, Math.min(len, sg.b+ext+512), r);
-        const body=rs.subarray(Math.min(ctxOff, Math.max(0,rs.length-1)));
-        y=wsolaStretch(body, n+ext, sr);
-      }
-      for (let i=0;i<y.length && i<n+ext;i++){
-        const oi=sg.a+i; if (oi>=len) break;
+      const a=Math.max(0, Math.min(len, Math.round(sg.a))), b=Math.max(a, Math.min(len, Math.round(sg.b)));
+      const n=b-a;
+      if (n<fade*2 || Math.abs(sg.semi)<0.05) continue;          // Mini-Noten/Nullzuege: Original lassen
+      const r=Math.pow(2, sg.semi/12);
+      const ctx0=Math.max(0, a-512), ctxOff=Math.round((a-ctx0)/r);
+      const rs=resampleLin(ch, ctx0, Math.min(len, b+512), r);
+      const body=rs.subarray(Math.min(ctxOff, Math.max(0,rs.length-1)));
+      const y=wsolaStretch(body, n, sr);
+      for (let i2=0;i2<n;i2++){
         let g=1;
-        if (sg.a>0 && i<fade) g*=i/fade;
-        if (ext>0 && i>=n) g*=Math.max(0, 1-(i-n)/ext);
-        out[oi]+=y[i]*g;
+        if (i2<fade) g=i2/fade;
+        else if (i2>n-fade) g=Math.max(0,(n-i2)/fade);
+        out[a+i2]=out[a+i2]*(1-g)+y[i2]*g;
       }
     }
     return out;
@@ -3294,9 +3288,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     };
     tuneInfo.textContent="ANALYZING // 0%"; setTimeout(step, 16);
   }
-  function tuneCurves(){
+  function tuneSegsNow(){
     const ivs=TUNE_SCALES[tuneScaleSel.value]||TUNE_SCALES.chrom;
-    return tuneCorrCurve(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, (+tuneHard.value)/100);
+    return tuneNoteSegs(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, (+tuneHard.value)/100);
   }
   function drawTune(){
     const dpr=window.devicePixelRatio||1, w=tuneCv.clientWidth, hh=tuneCv.clientHeight;
@@ -3325,22 +3319,31 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.font="11px 'Space Mono',monospace";
       g.fillText(TUNE_NOTES[((m%12)+12)%12]+(Math.floor(m/12)-1), 6, yOf(m)+4);
     }
-    const corr=tuneCurves();
+    const segs=tuneSegsNow();
+    const semiAt=(i)=>{ const t=i*TUNE_HOP; for (const sg of segs){ if (t>=sg.a && t<sg.b) return sg.semi; } return null; };
     const xOf=(i)=>i/(tuneF0.length-1||1)*w;
     g.strokeStyle="rgba(63,201,224,.85)"; g.lineWidth=1.5; g.beginPath();
-    let pen=false;
+    let pen=false, lastC=null;
     for (let i=0;i<tuneF0.length;i++){
-      if (tuneF0[i]<=0){ pen=false; continue; }
-      const yy=yOf(f2m(tuneF0[i]));
+      if (tuneF0[i]<=0){ pen=false; lastC=null; continue; }
+      const mm=f2m(tuneF0[i]);
+      if (lastC!=null && Math.abs(mm-lastC)>4) pen=false;
+      const yy=yOf(mm);
       if (!pen){ g.moveTo(xOf(i),yy); pen=true; } else g.lineTo(xOf(i),yy);
+      lastC=mm;
     }
     g.stroke();
     g.strokeStyle="#ff6a00"; g.lineWidth=1.8;
     g.shadowColor="rgba(255,106,0,.55)"; g.shadowBlur=6; g.beginPath(); pen=false;
+    let lastY=null;
     for (let i=0;i<tuneF0.length;i++){
-      if (tuneF0[i]<=0){ pen=false; continue; }
-      const yy=yOf(f2m(tuneF0[i])+corr[i]);
+      const sm=(tuneF0[i]>0)?semiAt(i):null;
+      if (sm==null){ pen=false; lastY=null; continue; }
+      const mm=f2m(tuneF0[i])+sm;
+      const yy=yOf(mm);
+      if (lastY!=null && Math.abs(mm-lastY)>4){ pen=false; }     // Notensprung: Stift absetzen, keine U-Bahn-Linien
       if (!pen){ g.moveTo(xOf(i),yy); pen=true; } else g.lineTo(xOf(i),yy);
+      lastY=mm;
     }
     g.stroke(); g.shadowBlur=0;
   }
@@ -3379,8 +3382,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   [tuneRootSel, tuneScaleSel].forEach((el)=>el.addEventListener("change", ()=>{ tuneClearPre(); drawTune(); }));
   tuneHard.addEventListener("input", ()=>{ tuneHardV.textContent=tuneHard.value+"%"; tuneClearPre(); drawTune(); });
   function tuneRender(){
-    const corr=tuneCurves(), nc=buffer.numberOfChannels, chs=[];
-    for (let c=0;c<nc;c++) chs.push(renderTuned(buffer.getChannelData(c), tuneSr, corr, TUNE_HOP));
+    const segs=tuneSegsNow(), nc=buffer.numberOfChannels, chs=[];
+    for (let c=0;c<nc;c++) chs.push(renderTunedSegs(buffer.getChannelData(c), tuneSr, segs));
     return chs;
   }
   $("#tunePrev").addEventListener("click", tunePlayPreview);
