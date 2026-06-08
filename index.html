@@ -213,6 +213,7 @@
   .corp { font-size:12px; letter-spacing:.32em; font-weight:700; color:#ffea00; text-transform:uppercase; text-shadow:0 0 8px rgba(255,234,0,.5); display:flex; align-items:center; gap:9px; }
   .corp .corp-wave { flex:none; filter:drop-shadow(0 0 4px rgba(255,234,0,.5)); }
   .brand { font-family:"Anton","Rubik Mono One",monospace; font-size:36px; line-height:1; letter-spacing:.06em; word-spacing:-.18em; color:#3a0c09; margin:5px 0 6px; }
+  .brand-tag { font-family:"Space Mono",monospace; font-weight:700; font-size:9.5px; letter-spacing:.42em; text-transform:uppercase; color:#4a1009; margin:-3px 0 7px; text-shadow:0 1px 0 rgba(255,255,255,.18); }
   .brand b { color:#140404; font-weight:normal; }
   .status { font-family:"VT323",monospace; font-size:15px; letter-spacing:.12em; font-weight:400; text-transform:uppercase; color:#6bff8c; display:flex; align-items:center; gap:10px; text-shadow:0 0 6px rgba(107,255,140,.35); width:560px; }
   .status #statusText { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:right; }
@@ -366,6 +367,7 @@
     <div class="dh-brand">
       <div class="corp"><svg class="corp-wave" viewBox="0 0 40 16" width="34" height="14" aria-hidden="true"><g fill="currentColor"><rect x="0" y="6.5" width="2.4" height="3"/><rect x="4.7" y="4" width="2.4" height="8"/><rect x="9.4" y="1" width="2.4" height="14"/><rect x="14.1" y="5" width="2.4" height="6"/><rect x="18.8" y="2.5" width="2.4" height="11"/><rect x="23.5" y="6" width="2.4" height="4"/><rect x="28.2" y="3.5" width="2.4" height="9"/><rect x="32.9" y="5.5" width="2.4" height="5"/><rect x="37.6" y="6.5" width="2.4" height="3"/></g></svg>SNAD INDUSTRIES</div>
       <div class="brand">THE DRECKSLER</div>
+      <div class="brand-tag">VOCAL WORKBENCH</div>
     </div>
     <div class="status">
       <span class="rec-dot" id="recDot"></span>
@@ -474,17 +476,15 @@
           <span class="tk-label" style="margin-left:16px">VOC</span>
           <button class="tune-chip vc-mode" data-vm="follow" title="Carrier follows the sung melody — the chord moves with you (needs a tracked take)">FOLLOW</button>
           <button class="tune-chip vc-mode" data-vm="drone" title="Carrier holds the KEY chord — static machine drone">DRONE</button>
-          <button class="tune-chip vc-chr" data-vc="classic" title="Smooth machine body — the warm vocoder">CLASSIC</button>
-          <button class="tune-chip vc-chr" data-vc="daft" title="Talkbox bite: hard bright carrier, resonant bands, crisp consonants — Harder Better Faster Stronger">DAFT</button>
           <button class="tune-chip vc-reg" data-vr="-24" title="Carrier two octaves down — subterranean">SUB</button>
           <button class="tune-chip vc-reg" data-vr="-12" title="Carrier one octave down">LOW</button>
           <button class="tune-chip vc-reg" data-vr="0" title="Carrier at spoken register">MID</button>
         </div>
         <div class="tune-tiles">
-          <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly — T-Pain territory. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
+          <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
           <button class="tune-tile" id="tileSoft" title="Full correction with musical smoothing — notes lock, phrasing survives. Tap = render + hear"><b>SOFT</b><span>full pull &middot; musical</span></button>
-          <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note — monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; daft</span></button>
-          <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier — Daft Punk machine talk. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
+          <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note — monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; machine</span></button>
+          <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier — the machine speaks. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
         </div>
         <canvas id="tuneCanvas" data-desc="TUNE VIEW \u2014 the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only \u2014 the tiles do the work"></canvas>
         <div class="tune-bar">
@@ -560,7 +560,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.17</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.20</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1113,7 +1113,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.17";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.20";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3625,17 +3625,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     let mono=chs[0];
     if (chs.length>1){ mono=new Float32Array(n); for (let c=0;c<chs.length;c++){ const d=chs[c]; for (let k=0;k<n;k++) mono[k]+=d[k]/chs.length; } }
     const nb=20, fLo=80, fHi=Math.min(8000, sr*0.42);
-    const daft=(typeof vocDaft!=="undefined" && vocDaft);
-    if (daft){ let pre=0; for (let i=0;i<n;i++){ const v=Math.tanh(3.2*car[i]); car[i]=v-0.72*pre; pre=v; } }   // Talkbox-Biss: harter Clip + steile Praeemphase
-    const ratio=Math.pow(fHi/fLo, 1/(nb-1)), Q=daft?8.0:4.0;     // DAFT: enge, resonante Baender
+    const ratio=Math.pow(fHi/fLo, 1/(nb-1)), Q=4.0;
     const acc=new Float32Array(n);
     for (let b=0;b<nb;b++){
       const fc=fLo*Math.pow(ratio,b);
       const co=biquadBP(fc, Q, sr);
       const mB=runBiquad(mono, co), cB=runBiquad(car, co);
       const env=envFollow(mB, sr, 3, 40);                         // 3ms Attack: Konsonanten-Einsaetze
-      let tilt=Math.min(daft?10:7, Math.max(0.6, Math.pow(fc/180, daft?1.15:0.8)));  // Whitening; DAFT: deutlich heller
-      if (daft && fc<160) tilt*=0.45;                            // Talkbox hat keinen Sub — Bauch raus, Biss rein
+      const tilt=Math.min(7, Math.max(0.6, Math.pow(fc/180, 0.8)));   // Whitening: Mitten/Hoehen formen die Worte
       for (let i=0;i<n;i++) acc[i]+=cB[i]*env[i]*tilt;
     }
     const hpA=1-Math.exp(-2*Math.PI*5000/sr);                    // Zischlaut-Pfad v2: steil (3x) + Gate
@@ -3648,8 +3645,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     const eH=envFollow(hf, sr, 2, 25), eA=envFollow(mono, sr, 2, 25);
     for (let i=0;i<n;i++){
-      const g2=Math.max(0, Math.min(1, (eH[i]/(eA[i]+1e-9)-(daft?0.26:0.32))/0.25));   // zu bei Vokalen, auf bei S/T/F; DAFT artikuliert schaerfer
-      acc[i]+=hf[i]*g2*(daft?1.15:0.9);
+      const g2=Math.max(0, Math.min(1, (eH[i]/(eA[i]+1e-9)-0.32)/0.25));   // zu bei Vokalen, auf bei S/T/F
+      acc[i]+=hf[i]*g2*0.9;
     }
     let ri=0, ra=0;
     for (let i=0;i<n;i++){ ri+=mono[i]*mono[i]; ra+=acc[i]*acc[i]; }
@@ -3839,11 +3836,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
   tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); });
   const VOC_CHORDS={ maj:[0,4,7,12], min:[0,3,7,12], chrom:[0,7,12] };   // chrom = Power-Akkord
-  let vocFollow=true, vocReg=-12, vocDaft=false;                 // Default: der Melodie folgen, eine Oktave tief, CLASSIC
+  let vocFollow=true, vocReg=-12;                                // Default: der Melodie folgen, eine Oktave tief
   function syncVocUi(){
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
-    document.querySelectorAll(".vc-chr").forEach((b)=>b.classList.toggle("active", (b.dataset.vc==="daft")===vocDaft));
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
@@ -3852,9 +3848,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   document.querySelectorAll(".vc-reg").forEach((b)=>b.addEventListener("click", ()=>{
     vocReg=+b.dataset.vr; syncVocUi();
     if (tuneMode==="vocoder") tunePlayPreview();
-  }));
-  document.querySelectorAll(".vc-chr").forEach((b)=>b.addEventListener("click", ()=>{
-    vocDaft=(b.dataset.vc==="daft"); syncVocUi();
   }));
   syncVocUi();                                                   // NACH den Deklarationen (TDZ!)
   function tuneRender(){
