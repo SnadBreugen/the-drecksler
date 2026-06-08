@@ -287,6 +287,8 @@
   .tune-bar { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .tune-bar label { font-size:10px; letter-spacing:.16em; color:var(--info); }
   .tune-bar select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
+  #tuneLoop { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; padding:4px 10px; margin-left:10px; background:transparent; color:#7a4a66; border:1px solid #5a3048; border-radius:5px; cursor:pointer; }
+  #tuneLoop.active { color:#ff5bd0; border-color:#ff5bd0; text-shadow:0 0 6px rgba(255,91,208,.6); box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneInfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#ff6a00; text-shadow:0 0 7px rgba(255,106,0,.5); letter-spacing:.08em; }
   .iconbtn { padding:4px 9px 2px; line-height:0; }
   .modegrp { display:flex; gap:4px; }
@@ -490,6 +492,7 @@
         <div class="tune-bar">
           <button id="tuneApply" class="primary" title="Render the snap into the material (Ctrl+Z undoes)">APPLY</button>
           <span id="tuneInfo">&mdash;</span>
+          <button id="tuneLoop" class="tune-loop" title="Loop the preview" aria-label="Loop preview">&#8635; LOOP</button>
         </div>
         <p class="edit-panel-hint">TAP A TILE = RENDER + HEAR &middot; ORANGE BARS = NOTES AFTER THE SNAP &middot; APPLY IS DESTRUCTIVE &middot; CTRL+Z UNDOES</p>
       </div>
@@ -560,7 +563,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.20</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.21</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1113,7 +1116,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.20";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.21";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2063,7 +2066,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); if (P.chop.mode==="mark") markRedo(); else redo(); return; }
     if (e.key==="Enter" && P.chop.mode==="mark" && markPreview){ e.preventDefault(); fixPending(); return; }
-    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")||deckEl.classList.contains("st-tune")) startPreview(); else startMonitor(); return; }
+    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (deckEl.classList.contains("st-tune")){ if (tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent="\u2014"; } else tunePlayPreview(); return; } if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
     if (e.key==="Delete"||e.key==="Backspace"){
@@ -3668,6 +3671,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   TUNE_NOTES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; tuneRootSel.appendChild(o); });
   const TUNE_HOP=1024, TUNE_FRAME=2048;
   let tuneF0=null, tuneConf=null, tuneSr=44100, tuneBusy=false, tunePrevSrc=null, tuneBufRef=null, tuneRaf=0;
+  let tuneLoop=false;
   function tuneLeave(){
     if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; }
     if (tuneRaf){ cancelAnimationFrame(tuneRaf); tuneRaf=0; }
@@ -3805,12 +3809,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const src=ac.createBufferSource(); src.buffer=nb;
       const gg=ac.createGain(); gg.gain.value=0.95;
       src.connect(gg); gg.connect(ac.destination);
-      src.start(); tunePrevSrc=src;
+      src.loop=tuneLoop; src.loopStart=0; src.loopEnd=nb.duration; src.start(); tunePrevSrc=src;
       const t0=ac.currentTime, dur=nb.duration;
       (function beam(){
         if (!tunePrevSrc){ drawTune(); tuneRaf=0; return; }
-        const t=ac.currentTime-t0;
-        if (t>=dur){ tunePrevSrc=null; drawTune(); tuneRaf=0; return; }
+        let t=ac.currentTime-t0;
+        if (tuneLoop){ t=t%dur; }
+        else if (t>=dur){ try{tunePrevSrc.stop();}catch{} tunePrevSrc=null; drawTune(); tuneRaf=0; return; }
         drawTune(t);
         tuneRaf=requestAnimationFrame(beam);
       })();
@@ -3831,6 +3836,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     tunePlayPreview();                                          // Voloco-Moment: antippen, sofort hoeren
   }
   $("#tileHard").addEventListener("click", ()=>tuneTapTile("hard"));
+  $("#tuneLoop").addEventListener("click", ()=>{ tuneLoop=!tuneLoop; $("#tuneLoop").classList.toggle("active", tuneLoop); if (tunePrevSrc) tunePrevSrc.loop=tuneLoop; });
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
