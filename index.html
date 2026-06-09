@@ -284,6 +284,7 @@
   .tune-tile span { font-size:9px; letter-spacing:.14em; color:rgba(189,250,255,.65); text-transform:uppercase; }
   .tune-tile.active { border-color:#ff5bd0; box-shadow:0 0 16px rgba(255,91,208,.4), inset 0 0 12px rgba(255,91,208,.10); }
   #tuneCanvas { width:100%; height:170px; display:block; background:#0a0805; border:1px solid var(--line); border-radius:6px; }
+  #tuneCanvas { cursor:crosshair; }
   .tune-bar { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .tune-bar label { font-size:10px; letter-spacing:.16em; color:var(--info); }
   .tune-bar select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
@@ -493,6 +494,10 @@
           <button class="tune-chip vc-reg" data-vr="-24" title="Carrier two octaves down — subterranean">SUB</button>
           <button class="tune-chip vc-reg" data-vr="-12" title="Carrier one octave down">LOW</button>
           <button class="tune-chip vc-reg" data-vr="0" title="Carrier at spoken register">MID</button>
+          <span class="tk-label" style="margin-left:16px">CARRIER</span>
+          <button class="tune-chip vc-carrier active" data-vc="chord" title="Chord — the machine chord">CHORD</button>
+          <button class="tune-chip vc-carrier" data-vc="mono" title="Single tone, follows your melody">MONO</button>
+          <button class="tune-chip vc-carrier" data-vc="noise" title="White noise — whispered texture">NOISE</button>
         </div>
         <div class="tune-tiles">
           <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
@@ -575,7 +580,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.26</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.35</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1128,7 +1133,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.26";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.35";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3663,6 +3668,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return out;
   }
+  function vocoderCarrierNoise(len){
+    const out=new Float32Array(len);
+    for(let i=0;i<len;i++) out[i]=Math.random()*2-1;
+    return out;
+  }
   function vocoderRender(chs, sr, car){
     const n=chs[0].length;
     let mono=chs[0];
@@ -3705,6 +3715,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // [VOCODER-DSP-END]
 
   const tuneCv=$("#tuneCanvas"), tuneCtx2=tuneCv.getContext("2d");
+  let tuneOverrides={}, tuneMidiLo=48, tuneMidiHi=72, tuneDragSeg=-1, tuneDragBaseNote=0;
   const tuneRootSel=$("#tuneRoot"), tuneInfo=$("#tuneInfo"), tuneKeySrc=$("#tuneKeySrc");
   let tuneScaleVal="maj", tuneMode="hard", tuneRootTouched=false;   // hard | soft | robot
   const TUNE_NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
@@ -3730,6 +3741,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return mono;
   }
   function tuneAnalyze(){
+    tuneOverrides={}; tuneDragSeg=-1; tuneDragBaseNote=0;
     if (tuneBusy) return;
     tuneBusy=true; tuneSr=buffer.sampleRate; if (tuneBufRef!==buffer) tuneRootTouched=false; tuneBufRef=buffer;
     const mono=tuneMono(), nF=Math.max(0, Math.floor((mono.length-TUNE_FRAME)/TUNE_HOP)+1);
@@ -3763,21 +3775,25 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const tp=tuneParams();
     return tuneNoteSegs(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, tp.strength, tp.maxPull, tp.minNote);
   }
+  function segsWithOverrides(){
+    return tuneSegsNow().map((sg,i)=>tuneOverrides[i]!=null?{...sg,note:sg.note+tuneOverrides[i]*12}:sg);
+  }
   function drawTune(playT){
     const dpr=window.devicePixelRatio||1, w=tuneCv.clientWidth, hh=tuneCv.clientHeight;
     if (!w||!hh) return;
     tuneCv.width=w*dpr; tuneCv.height=hh*dpr; tuneCtx2.setTransform(dpr,0,0,dpr,0,0);
     const g=tuneCtx2;
+    const PW=48;
     g.fillStyle="#0a0805"; g.fillRect(0,0,w,hh);
     if (buffer){                                                // Material-Silhouette: Magenta-Glut der Station
-      const ch=buffer.getChannelData(0), n=ch.length, mid=hh/2, stepN=Math.max(1, Math.floor(n/w));
-      const sil=g.createLinearGradient(0,0,0,hh);
+      const ch=buffer.getChannelData(0), n=ch.length, mid=hh/2, stepN=Math.max(1, Math.floor(n/(w-PW)));
+      const sil=g.createLinearGradient(PW,0,PW,hh);
       sil.addColorStop(0,"rgba(255,150,228,.85)"); sil.addColorStop(0.5,"rgba(255,91,208,.55)"); sil.addColorStop(1,"rgba(168,45,128,.7)");
       g.fillStyle=sil;
       g.shadowColor="rgba(255,91,208,.5)"; g.shadowBlur=6;
-      for (let x=0;x<w;x++){
+      for (let x=PW;x<w;x++){
         let mn=1, mx=-1;
-        for (let k2=0;k2<stepN;k2++){ const v=ch[x*stepN+k2]||0; if (v<mn) mn=v; if (v>mx) mx=v; }
+        for (let k2=0;k2<stepN;k2++){ const v=ch[(x-PW)*stepN+k2]||0; if (v<mn) mn=v; if (v>mx) mx=v; }
         if (mx>=mn) g.fillRect(x, mid+mn*mid*0.92, 1, Math.max(1,(mx-mn)*mid*0.92));
       }
       g.shadowBlur=0;
@@ -3791,32 +3807,63 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       return;
     }
     ms.sort((a,b)=>a-b);
-    const med=ms[ms.length>>1], mLo=Math.floor(med-8), mHi=Math.ceil(med+8);
+    const med=ms[ms.length>>1], mLo=Math.floor(med-15), mHi=Math.ceil(med+27);
+    tuneMidiLo=mLo; tuneMidiHi=mHi;
     const yOf=(m)=>hh-((m-mLo)/(mHi-mLo))*hh;
-    const segs=tuneSegsNow();
+    const segs=segsWithOverrides();
     const totalT=buffer ? buffer.duration : (tuneF0.length*TUNE_HOP/tuneSr);
-    const xOfT=(t)=>t/totalT*w;
-    g.strokeStyle="rgba(63,201,224,.8)"; g.lineWidth=1.3;        // gesungene Tonhoehe: cyane Spur
-    let pen=false, lastM=null;
-    for (let i2=0;i2<tuneF0.length;i2++){
-      if (tuneF0[i2]<=0){ pen=false; lastM=null; continue; }
-      const mm=f2m(tuneF0[i2]);
-      if (lastM!=null && Math.abs(mm-lastM)>4) pen=false;
-      const xx=xOfT(i2*TUNE_HOP/tuneSr), yy=yOf(mm);
-      if (!pen){ g.beginPath(); g.moveTo(xx,yy); pen=true; } else g.lineTo(xx,yy);
-      if (tuneF0[i2+1]==null || tuneF0[i2+1]<=0) g.stroke();
-      lastM=mm;
-    }
-    if (pen) g.stroke();
+    const xOfT=(t)=>PW+t/totalT*(w-PW);
     const playP=(playT!=null)?playT*tuneSr:null;
+    // Neon-Schlauch: Pitch-Track mit Glow + leuchtende Kugel am Playhead
+    const nPF_=tuneF0.length;
+    const playFr_=playP!=null?Math.min(nPF_,Math.ceil(playP/TUNE_HOP)+1):0;
+    const drawPL_=(color,glow,width,maxI)=>{
+      g.strokeStyle=color; g.lineWidth=width; g.shadowColor=color; g.shadowBlur=glow;
+      g.beginPath(); let moved_=false, lastY_=null;
+      const mi=maxI||nPF_;
+      for(let i2=0;i2<mi;i2++){
+        const y2=tuneF0[i2]>0?yOf(f2m(tuneF0[i2])):lastY_;
+        if(y2==null) continue;
+        if(tuneF0[i2]>0) lastY_=y2;
+        const xx=xOfT(i2*TUNE_HOP/tuneSr);
+        if(!moved_){ g.moveTo(xx,y2); moved_=true; } else g.lineTo(xx,y2);
+      }
+      if(moved_) g.stroke(); g.shadowBlur=0;
+    };
+    g.lineJoin="round";
+    drawPL_("rgba(189,250,255,.15)",14,6);        // Eisblau: äußerer Glow
+    drawPL_("rgba(189,250,255,.75)",5,2);         // Eisblau: Kern
+    if(playFr_>0){
+      drawPL_("rgba(255,176,86,.2)",20,7,playFr_); // Orange: gespielter Glow
+      drawPL_("#ffb056",10,2.5,playFr_);           // Orange: gespielter Kern
+    }
+    // Leuchtende Kugel an aktueller Playhead-Position
+    if(playP!=null&&playFr_>0){
+      let bLast_=null;
+      for(let i2=0;i2<nPF_;i2++){
+        if(tuneF0[i2]>0) bLast_=yOf(f2m(tuneF0[i2]));
+        if(i2>=playFr_-1) break;
+      }
+      if(bLast_!=null){
+        const bx_=xOfT(playP/tuneSr);
+        g.shadowColor="#ffffff"; g.shadowBlur=30; g.fillStyle="#ffffff";
+        g.beginPath(); g.arc(bx_,bLast_,4.5,0,Math.PI*2); g.fill(); g.shadowBlur=0;
+      }
+    }
+    if(tuneMode!=="vocoder"){
+    let sgi_=0;
     for (const sg of segs){                                      // das Ergebnis: orange Lichtbalken im Kern
       const x1=xOfT(sg.a/tuneSr), x2=xOfT(sg.b/tuneSr);
       const yy=yOf(sg.note);
-      const hot=(playP!=null && playP>=sg.a && playP<sg.b);      // die Note, die gerade klingt, glueht
-      g.fillStyle=hot?"#ffb056":"rgba(255,106,0,.9)";
-      g.shadowColor=hot?"rgba(255,176,86,.95)":"rgba(255,106,0,.6)"; g.shadowBlur=hot?16:8;
-      g.fillRect(x1, yy-(hot?3:2), Math.max(2,x2-x1-1), hot?6:4);
+      const hot=(playP!=null&&playP>=sg.a&&playP<sg.b);
+      const ov=tuneOverrides[sgi_]!=null, drag=tuneDragSeg===sgi_;
+      g.fillStyle=drag?"#ffffff":ov?"#ffe082":hot?"#ffb056":"rgba(255,106,0,.9)";
+      g.shadowColor=drag?"rgba(255,255,255,.9)":ov?"rgba(255,224,130,.8)":hot?"rgba(255,176,86,.95)":"rgba(255,106,0,.6)";
+      g.shadowBlur=drag?20:ov?10:hot?16:8;
+      g.fillRect(x1,yy-(hot||drag?3:2),Math.max(2,x2-x1-1),hot||drag?6:4);
       g.shadowBlur=0;
+      sgi_++;
+    }
     }
     if (playP!=null){                                            // laufender Lese-Strahl
       const px=xOfT(playT);
@@ -3827,11 +3874,36 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.shadowColor="rgba(255,176,86,.9)"; g.shadowBlur=10;
       g.beginPath(); g.moveTo(px,0); g.lineTo(px,hh); g.stroke(); g.shadowBlur=0;
     }
-    g.font="10px 'Space Mono',monospace";                        // Notennamen am linken Rand
-    for (let m=mLo+1; m<mHi; m++){
-      g.fillStyle="rgba(189,250,255,.34)";
-      g.fillText(TUNE_NOTES[((m%12)+12)%12]+(Math.floor(m/12)-1), 4, yOf(m)+3);
+    // C-Noten als leichte Orientierungslinien
+    g.font="11px 'VT323',monospace";
+    for (let m=mLo; m<=mHi; m++){
+      if (((m%12)+12)%12===0){
+        const yy=yOf(m);
+        g.strokeStyle="rgba(189,250,255,.15)"; g.lineWidth=0.5;
+        g.beginPath(); g.moveTo(PW,yy); g.lineTo(w,yy); g.stroke();
+        g.fillStyle="rgba(189,250,255,.25)";
+        g.fillText("C"+(Math.floor(m/12)-1), 2, yy-2);
+      }
     }
+    // 4 Oktav-Snap-Zonen (dynamisch: beim Drag für dieses Segment, sonst Median)
+    const baseRef_=tuneDragSeg>=0?tuneDragBaseNote:med;
+    const OCT_OFFS=[-1,0,1,2], OCT_LBL=["-1","+0","+1","+2"];
+    OCT_OFFS.forEach((oct,idx)=>{
+      const absN=baseRef_+oct*12;
+      if (absN<mLo||absN>mHi) return;
+      const yy=yOf(absN);
+      const active=tuneDragSeg>=0&&(tuneOverrides[tuneDragSeg]||0)===oct;
+      const isBase=(oct===0);
+      g.strokeStyle=active?"#ffffff":isBase?"rgba(255,106,0,.6)":"rgba(189,250,255,.45)";
+      g.lineWidth=active?1.8:1;
+      g.setLineDash(active?[]:[5,3]);
+      g.beginPath(); g.moveTo(0,yy); g.lineTo(PW-2,yy); g.stroke();
+      g.setLineDash([]);
+      const nm=TUNE_NOTES[((absN%12)+12)%12]+(Math.floor(absN/12)-1);
+      g.fillStyle=active?"#ffffff":isBase?"#ff6a00":"rgba(189,250,255,.95)";
+      g.font=active?"bold 12px 'Space Mono',monospace":"11px 'VT323',monospace";
+      g.fillText(OCT_LBL[idx]+" "+nm, 2, yy-3);
+    });
   }
 
   function tunePlayPreview(){
@@ -3884,15 +3956,41 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   chopLoopBtn.addEventListener("click", ()=>{ chopLoop=!chopLoop; chopLoopBtn.classList.toggle("active", chopLoop); setStatus(chopLoop?"CHOPPER LOOP ON":"CHOPPER LOOP OFF"); if(schedTimer){ stopPlayback(); startMonitor(); } });
   chopLoopBtn.classList.toggle("active", chopLoop);
   $("#tuneStop").addEventListener("click", ()=>{ if(tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent="—"; } });
+  tuneCv.addEventListener("pointerdown",(e)=>{
+    if (!tuneF0||!buffer) return;
+    const r=tuneCv.getBoundingClientRect();
+    const xc=e.clientX-r.left, yc=e.clientY-r.top;
+    if (xc<48) return;
+    const cw=tuneCv.clientWidth, ch=tuneCv.clientHeight;
+    const tSamp=(xc/cw)*buffer.duration*tuneSr;
+    const segs_=segsWithOverrides();
+    for (let i=0;i<segs_.length;i++){
+      const sg=segs_[i];
+      const yy=ch-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch;
+      if (tSamp>=sg.a&&tSamp<sg.b&&Math.abs(yc-yy)<=14){
+        tuneDragSeg=i; tuneDragBaseNote=segs_[i].note; tuneCv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+      }
+    }
+  });
+  tuneCv.addEventListener("pointermove",(e)=>{
+    if (tuneDragSeg<0) return;
+    const r=tuneCv.getBoundingClientRect();
+    const yFrac=1-(e.clientY-r.top)/tuneCv.clientHeight;
+    const oct=Math.max(-1,Math.min(2,Math.round(yFrac*3)-1));
+    tuneOverrides[tuneDragSeg]=oct; drawTune(null);
+  });
+  tuneCv.addEventListener("pointerup",()=>{ tuneDragSeg=-1; });
+  tuneCv.addEventListener("pointercancel",()=>{ tuneDragSeg=-1; });
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
   tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); });
   const VOC_CHORDS={ maj:[0,4,7,12], min:[0,3,7,12], chrom:[0,7,12] };   // chrom = Power-Akkord
-  let vocFollow=true, vocReg=-12;                                // Default: der Melodie folgen, eine Oktave tief
+  let vocFollow=true, vocReg=-12, vocCarrierType="chord";                                // Default: der Melodie folgen, eine Oktave tief
   function syncVocUi(){
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
+    document.querySelectorAll(".vc-carrier").forEach((b)=>b.classList.toggle("active", b.dataset.vc===vocCarrierType));
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
@@ -3902,21 +4000,29 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     vocReg=+b.dataset.vr; syncVocUi();
     if (tuneMode==="vocoder") tunePlayPreview();
   }));
+  document.querySelectorAll(".vc-carrier").forEach((b)=>b.addEventListener("click", ()=>{
+    vocCarrierType=b.dataset.vc; syncVocUi();
+    if (tuneMode==="vocoder") tunePlayPreview();
+  }));
   syncVocUi();                                                   // NACH den Deklarationen (TDZ!)
   function tuneRender(){
     const nc=buffer.numberOfChannels, chs=[];
     for (let c=0;c<nc;c++) chs.push(buffer.getChannelData(c));
     if (tuneMode==="vocoder"){
-      const ivs=VOC_CHORDS[tuneScaleVal]||VOC_CHORDS.chrom;
-      let car=null;
-      if (vocFollow && tuneF0){
-        const segs=tuneNoteSegs(tuneF0, tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom, 1, 12);
-        if (segs.length) car=vocoderCarrierTrack(buffer.length, tuneSr, segs, ivs, vocReg);
+      const rootM_=48+(+tuneRootSel.value)+vocReg; let car=null;
+      if (vocCarrierType==="noise"){
+        car=vocoderCarrierNoise(buffer.length);
+      } else if (vocCarrierType==="mono"){
+        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,[0],vocReg); }
+        if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,[0]);
+      } else {
+        const ivs=VOC_CHORDS[tuneScaleVal]||VOC_CHORDS.chrom;
+        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,ivs,vocReg); }
+        if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,ivs);
       }
-      if (!car) car=vocoderCarrier(buffer.length, tuneSr, 48+(+tuneRootSel.value)+vocReg, ivs);   // DRONE / Fallback
       return vocoderRender(chs, tuneSr, car);
     }
-    const segs=tuneSegsNow();
+    const segs=segsWithOverrides();
     const tp=tuneParams();
     return psolaRender(chs, tuneSr, tuneF0, TUNE_HOP, segs, tp.strength, tp.maxPull, tp.ramp);
   }
