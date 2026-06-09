@@ -604,7 +604,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.39</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1157,7 +1157,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.39";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.46";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2574,8 +2574,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const at=atSession || await atConnect(true);
     if (!at) return;
     atUrlInput.value="";
-    placePop(atUrlPop, importBtn);
-    atUrlInput.focus();
+    setTimeout(()=>{ placePop(atUrlPop, importBtn); atUrlInput.focus(); }, 0);
   }
   function atOpenFromInput(){
     const url=atUrlInput.value.trim();
@@ -3323,14 +3322,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const AT_SCOPE="sample:read sample:write project:read project:write";
   const uplinkBtn=$("#uplinkBtn");
   let atSession=null, atSdkPromise=null, _carrierPickMode=false;
-  function loadAtSdk(){
-    if (!atSdkPromise){
-      setStatus("UPLINK // LOADING SDK");
-      atSdkPromise=import("https://unpkg.com/@audiotool/nexus@0.0.17/dist/index.js")
-        .catch(()=>import("https://cdn.jsdelivr.net/npm/@audiotool/nexus@0.0.17/dist/index.js"))
-        .catch((e)=>{ atSdkPromise=null; throw e; });   // Fehlversuch nicht cachen — naechster Klick darf neu laden
+  async function loadAtSdk(){
+    if(!atSdkPromise){
+      // Version 0.0.17 explizit — ohne Version schlägt esm.sh fehl
+      atSdkPromise=import("https://esm.sh/@audiotool/nexus@0.0.17")
+        .catch(()=>import("https://cdn.jsdelivr.net/npm/@audiotool/nexus@0.0.17/dist/index.js"));
     }
-    return atSdkPromise;
+    const m=await atSdkPromise; return m.default||m;
   }
   async function atConnect(interactive){
     if (location.protocol==="file:"){ setStatus("UPLINK REQUIRES THE LIVE URL"); return null; }
@@ -3677,16 +3675,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return out;
   }
-  function vocoderCarrierTrack(len, sr, segs, chord, regSemi){
+  function vocoderCarrierTrack(len, sr, segs, chord, regSemi, rootShift){
     // Melodiefolgender Traeger: Akkord-Root = gesungene (gesnappte) Note, mit 8ms-Portamento
+    // rootShift: zentrierter Root-Offset (-6..+5 Halbtöne) verschiebt den Chord mit dem Root
+    const rs=(rootShift||0);
     const root=new Float32Array(len);
     let cur=0;
-    for (const sg of segs){ if (sg.note){ cur=m2f(sg.note+regSemi); break; } }
-    if (!cur) cur=m2f(48+regSemi);
+    for (const sg of segs){ if (sg.note){ cur=m2f(sg.note+regSemi+rs); break; } }
+    if (!cur) cur=m2f(48+regSemi+rs);
     let si=0;
     for (let p=0;p<len;p++){
       while (si<segs.length && p>=segs[si].b) si++;
-      if (si<segs.length && p>=segs[si].a) cur=m2f(segs[si].note+regSemi);
+      if (si<segs.length && p>=segs[si].a) cur=m2f(segs[si].note+regSemi+rs);
       root[p]=cur;
     }
     const aa=1-Math.exp(-1/(0.008*sr));
@@ -3770,6 +3770,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; }
     if (tuneRaf){ cancelAnimationFrame(tuneRaf); tuneRaf=0; }
   }
+  function tuneAutoReplay(){
+    // Replay wenn gerade eine Tune-Vorschau laeuft oder zuletzt getappt wurde
+    if (tunePrevSrc || tuneLastTap) tunePlayPreview();
+  }
+  let tuneLastTap=false;                              // merkt sich: Tile wurde mindestens einmal angetippt
   function enterTuneStation(){
     if (!tuneRootTouched){
       tuneRootSel.value=((P.metroRoot%12)+12)%12;               // Tonart kommt vom gestimmten Metronom
@@ -3982,10 +3987,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     [["tileHard","hard"],["tileSoft","soft"],["tileRobot","robot"],["tileVoc","vocoder"]].forEach(([id,m])=>$("#"+id).classList.toggle("active", tuneMode===m));
   }
   document.querySelectorAll(".tune-chip").forEach((b)=>{
-    b.addEventListener("click", ()=>{ tuneScaleVal=b.dataset.sc; syncTuneUi(); drawTune(); });
+    b.addEventListener("click", ()=>{ tuneScaleVal=b.dataset.sc; syncTuneUi(); drawTune(); tuneAutoReplay(); });
   });
   function tuneTapTile(mode){
-    tuneMode=mode; syncTuneUi(); drawTune();
+    tuneMode=mode; tuneLastTap=true; syncTuneUi(); drawTune();
     const lbl=mode.toUpperCase()+((mode==="robot"||mode==="vocoder") ? " \u00B7 "+TUNE_NOTES[+tuneRootSel.value]+(mode==="vocoder"?" "+(tuneScaleVal==="min"?"MIN":tuneScaleVal==="maj"?"MAJ":"PWR")+" CHORD":"") : " \u00B7 "+TUNE_NOTES[+tuneRootSel.value]+" "+tuneScaleVal.toUpperCase());
     setStatus("TUNE // "+lbl);
     tunePlayPreview();                                          // Voloco-Moment: antippen, sofort hoeren
@@ -4005,7 +4010,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const xc=e.clientX-r.left, yc=e.clientY-r.top;
     if (xc<48) return;
     const cw=tuneCv.clientWidth, ch=tuneCv.clientHeight;
-    const tSamp=(xc/cw)*buffer.duration*tuneSr;
+    const tSamp=Math.max(0,(xc-48)/(cw-48))*buffer.duration*tuneSr;
     const segs_=segsWithOverrides();
     for (let i=0;i<segs_.length;i++){
       const sg=segs_[i];
@@ -4021,7 +4026,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const r_=tuneCv.getBoundingClientRect();
       const xc_=e.clientX-r_.left, yc_=e.clientY-r_.top;
       const cw_=tuneCv.clientWidth, ch_=tuneCv.clientHeight;
-      const tS_=(xc_/cw_)*buffer.duration*tuneSr;
+      const tS_=Math.max(0,(xc_-48)/(cw_-48))*buffer.duration*tuneSr;
       const segsH_=tuneMode!=="vocoder"?segsWithOverrides():[];
       let found_=-1;
       for(let i=0;i<segsH_.length;i++){
@@ -4043,7 +4048,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
-  tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); });
+  tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); tuneAutoReplay(); });
   const VOC_CHORDS={ maj:[0,4,7,12], min:[0,3,7,12], chrom:[0,7,12] };   // chrom = Power-Akkord
   let vocFollow=true, vocReg=-12, vocCarrierType="chord";                                // Default: der Melodie folgen, eine Oktave tief
   function syncVocUi(){
@@ -4080,7 +4085,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     document.getElementById("carrierPopup").style.display="none";
     if(!atSession){ await atConnect(true); if(!atSession) return; }
     _carrierPickMode=true;
-    atUrlPop.classList.remove("hidden"); atUrlInput.value=""; atUrlInput.focus();
+    // setTimeout(0): Öffnung nach dem pointerdown-Bubbling — sonst schließt sich das Popup sofort
+    setTimeout(()=>{ atUrlPop.classList.remove("hidden"); atUrlInput.value=""; atUrlInput.focus(); }, 0);
   });
   document.getElementById("carrierFileInput").addEventListener("change",async(e)=>{
     const f_=e.target.files[0]; if(!f_) return;
@@ -4101,11 +4107,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       } else if (vocCarrierType==="track"){
         car=vocoderCarrierFromBuffer(buffer.length,tuneSr);
       } else if (vocCarrierType==="mono"){
-        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,[0],vocReg); }
+        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,[0],vocReg,((+tuneRootSel.value+6)%12)-6); }
         if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,[0]);
       } else {
         const ivs=VOC_CHORDS[tuneScaleVal]||VOC_CHORDS.chrom;
-        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,ivs,vocReg); }
+        if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,ivs,vocReg,((+tuneRootSel.value+6)%12)-6); }
         if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,ivs);
       }
       return vocoderRender(chs, tuneSr, car);
