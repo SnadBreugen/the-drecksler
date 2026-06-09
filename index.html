@@ -498,6 +498,8 @@
           <button class="tune-chip vc-carrier active" data-vc="chord" title="Chord — the machine chord">CHORD</button>
           <button class="tune-chip vc-carrier" data-vc="mono" title="Single tone, follows your melody">MONO</button>
           <button class="tune-chip vc-carrier" data-vc="noise" title="White noise — whispered texture">NOISE</button>
+          <button class="tune-chip vc-carrier" id="trackCarrierBtn" data-vc="track" title="Upload carrier audio — click again to replace">TRACK ↑</button>
+          <input type="file" id="carrierFileInput" accept="audio/*" style="display:none">
         </div>
         <div class="tune-tiles">
           <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
@@ -580,7 +582,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.35</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.36</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1133,7 +1135,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.35";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.36";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1154,6 +1156,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // ---------- State ----------
   let audioCtx=null, mediaStream=null, recorder=null, chunks=[];
   let buffer=null, reversedBuffer=null, selection=null, rafId=null, analyser=null;
+  let carrierBuffer=null;
   let recState="idle", recAborted=false, recTimers=[], recT0=0, recBeatDur=0, recCountInBeats=4, recLenCaptured=0;
   let liveFx=null, playSource=null;
   const pitchCache=new Map();
@@ -3673,6 +3676,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for(let i=0;i<len;i++) out[i]=Math.random()*2-1;
     return out;
   }
+  function vocoderCarrierFromBuffer(len,sr){
+    if(!carrierBuffer) return vocoderCarrierNoise(len);
+    const cSr=carrierBuffer.sampleRate,cLen=carrierBuffer.length,src=carrierBuffer.getChannelData(0),ratio=cSr/sr;
+    const out=new Float32Array(len);
+    for(let i=0;i<len;i++){ const pos=(i*ratio)%cLen,idx=Math.floor(pos),fr=pos-idx; out[i]=(src[idx]||0)+((src[(idx+1)%cLen]||0)-(src[idx]||0))*fr; }
+    return out;
+  }
   function vocoderRender(chs, sr, car){
     const n=chs[0].length;
     let mono=chs[0];
@@ -3991,6 +4001,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
     document.querySelectorAll(".vc-carrier").forEach((b)=>b.classList.toggle("active", b.dataset.vc===vocCarrierType));
+    const trk_=document.querySelector("[data-vc='track']"); if(trk_) trk_.textContent=carrierBuffer?"TRACK ✓":"TRACK ↑";
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
@@ -4001,9 +4012,19 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (tuneMode==="vocoder") tunePlayPreview();
   }));
   document.querySelectorAll(".vc-carrier").forEach((b)=>b.addEventListener("click", ()=>{
+    const wasActive_=vocCarrierType===b.dataset.vc;
     vocCarrierType=b.dataset.vc; syncVocUi();
-    if (tuneMode==="vocoder") tunePlayPreview();
+    if(b.dataset.vc==="track"&&(!carrierBuffer||wasActive_)) document.getElementById("carrierFileInput").click();
+    else if(tuneMode==="vocoder") tunePlayPreview();
   }));
+  document.getElementById("carrierFileInput").addEventListener("change",async(e)=>{
+    const f_=e.target.files[0]; if(!f_) return;
+    try{ const ab_=await f_.arrayBuffer(); carrierBuffer=await ctxGet().decodeAudioData(ab_); syncVocUi();
+      setStatus("CARRIER LOADED // "+f_.name.replace(/\.[^.]+$/,"").toUpperCase().slice(0,28));
+      if(tuneMode==="vocoder") tunePlayPreview();
+    } catch(e_){ setStatus("CARRIER LOAD FAILED // CHECK FORMAT"); }
+    e.target.value="";
+  });
   syncVocUi();                                                   // NACH den Deklarationen (TDZ!)
   function tuneRender(){
     const nc=buffer.numberOfChannels, chs=[];
@@ -4012,6 +4033,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const rootM_=48+(+tuneRootSel.value)+vocReg; let car=null;
       if (vocCarrierType==="noise"){
         car=vocoderCarrierNoise(buffer.length);
+      } else if (vocCarrierType==="track"){
+        car=vocoderCarrierFromBuffer(buffer.length,tuneSr);
       } else if (vocCarrierType==="mono"){
         if (vocFollow&&tuneF0){ const segs=tuneNoteSegs(tuneF0,tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,[0],vocReg); }
         if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,[0]);
