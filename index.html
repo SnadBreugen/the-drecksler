@@ -289,6 +289,8 @@
   .tune-bar select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
   #sampleBack { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; color:#ff6a00; border-color:rgba(255,106,0,.4); opacity:.3; cursor:default; }
   #sampleBack:not([disabled]) { opacity:1; border-color:#ff6a00; box-shadow:0 0 8px rgba(255,106,0,.28); cursor:pointer; }
+  .tune-transport { font-size:13px; padding:5px 11px; background:transparent; color:#ff5bd0; border:1px solid rgba(255,91,208,.4); border-radius:5px; cursor:pointer; }
+  .tune-transport:hover { border-color:#ff5bd0; box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneLoop { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; padding:4px 10px; margin-left:10px; background:transparent; color:#7a4a66; border:1px solid #5a3048; border-radius:5px; cursor:pointer; }
   #tuneLoop.active { color:#ff5bd0; border-color:#ff5bd0; text-shadow:0 0 6px rgba(255,91,208,.6); box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneInfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#ff6a00; text-shadow:0 0 7px rgba(255,106,0,.5); letter-spacing:.08em; }
@@ -464,6 +466,7 @@
         <p class="edit-panel-title" style="margin-top:16px">RESULT // POST-CHOP WAVE</p>
         <div class="fin-wave-wrap"><canvas id="finCanvas"></canvas></div>
         <p class="edit-panel-hint">PRESET COLORS THE SUM &middot; THE WAVE IS EXACTLY WHAT EXPORT RENDERS &middot; CRACKLE + APPLY: FULL STATION PENDING</p>
+        <div style="margin-top:14px"><button id="finApply" class="primary" title="Commit the processed result as new active sample">APPLY</button></div>
       </div>
     </section>
 
@@ -492,6 +495,8 @@
         </div>
         <canvas id="tuneCanvas" data-desc="TUNE VIEW \u2014 the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only \u2014 the tiles do the work"></canvas>
         <div class="tune-bar">
+          <button id="tunePlay" class="tune-transport" title="Preview tuned result (Space)">&#9654;</button>
+          <button id="tuneStop" class="tune-transport" title="Stop preview">&#9632;</button>
           <button id="tuneApply" class="primary" title="Render the snap into the material (Ctrl+Z undoes)">APPLY</button>
           <span id="tuneInfo">&mdash;</span>
           <button id="tuneLoop" class="tune-loop" title="Loop the preview" aria-label="Loop preview">&#8635; LOOP</button>
@@ -505,6 +510,7 @@
         <div class="transport">
           <button class="tbtn" id="playBtn" disabled title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="stopPlayBtn" disabled title="Stop (reset position)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
+          <button id="chopLoopBtn" class="tune-loop" title="Loop the chopper (off = stop after one cycle)">&#8635; LOOP</button>
         </div>
       </div>
       <div class="wave-wrap" id="waveWrap">
@@ -553,6 +559,7 @@
           <button id="scatterBtn" disabled title="Roll a random arrangement (slices + FX)">&#10227; SCATTER</button>
         </div>
         <button id="resetBtn" disabled title="Reset all chops to their original order">RESET</button>
+          <button id="chopApply" class="primary" disabled title="Commit the chopped result as new active sample">APPLY</button>
         <button id="clearChopBtn" disabled title="Clear all steps">CLEAR</button>
       </div>
       <div class="grid-wrap"><canvas class="grid" id="grid"></canvas></div>
@@ -566,7 +573,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.22</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.24</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1119,7 +1126,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.22";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.24";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1188,7 +1195,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const recBtn=$("#recBtn"), importBtn=$("#importBtn"), fileInput=$("#fileInput");
   const playBtn=$("#playBtn"), stopPlayBtn=$("#stopPlayBtn");
   const scatterBtn=$("#scatterBtn"), clearChopBtn=$("#clearChopBtn"), metroBtn=$("#metroBtn");
-  const wavBtn=$("#wavBtn"), atBtn=$("#atBtn");
+  const wavBtn=$("#wavBtn"), atBtn=$("#atBtn"), chopApply=$("#chopApply"), finApply=$("#finApply");
   const tc=$("#tc"), inMeterFill=$("#inMeterFill"), outMeterFill=$("#outMeterFill"), recDot=$("#recDot");
   const hint=$("#hint"), banner=$("#banner"), statusText=$("#statusText");
   const canvas=$("#wave"), ctx=canvas.getContext("2d"), waveWrap=$("#waveWrap");
@@ -1245,7 +1252,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
-    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn].forEach((b)=>(b.disabled=!on));
+    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply].forEach((b)=>(b.disabled=!on));
     if (typeof syncModeBtns==="function") syncModeBtns();
     if (typeof updateWinUi==="function") updateWinUi();
   }
@@ -2740,7 +2747,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
   edStopBtn.addEventListener("click", ()=>stopPlayback());
   let edLoop=false;
-  const edLoopBtn=$("#edLoopBtn");
+  let chopLoop=true;
+  const edLoopBtn=$("#edLoopBtn"), chopLoopBtn=$("#chopLoopBtn");
   edLoopBtn.addEventListener("click", ()=>{
     edLoop=!edLoop;
     edLoopBtn.classList.toggle("active", edLoop);
@@ -2796,7 +2804,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       previewFx=buildPreviewFx(ac); updatePreviewFx();
       playSource.connect(previewFx.input); previewFx.output.connect(liveFx.input);
     } else { previewFx=null; playSource.connect(liveFx.input); }
-    const wantLoop=deckEl.classList.contains("st-editor") && edLoop;
+    const wantLoop=(deckEl.classList.contains("st-editor")&&edLoop)||(deckEl.classList.contains("st-hecksler")&&chopLoop);
     const baseOff=selection?selection.start:0, baseDur=selection?selection.end-selection.start:buffer.duration;
     let offset=baseOff, dur=baseDur;
     if (resumeOffset!=null && resumeOffset>baseOff && resumeOffset<baseOff+baseDur-0.01){ offset=resumeOffset; dur=baseOff+baseDur-resumeOffset; }
@@ -3183,6 +3191,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       rafId=requestAnimationFrame(follow);
     })();
   }
+  function schedStepAdvance(ts){ schedStep=(schedStep+1)%ts; if(schedStep===0&&!chopLoop) stopPlayback(); }
   function chopScheduler(){
     const ac=audioCtx, sd=stepDur(), tab=sliceTable(), ts=totalSteps(), spb=stepsPerBar(), spbeat=stepsPerBeat(), look=ac.currentTime+0.2;
     if (P.chop.mode==="mark"){
@@ -3195,7 +3204,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
           }
         }
         if (P.metro && (s % spbeat===0)) scheduleClick(ac, nextStepTime, s % spb===0);
-        nextStepTime+=sd; schedStep=(schedStep+1)%ts;
+        nextStepTime+=sd; schedStepAdvance(ts);
       }
       return;
     }
@@ -3204,7 +3213,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (ch && tab.length>0){
         const src=playChop(ac, liveFx, ch, nextStepTime, sd, tab, activeSources); if (src){ activeSources.push(src); src.onended=()=>{ const k=activeSources.indexOf(src); if (k>=0) activeSources.splice(k,1); }; } }
       if (P.metro && (s % spbeat===0)) scheduleClick(ac, nextStepTime, s % spb===0);
-      nextStepTime+=sd; schedStep=(schedStep+1)%ts;
+      nextStepTime+=sd; schedStepAdvance(ts);
     }
   }
   stopPlayBtn.addEventListener("click", ()=>stopPlayback());
@@ -3867,6 +3876,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#tileHard").addEventListener("click", ()=>tuneTapTile("hard"));
   $("#tuneLoop").addEventListener("click", ()=>{ tuneLoop=!tuneLoop; $("#tuneLoop").classList.toggle("active", tuneLoop); if (tunePrevSrc) tunePrevSrc.loop=tuneLoop; });
   $("#sampleBack").addEventListener("click", sampleBack);
+  $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
+  $("#finApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("FINALIZER COMMITTED // SAMPLE UPDATED"); });
+  $("#tunePlay").addEventListener("click", ()=>{ tunePlayPreview(); });
+  chopLoopBtn.addEventListener("click", ()=>{ chopLoop=!chopLoop; chopLoopBtn.classList.toggle("active", chopLoop); setStatus(chopLoop?"CHOPPER LOOP ON":"CHOPPER LOOP OFF"); if(schedTimer){ stopPlayback(); startMonitor(); } });
+  chopLoopBtn.classList.toggle("active", chopLoop);
+  $("#tuneStop").addEventListener("click", ()=>{ if(tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent="—"; } });
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
@@ -3913,6 +3928,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       for (let c=0;c<nb.numberOfChannels;c++) nb.getChannelData(c).set(chs[c]);
       tuneLeave();
       applyEdit(nb, (tuneMode==="vocoder"?"VOCODED // ":"TUNED // ")+tuneMode.toUpperCase()+" \u00B7 "+TUNE_NOTES[+tuneRootSel.value]+(tuneMode==="robot"?"":" "+tuneScaleVal.toUpperCase()), false, null);
+      commit(nb, bufferSource, bufferFitBpm);
       tuneBufRef=null; enterTuneStation();                       // frische Analyse: die gelbe Linie wird zur cyanen
     }, 30);
   });
