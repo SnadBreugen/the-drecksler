@@ -472,6 +472,13 @@
 
     <section class="stage island-tune" data-tag="TUNE">
       <div class="fin-inner">
+        <div class="tune-bar" style="margin-top:0;margin-bottom:8px">
+          <button id="tunePlay" class="tune-transport" title="Preview tuned result (Space)">&#9654;</button>
+          <button id="tuneStop" class="tune-transport" title="Stop preview">&#9632;</button>
+          <span id="tuneInfo">&mdash;</span>
+          <button id="tuneLoop" class="tune-loop" title="Loop the preview" aria-label="Loop preview">&#8635; LOOP</button>
+        </div>
+        <canvas id="tuneCanvas" data-desc="TUNE VIEW — the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only — the tiles do the work"></canvas>
         <p class="edit-panel-title">PITCH DISCIPLINE // SING &rarr; SNAP</p>
         <div class="tune-key">
           <span class="tk-label">KEY</span>
@@ -493,13 +500,8 @@
           <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note — monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; machine</span></button>
           <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier — the machine speaks. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
         </div>
-        <canvas id="tuneCanvas" data-desc="TUNE VIEW \u2014 the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only \u2014 the tiles do the work"></canvas>
         <div class="tune-bar">
-          <button id="tunePlay" class="tune-transport" title="Preview tuned result (Space)">&#9654;</button>
-          <button id="tuneStop" class="tune-transport" title="Stop preview">&#9632;</button>
           <button id="tuneApply" class="primary" title="Render the snap into the material (Ctrl+Z undoes)">APPLY</button>
-          <span id="tuneInfo">&mdash;</span>
-          <button id="tuneLoop" class="tune-loop" title="Loop the preview" aria-label="Loop preview">&#8635; LOOP</button>
         </div>
         <p class="edit-panel-hint">TAP A TILE = RENDER + HEAR &middot; ORANGE BARS = NOTES AFTER THE SNAP &middot; APPLY IS DESTRUCTIVE &middot; CTRL+Z UNDOES</p>
       </div>
@@ -573,7 +575,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.24</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.25</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1126,7 +1128,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.24";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.25";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
