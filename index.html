@@ -284,7 +284,23 @@
   .tune-tile span { font-size:9px; letter-spacing:.14em; color:rgba(189,250,255,.65); text-transform:uppercase; }
   .tune-tile.active { border-color:#ff5bd0; box-shadow:0 0 16px rgba(255,91,208,.4), inset 0 0 12px rgba(255,91,208,.10); }
   #tuneCanvas { width:100%; height:170px; display:block; background:#0a0805; border:1px solid var(--line); border-radius:6px; }
-  #tuneCanvas { cursor:crosshair; }
+  #tuneCanvas { cursor:default; }
+  #carrierPopup { position:absolute; top:calc(100% + 6px); left:0; z-index:200;
+    background:#0e0b09; border:1px solid rgba(189,250,255,.28); border-radius:5px;
+    min-width:150px; box-shadow:0 8px 24px rgba(0,0,0,.85); overflow:hidden; }
+  #carrierPopup .vc-carrier { display:block; width:100%; text-align:left; padding:9px 14px;
+    background:transparent; color:rgba(189,250,255,.8); border:none;
+    border-bottom:1px solid rgba(189,250,255,.1); cursor:pointer;
+    font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.08em; }
+  #carrierPopup .vc-carrier:last-child { border-bottom:none; }
+  #carrierPopup .vc-track-up { display:block; width:100%; text-align:left; padding:9px 14px;
+    background:transparent; color:rgba(255,234,0,.8); border:none;
+    border-bottom:1px solid rgba(189,250,255,.1); cursor:pointer;
+    font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.08em; }
+  #carrierPopup .vc-track-up:hover { background:rgba(255,234,0,.08); color:#ffea00; }
+  #carrierPopup .vc-carrier:hover { background:rgba(189,250,255,.08); color:#bdfaff; }
+  #carrierPopup .vc-carrier.active { color:#ff6a00; }
+  #carrierPopup small { font-size:9px; opacity:.55; display:block; margin-top:1px; }
   .tune-bar { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .tune-bar label { font-size:10px; letter-spacing:.16em; color:var(--info); }
   .tune-bar select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
@@ -476,8 +492,8 @@
         <div class="tune-bar" style="margin-top:0;margin-bottom:8px">
           <button id="tunePlay" class="tbtn" title="Preview tuned result (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button id="tuneStop" class="tbtn" title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
-          <span id="tuneInfo">&mdash;</span>
           <button id="tuneLoop" class="tbtn" title="Loop the preview" aria-label="Loop preview"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
+          <span id="tuneInfo">&mdash;</span>
         </div>
         <canvas id="tuneCanvas" data-desc="TUNE VIEW — the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only — the tiles do the work"></canvas>
         <p class="edit-panel-title">PITCH DISCIPLINE // SING &rarr; SNAP</p>
@@ -495,10 +511,16 @@
           <button class="tune-chip vc-reg" data-vr="-12" title="Carrier one octave down">LOW</button>
           <button class="tune-chip vc-reg" data-vr="0" title="Carrier at spoken register">MID</button>
           <span class="tk-label" style="margin-left:16px">CARRIER</span>
-          <button class="tune-chip vc-carrier active" data-vc="chord" title="Chord — the machine chord">CHORD</button>
-          <button class="tune-chip vc-carrier" data-vc="mono" title="Single tone, follows your melody">MONO</button>
-          <button class="tune-chip vc-carrier" data-vc="noise" title="White noise — whispered texture">NOISE</button>
-          <button class="tune-chip vc-carrier" id="trackCarrierBtn" data-vc="track" title="Upload carrier audio — click again to replace">TRACK ↑</button>
+          <div style="position:relative;display:inline-block">
+            <button id="carrierBtn" class="tune-chip" style="min-width:120px;text-align:left">CHORD ▾</button>
+            <div id="carrierPopup" style="display:none">
+              <button class="vc-carrier" data-vc="chord">CHORD<br><small>machine chord</small></button>
+              <button class="vc-carrier" data-vc="mono">MONO<br><small>follows melody</small></button>
+              <button class="vc-carrier" data-vc="noise">NOISE<br><small>whispered texture</small></button>
+              <button class="vc-carrier" data-vc="track">TRACK // FILE<br><small>upload from disk</small></button>
+              <button id="trackUplinkBtn" class="vc-track-up" title="Load carrier from Audiotool">TRACK // UPLINK<br><small>from audiotool</small></button>
+            </div>
+          </div>
           <input type="file" id="carrierFileInput" accept="audio/*" style="display:none">
         </div>
         <div class="tune-tiles">
@@ -582,7 +604,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.36</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.39</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1135,7 +1157,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.36";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.39";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2559,9 +2581,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const url=atUrlInput.value.trim();
     if (!/audiotool\.com/.test(url)){ setStatus("INVALID PROJECT LINK"); return; }
     atUrlPop.classList.add("hidden");
-    atOpenProject({ url });
+    atOpenProject({ url }, _carrierPickMode); _carrierPickMode=false;
   }
-  async function atOpenProject(proj){
+  async function atOpenProject(proj, forCarrier_){
     const at=atSession, c=at.client||at;
     let nexus=null;
     try {
@@ -2595,7 +2617,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         try { const m=await c.samples.get(nm); if (!(m instanceof Error)) meta=m; } catch(err){}
         items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:{ name:(meta&&meta.name)||nm, bpm:(meta&&Number(meta.bpm))||0, displayName:(meta&&meta.displayName)||"" } });
       }
-      showListPop("SELECT SAMPLE", items, (sample)=>atDownloadSample(c, sample, projBpm));
+      showListPop(forCarrier_?"SELECT CARRIER":"SELECT SAMPLE", items, forCarrier_?(sample)=>atDownloadCarrier(c,sample):(sample)=>atDownloadSample(c, sample, projBpm));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
     finally { try { if (nexus && nexus.stop) nexus.stop(); } catch(err){} }
   }
@@ -2629,6 +2651,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       P.chop.bpm=gridBpm; syncChopBtns();
       loadDecodedBuffer(buf, (gridBpm!==srcBpm ? "TEMPO FIT // "+gridBpm+" BPM (SRC "+srcBpm+")" : "TEMPO LOCKED // "+gridBpm+" BPM")+" // "+nm, "audiotool");
     } catch(e){ console.error("[UPLINK]", e); setStatus("DOWNLOAD FAILED // SEE CONSOLE (F12)"); }
+  }
+  async function atDownloadCarrier(c, sample){
+    try {
+      const nm=String(sample.displayName||sample.name||"CARRIER").toUpperCase().slice(0,28);
+      setStatus("LOADING CARRIER // "+nm);
+      const blob=await c.samples.download(sample.name||sample, { format:"wav" });
+      if (blob instanceof Error) throw blob;
+      carrierBuffer=await ctxGet().decodeAudioData(await blob.arrayBuffer());
+      syncVocUi(); setStatus("CARRIER LOADED // "+nm);
+      if (tuneMode==="vocoder") tunePlayPreview();
+    } catch(e){ setStatus("CARRIER LOAD FAILED // SEE CONSOLE"); console.error("[CARRIER]",e); }
   }
 
   // ---------- Waveform + selection ----------
@@ -3289,7 +3322,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const AT_REDIRECT="https://snadbreugen.github.io/the-drecksler/";
   const AT_SCOPE="sample:read sample:write project:read project:write";
   const uplinkBtn=$("#uplinkBtn");
-  let atSession=null, atSdkPromise=null;
+  let atSession=null, atSdkPromise=null, _carrierPickMode=false;
   function loadAtSdk(){
     if (!atSdkPromise){
       setStatus("UPLINK // LOADING SDK");
@@ -3725,7 +3758,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // [VOCODER-DSP-END]
 
   const tuneCv=$("#tuneCanvas"), tuneCtx2=tuneCv.getContext("2d");
-  let tuneOverrides={}, tuneMidiLo=48, tuneMidiHi=72, tuneDragSeg=-1, tuneDragBaseNote=0;
+  let tuneOverrides={}, tuneMidiLo=48, tuneMidiHi=72, tuneDragSeg=-1, tuneDragBaseNote=0, tuneHoverSeg=-1;
   const tuneRootSel=$("#tuneRoot"), tuneInfo=$("#tuneInfo"), tuneKeySrc=$("#tuneKeySrc");
   let tuneScaleVal="maj", tuneMode="hard", tuneRootTouched=false;   // hard | soft | robot
   const TUNE_NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
@@ -3866,11 +3899,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const x1=xOfT(sg.a/tuneSr), x2=xOfT(sg.b/tuneSr);
       const yy=yOf(sg.note);
       const hot=(playP!=null&&playP>=sg.a&&playP<sg.b);
-      const ov=tuneOverrides[sgi_]!=null, drag=tuneDragSeg===sgi_;
-      g.fillStyle=drag?"#ffffff":ov?"#ffe082":hot?"#ffb056":"rgba(255,106,0,.9)";
+      const ov=tuneOverrides[sgi_]!=null, drag=tuneDragSeg===sgi_, hov_=tuneHoverSeg===sgi_;
+      g.fillStyle=drag?"#ffffff":hov_?"#ffcc44":ov?"#ffe082":hot?"#ffb056":"rgba(255,106,0,.9)";
       g.shadowColor=drag?"rgba(255,255,255,.9)":ov?"rgba(255,224,130,.8)":hot?"rgba(255,176,86,.95)":"rgba(255,106,0,.6)";
-      g.shadowBlur=drag?20:ov?10:hot?16:8;
-      g.fillRect(x1,yy-(hot||drag?3:2),Math.max(2,x2-x1-1),hot||drag?6:4);
+      g.shadowBlur=drag?20:hov_?14:ov?10:hot?16:8;
+      g.fillRect(x1,yy-(hot||drag||hov_?3:2),Math.max(2,x2-x1-1),hot||drag||hov_?6:4);
       g.shadowBlur=0;
       sgi_++;
     }
@@ -3977,20 +4010,36 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let i=0;i<segs_.length;i++){
       const sg=segs_[i];
       const yy=ch-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch;
-      if (tSamp>=sg.a&&tSamp<sg.b&&Math.abs(yc-yy)<=14){
-        tuneDragSeg=i; tuneDragBaseNote=segs_[i].note; tuneCv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+      if (tSamp>=sg.a&&tSamp<sg.b&&Math.abs(yc-yy)<=22){
+        tuneDragSeg=i; tuneDragBaseNote=segs_[i].note; tuneCv.style.cursor="grabbing"; tuneCv.setPointerCapture(e.pointerId); e.preventDefault(); return;
       }
     }
   });
   tuneCv.addEventListener("pointermove",(e)=>{
-    if (tuneDragSeg<0) return;
+    if (tuneDragSeg<0){
+      if (!tuneF0||!buffer){ return; }
+      const r_=tuneCv.getBoundingClientRect();
+      const xc_=e.clientX-r_.left, yc_=e.clientY-r_.top;
+      const cw_=tuneCv.clientWidth, ch_=tuneCv.clientHeight;
+      const tS_=(xc_/cw_)*buffer.duration*tuneSr;
+      const segsH_=tuneMode!=="vocoder"?segsWithOverrides():[];
+      let found_=-1;
+      for(let i=0;i<segsH_.length;i++){
+        const sg=segsH_[i];
+        const yy=ch_-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch_;
+        if(tS_>=sg.a&&tS_<sg.b&&Math.abs(yc_-yy)<=22){ found_=i; break; }
+      }
+      if(found_!==tuneHoverSeg){ tuneHoverSeg=found_; tuneCv.style.cursor=found_>=0?"grab":"default"; drawTune(null); }
+      return;
+    }
     const r=tuneCv.getBoundingClientRect();
     const yFrac=1-(e.clientY-r.top)/tuneCv.clientHeight;
     const oct=Math.max(-1,Math.min(2,Math.round(yFrac*3)-1));
     tuneOverrides[tuneDragSeg]=oct; drawTune(null);
   });
-  tuneCv.addEventListener("pointerup",()=>{ tuneDragSeg=-1; });
-  tuneCv.addEventListener("pointercancel",()=>{ tuneDragSeg=-1; });
+  tuneCv.addEventListener("pointerup",()=>{ tuneDragSeg=-1; tuneCv.style.cursor="default"; });
+  tuneCv.addEventListener("pointercancel",()=>{ tuneDragSeg=-1; tuneCv.style.cursor="default"; });
+  tuneCv.addEventListener("pointerleave",()=>{ if(tuneDragSeg<0&&tuneHoverSeg>=0){ tuneHoverSeg=-1; tuneCv.style.cursor="default"; drawTune(null); } });
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
@@ -4001,7 +4050,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
     document.querySelectorAll(".vc-carrier").forEach((b)=>b.classList.toggle("active", b.dataset.vc===vocCarrierType));
-    const trk_=document.querySelector("[data-vc='track']"); if(trk_) trk_.textContent=carrierBuffer?"TRACK ✓":"TRACK ↑";
+    const _cbtn=document.getElementById("carrierBtn");
+    if(_cbtn){ const _lbl={chord:"CHORD",mono:"MONO",noise:"NOISE",track:carrierBuffer?"TRACK ✓":"TRACK ↑"}[vocCarrierType]||"CHORD"; _cbtn.textContent=_lbl+" ▾"; }
+    const _trkOpt=document.querySelector("#carrierPopup [data-vc='track']"); if(_trkOpt) _trkOpt.firstChild.textContent=carrierBuffer?"TRACK ✓":"TRACK ↑";
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
@@ -4014,9 +4065,23 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   document.querySelectorAll(".vc-carrier").forEach((b)=>b.addEventListener("click", ()=>{
     const wasActive_=vocCarrierType===b.dataset.vc;
     vocCarrierType=b.dataset.vc; syncVocUi();
+    document.getElementById("carrierPopup").style.display="none";
     if(b.dataset.vc==="track"&&(!carrierBuffer||wasActive_)) document.getElementById("carrierFileInput").click();
     else if(tuneMode==="vocoder") tunePlayPreview();
   }));
+  document.getElementById("carrierBtn").addEventListener("click",(e)=>{
+    e.stopPropagation();
+    const _p=document.getElementById("carrierPopup");
+    _p.style.display=_p.style.display==="none"?"block":"none";
+  });
+  document.addEventListener("click",()=>{ const _p=document.getElementById("carrierPopup"); if(_p) _p.style.display="none"; });
+  document.getElementById("trackUplinkBtn").addEventListener("click",async()=>{
+    vocCarrierType="track"; syncVocUi();
+    document.getElementById("carrierPopup").style.display="none";
+    if(!atSession){ await atConnect(true); if(!atSession) return; }
+    _carrierPickMode=true;
+    atUrlPop.classList.remove("hidden"); atUrlInput.value=""; atUrlInput.focus();
+  });
   document.getElementById("carrierFileInput").addEventListener("change",async(e)=>{
     const f_=e.target.files[0]; if(!f_) return;
     try{ const ab_=await f_.arrayBuffer(); carrierBuffer=await ctxGet().decodeAudioData(ab_); syncVocUi();
