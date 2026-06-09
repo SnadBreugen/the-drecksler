@@ -287,6 +287,8 @@
   .tune-bar { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .tune-bar label { font-size:10px; letter-spacing:.16em; color:var(--info); }
   .tune-bar select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:5px 8px; font-family:"Space Mono",monospace; font-size:11px; }
+  #sampleBack { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; color:#ff6a00; border-color:rgba(255,106,0,.4); opacity:.3; cursor:default; }
+  #sampleBack:not([disabled]) { opacity:1; border-color:#ff6a00; box-shadow:0 0 8px rgba(255,106,0,.28); cursor:pointer; }
   #tuneLoop { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; padding:4px 10px; margin-left:10px; background:transparent; color:#7a4a66; border:1px solid #5a3048; border-radius:5px; cursor:pointer; }
   #tuneLoop.active { color:#ff5bd0; border-color:#ff5bd0; text-shadow:0 0 6px rgba(255,91,208,.6); box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneInfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#ff6a00; text-shadow:0 0 7px rgba(255,106,0,.5); letter-spacing:.08em; }
@@ -557,13 +559,14 @@
     </section>
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
+      <button id="sampleBack" class="back-btn" disabled title="Restore the previous sample version">SAMPLE ZURÜCK</button>
       <button id="uplinkBtn" title="Connect to Audiotool (login)">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Render the arrangement as a WAV file">EXPORT // WAV</button>
       <button id="atBtn" disabled title="Send straight to your Audiotool library">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.21</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.22</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1116,7 +1119,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.21";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.22";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1253,6 +1256,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // Gefittet wird IMMER aus tempoRef (letzter Material-Stand) — maximal eine Stretch-Generation,
   // kein Qualitaetsverlust beim Knopf-Wackeln. Loads und Edits erneuern den Snapshot.
   let tempoRef=null, bufferFitBpm=120, tempoFitBusy=false, tempoFitPending=false;
+  let sampleState={ active:null, history:[] };  // Apply-Bus: geraeteuebergreifende Sample-History
   let defaultMaterial=false;                                 // Beispiel-Sample geladen? -> Quellen-Hinweis ueber der Wave
   let sourceHintGone=false;                                  // erster Klick irgendwo -> Hinweis weg
   function setTempoRef(){ tempoRef = buffer ? { buf:cloneBuffer(buffer), bpm:Math.round(P.chop.bpm) } : null; }
@@ -1323,8 +1327,33 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     drawEditWave();                                   // Editor-Ansicht haelt Schritt
       if (typeof syncSrcBtn==="function") syncSrcBtn();
     barAnchor=0;
+    sampleState.active={buffer,bufferSource,bufferFitBpm}; sampleState.history=[]; syncSampleBack();
   }
 
+  // ---------- Apply-Bus: sampleState commit / sampleBack ----------
+  function commit(newBuf, newSrc, newBpm){
+    // Aktuellen Stand in die History sichern, dann neues active setzen
+    if (sampleState.active) sampleState.history.push({buffer:sampleState.active.buffer, bufferSource:sampleState.active.bufferSource, bufferFitBpm:sampleState.active.bufferFitBpm});
+    const src=newSrc||bufferSource, bpm=newBpm||bufferFitBpm;
+    sampleState.active={buffer:newBuf, bufferSource:src, bufferFitBpm:bpm};
+    buffer=newBuf; bufferSource=src; bufferFitBpm=bpm;
+    syncSampleBack();
+  }
+  function sampleBack(){
+    if (!sampleState.history.length) return;
+    const prev=sampleState.history.pop();
+    sampleState.active=prev;
+    buffer=prev.buffer; bufferSource=prev.bufferSource; bufferFitBpm=prev.bufferFitBpm;
+    // UI aktualisieren — Schritt 2 erweitert dies um Editor-/Chopper-State
+    drawWave(); drawEditWave(); drawGrid();
+    if (typeof tc!=="undefined") tc.textContent=fmtTime(buffer.duration);
+    setStatus("SAMPLE ZURÜCK // RESTORED");
+    syncSampleBack();
+  }
+  function syncSampleBack(){
+    const btn=$("#sampleBack"); if (!btn) return;
+    btn.disabled=!sampleState.history.length;
+  }
   // ---------- Saturation curve (used by the finisher) ----------
   function makeSatCurve(drive, n=2048){
     const c=new Float32Array(n), k=Math.max(1, drive), norm=Math.tanh(k);
@@ -3837,6 +3866,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   $("#tileHard").addEventListener("click", ()=>tuneTapTile("hard"));
   $("#tuneLoop").addEventListener("click", ()=>{ tuneLoop=!tuneLoop; $("#tuneLoop").classList.toggle("active", tuneLoop); if (tunePrevSrc) tunePrevSrc.loop=tuneLoop; });
+  $("#sampleBack").addEventListener("click", sampleBack);
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
