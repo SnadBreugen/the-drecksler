@@ -51,6 +51,7 @@
   @keyframes featBlink { 50% { opacity:0; } }
   .feat-hover { margin-top:20px; padding-top:14px; border-top:1px solid rgba(189,250,255,.18); min-height:4em; }
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
+  #bgWave { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:1; }
   .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
@@ -381,6 +382,7 @@
 </style>
 </head>
 <body>
+<canvas id="bgWave" aria-hidden="true"></canvas>
 <aside class="feat-panel" id="featPanel" aria-hidden="true">
   <div id="featLines"></div>
   <div class="feat-hover" id="featHover"></div>
@@ -604,7 +606,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.49</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1157,7 +1159,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.46";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.49";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1367,6 +1369,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (typeof syncSrcBtn==="function") syncSrcBtn();
     barAnchor=0;
     sampleState.active={buffer,bufferSource,bufferFitBpm}; sampleState.history=[]; syncSampleBack();
+    drawBgWave();
   }
 
   // ---------- Apply-Bus: sampleState commit / sampleBack ----------
@@ -2745,7 +2748,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   async function startMonitor(){
     if (!buffer) return;
     const resume=pauseState;
-    stopPlayback();
+    stopPlayback(); bgWaveSetActive(true);
     const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
     liveFx=buildChain(ac);
     if (P.chop.on && chopHasContent()) startChopper(ac, (resume && resume.mode==="chop") ? resume.step : 0);
@@ -3266,7 +3269,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (playSource){ try{ playSource.stop(); }catch{} playSource=null; }
     if (liveFx){ try{ liveFx.out.disconnect(); }catch{} try{ liveFx.analyser.disconnect(); }catch{} liveFx=null; }
     previewFx=null;
-    cancelAnimationFrame(rafId); _meterLevels.set(outMeterFill,0); outMeterFill.style.width="0%"; setPlayIcon(false); drawWave(); drawGrid(); drawEqGraph();
+    cancelAnimationFrame(rafId); _meterLevels.set(outMeterFill,0); outMeterFill.style.width="0%"; setPlayIcon(false); drawWave(); drawGrid(); drawEqGraph(); bgWaveSetActive(false);
   }
 
   // ---------- Offline render ----------
@@ -3366,6 +3369,90 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Stationen (DRECKSLER-Werkbank: Editor / Hecksler / Finalizer) ----------
   const deckEl=document.querySelector(".deck");
+  function drawBgWave(st){
+    const cv=document.getElementById("bgWave"); if(!cv) return;
+    const W=window.innerWidth, H=window.innerHeight;
+    if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+    const g=cv.getContext("2d"); g.clearRect(0,0,W,H);
+    if(!buffer) return;
+    // Aktive Station aus Deck-Klasse ableiten wenn kein Argument
+    if(!st){
+      const dc=document.querySelector(".deck");
+      if(dc.classList.contains("st-hecksler")) st="hecksler";
+      else if(dc.classList.contains("st-tune")) st="tune";
+      else if(dc.classList.contains("st-fin")) st="fin";
+      else st="editor";
+    }
+    const COLS={ editor:"189,250,255", hecksler:"255,69,50", tune:"255,91,208", fin:"255,106,0" };
+    const col=COLS[st]||COLS.editor;
+    const data=buffer.getChannelData(0), n=data.length;
+    const mid=H*0.5, amp=H*0.38;
+    const step=Math.max(1,Math.floor(n/W));
+    // Waveform — subtile Füllfläche
+    g.beginPath(); g.moveTo(0,mid);
+    for(let x=0;x<W;x++){
+      let mn=0,mx=0;
+      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v<mn)mn=v; if(v>mx)mx=v; }
+      g.lineTo(x, mid-mx*amp);
+    }
+    for(let x=W-1;x>=0;x--){
+      let mn=0;
+      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v<mn)mn=v; }
+      g.lineTo(x, mid-mn*amp);
+    }
+    g.closePath();
+    const grad=g.createLinearGradient(0,mid-amp,0,mid+amp);
+    grad.addColorStop(0,`rgba(${col},0.055)`);
+    grad.addColorStop(0.5,`rgba(${col},0.025)`);
+    grad.addColorStop(1,`rgba(${col},0.055)`);
+    g.fillStyle=grad; g.fill();
+    // Konturlinie oben
+    g.beginPath(); g.moveTo(0,mid);
+    for(let x=0;x<W;x++){
+      let mx=-1;
+      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
+      g.lineTo(x, mid-mx*amp);
+    }
+    g.strokeStyle=`rgba(${col},0.08)`; g.lineWidth=1; g.stroke();
+    // TUNE: Pitch-Track-Kurve drüber
+    if(st==="tune" && tuneF0 && tuneF0.length>1){
+      const nF=tuneF0.length;
+      const ms=[]; for(let i=0;i<nF;i++) if(tuneF0[i]>0) ms.push(f2m(tuneF0[i]));
+      if(ms.length>4){
+        ms.sort((a,b)=>a-b);
+        const med=ms[ms.length>>1];
+        const fLo=med-14, fHi=med+14;
+        const yOfM=(m)=>H*0.15+((fHi-m)/(fHi-fLo))*H*0.7;
+        g.beginPath(); let moved=false, lastY=H/2;
+        for(let i=0;i<nF;i++){
+          const x=i/nF*W;
+          if(tuneF0[i]>0){
+            const y=yOfM(f2m(tuneF0[i])); lastY=y;
+            moved?g.lineTo(x,y):g.moveTo(x,y); moved=true;
+          } else if(moved){ g.lineTo(x,lastY); }
+        }
+        g.strokeStyle="rgba(255,91,208,0.13)"; g.lineWidth=2.5;
+        g.shadowColor="rgba(255,91,208,0.18)"; g.shadowBlur=12;
+        g.stroke(); g.shadowBlur=0;
+      }
+    }
+    // CHOPPER: vertikale Raster-Linien
+    if(st==="hecksler"){
+      const ts=totalSteps(), sd=stepDur(), spb=stepsPerBar();
+      const dur=buffer.duration;
+      for(let i=0;i<=ts;i++){
+        const x=(i*sd/dur)*W;
+        const isBar=(i%spb===0);
+        g.strokeStyle=isBar?"rgba(255,69,50,0.10)":"rgba(255,69,50,0.05)";
+        g.lineWidth=isBar?1:0.5;
+        g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke();
+      }
+    }
+  }
+  function bgWaveSetActive(on){
+    const cv=document.getElementById("bgWave"); if(!cv) return;
+    cv.style.opacity=on?"1":"0";
+  }
   function setStation(st){
     deckEl.classList.remove("st-editor","st-hecksler","st-fin","st-tune");
     deckEl.classList.add("st-"+st);
@@ -3386,6 +3473,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       })();
     }
     setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":st==="tune"?"TUNE":"FINALIZER"));
+    drawBgWave(st);
   }
   $("#stTune").addEventListener("click", ()=>setStation("tune"));
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
@@ -3767,7 +3855,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   let tuneF0=null, tuneConf=null, tuneSr=44100, tuneBusy=false, tunePrevSrc=null, tuneBufRef=null, tuneRaf=0;
   let tuneLoop=false;
   function tuneLeave(){
-    if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; }
+    if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; bgWaveSetActive(false); }
     if (tuneRaf){ cancelAnimationFrame(tuneRaf); tuneRaf=0; }
   }
   function tuneAutoReplay(){
@@ -3969,7 +4057,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const src=ac.createBufferSource(); src.buffer=nb;
       const gg=ac.createGain(); gg.gain.value=0.95;
       src.connect(gg); gg.connect(ac.destination);
-      src.loop=tuneLoop; src.loopStart=0; src.loopEnd=nb.duration; src.start(); tunePrevSrc=src;
+      src.loop=tuneLoop; src.loopStart=0; src.loopEnd=nb.duration; src.start(); tunePrevSrc=src; bgWaveSetActive(true);
       const t0=ac.currentTime, dur=nb.duration;
       (function beam(){
         if (!tunePrevSrc){ drawTune(); tuneRaf=0; return; }
