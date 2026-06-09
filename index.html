@@ -473,10 +473,10 @@
     <section class="stage island-tune" data-tag="TUNE">
       <div class="fin-inner">
         <div class="tune-bar" style="margin-top:0;margin-bottom:8px">
-          <button id="tunePlay" class="tune-transport" title="Preview tuned result (Space)">&#9654;</button>
-          <button id="tuneStop" class="tune-transport" title="Stop preview">&#9632;</button>
+          <button id="tunePlay" class="tbtn" title="Preview tuned result (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
+          <button id="tuneStop" class="tbtn" title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
           <span id="tuneInfo">&mdash;</span>
-          <button id="tuneLoop" class="tune-loop" title="Loop the preview" aria-label="Loop preview">&#8635; LOOP</button>
+          <button id="tuneLoop" class="tbtn" title="Loop the preview" aria-label="Loop preview"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
         </div>
         <canvas id="tuneCanvas" data-desc="TUNE VIEW — the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only — the tiles do the work"></canvas>
         <p class="edit-panel-title">PITCH DISCIPLINE // SING &rarr; SNAP</p>
@@ -512,7 +512,7 @@
         <div class="transport">
           <button class="tbtn" id="playBtn" disabled title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="stopPlayBtn" disabled title="Stop (reset position)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
-          <button id="chopLoopBtn" class="tune-loop" title="Loop the chopper (off = stop after one cycle)">&#8635; LOOP</button>
+          <button id="chopLoopBtn" class="tbtn" title="Loop the chopper (off = stop after one cycle)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
         </div>
       </div>
       <div class="wave-wrap" id="waveWrap">
@@ -575,7 +575,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.25</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.26</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1128,7 +1128,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.25";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.26";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
