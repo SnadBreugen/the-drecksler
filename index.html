@@ -285,6 +285,17 @@
   .tune-tile.active { border-color:#ff5bd0; box-shadow:0 0 16px rgba(255,91,208,.4), inset 0 0 12px rgba(255,91,208,.10); }
   #tuneCanvas { width:100%; height:170px; display:block; background:#0a0805; border:1px solid var(--line); border-radius:6px; }
   #tuneCanvas { cursor:default; }
+  .fade-wrap { position:relative; display:inline-block; }
+  .fade-popup { position:absolute; top:calc(100% + 6px); left:0; z-index:200;
+    background:#0e0b09; border:1px solid rgba(189,250,255,.28); border-radius:5px;
+    min-width:150px; box-shadow:0 8px 24px rgba(0,0,0,.85); overflow:hidden; }
+  .fade-popup.hidden { display:none; }
+  .fade-popup .fade-opt { display:block; width:100%; text-align:left; padding:9px 14px;
+    background:transparent; color:rgba(189,250,255,.8); border:none;
+    border-bottom:1px solid rgba(189,250,255,.1); cursor:pointer;
+    font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.08em; }
+  .fade-popup .fade-opt:last-child { border-bottom:none; }
+  .fade-popup .fade-opt:hover { color:#ff6a00; }
   #carrierPopup { position:absolute; top:calc(100% + 6px); left:0; z-index:200;
     background:#0e0b09; border:1px solid rgba(189,250,255,.28); border-radius:5px;
     min-width:150px; box-shadow:0 8px 24px rgba(0,0,0,.85); overflow:hidden; }
@@ -434,10 +445,21 @@
         <button id="edHalfA" disabled title="Keep the first half of the material">&#189; A</button>
         <button id="edHalfB" disabled title="Keep the second half (tails with built-up delay/reverb)">&#189; B</button>
         <button id="edSil" disabled title="Silence the selection (length unchanged)">SILENCE</button>
+        <button id="edRev" disabled title="Reverse the selection (or whole material)">REVERSE</button>
         <button id="edGainM" disabled title="-2 dB (selection or whole file)">GAIN &minus;</button>
         <button id="edGainP" disabled title="+2 dB (selection or whole file)">GAIN +</button>
-        <button id="edFadeIn" disabled title="Fade in across the selection (silence to full)">FADE IN</button>
-        <button id="edFadeOut" disabled title="Fade out across the selection (full to silence)">FADE OUT</button>
+        <span class="fade-wrap"><button id="edFadeIn" disabled title="Fade in across the selection">FADE IN</button>
+          <div id="fadeInPopup" class="fade-popup hidden">
+            <button class="fade-opt" data-fc="lin" data-dir="1">LINEAR</button>
+            <button class="fade-opt" data-fc="exp" data-dir="1">EXPONENTIAL</button>
+            <button class="fade-opt" data-fc="scurve" data-dir="1">S-CURVE</button>
+          </div></span>
+        <span class="fade-wrap"><button id="edFadeOut" disabled title="Fade out across the selection">FADE OUT</button>
+          <div id="fadeOutPopup" class="fade-popup hidden">
+            <button class="fade-opt" data-fc="lin" data-dir="-1">LINEAR</button>
+            <button class="fade-opt" data-fc="exp" data-dir="-1">EXPONENTIAL</button>
+            <button class="fade-opt" data-fc="scurve" data-dir="-1">S-CURVE</button>
+          </div></span>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
         <span class="edit-sep"></span>
@@ -608,7 +630,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.82</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.88</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1161,7 +1183,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.82";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.88";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -4390,6 +4412,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       ectx.fillStyle="rgba(255,84,98,.16)"; ectx.fillRect(x1,0,x2-x1,h);
       ectx.strokeStyle="rgba(255,108,92,.9)";
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
+      if(fadePreview!==0){                            // Fade-Vorschau-Rampe (folgt der gewählten Kurve)
+        ectx.fillStyle="rgba(189,250,255,.18)"; ectx.strokeStyle="rgba(189,250,255,.85)"; ectx.lineWidth=2;
+        ectx.beginPath(); ectx.moveTo(x1, fadePreview>0?h:0);
+        const steps=Math.max(8, Math.round(x2-x1));
+        for(let s2=0;s2<=steps;s2++){
+          const p=s2/steps;
+          const g=fadeShape(fadePreview>0?p:1-p);       // 0..1 Verstärkung
+          ectx.lineTo(x1+(x2-x1)*p, h-g*h);
+        }
+        ectx.stroke();
+        ectx.lineTo(x2, h); ectx.lineTo(x1, h); ectx.closePath(); ectx.fill();
+      }
     }
     // Slice-Leiste: ruhige 8tel-Grenzen als Orientierung (Feinrhythmik macht QUANTIZE)
     if (buffer && P.chop.on){
@@ -4446,12 +4480,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     edTrim.disabled=edCut.disabled=edFadeIn.disabled=edFadeOut.disabled=!hasSel;
     edNorm.disabled=!hasBuf;
     $("#edHalfA").disabled=$("#edHalfB").disabled=$("#edGainP").disabled=$("#edGainM").disabled=!hasBuf;
-    $("#edSil").disabled=!hasSel;
+    $("#edSil").disabled=!hasSel; $("#edRev").disabled=!hasBuf;
     $("#eq8Apply").disabled=!hasBuf;
     $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
-  let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null;
+  let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null, fadePreview=0, fadeCurve="lin";
   let barSnap=false, barAnchor=0;                                // Takt-Raster: an / Downbeat-Anker (s)
   const barDurS=()=>240/Math.max(30, bufferFitBpm);
   const edBarsBtn=$("#edBarsBtn");
@@ -4543,7 +4577,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   editCanvas.addEventListener("pointerup",(e)=>{
     if (anchorDrag){ anchorDrag=false; editCanvas.style.cursor="text"; drawEditWave(); return; }
-    if (edgeDrag){ edgeDrag=null; editCanvas.style.cursor="text"; drawEditWave(); return; }
+    if (edgeDrag){ if(editSel && !barSnap) editSel={ a:snapZero(editSel.a), b:snapZero(editSel.b) }; edgeDrag=null; editCanvas.style.cursor="text"; drawEditWave(); return; }
     if (panDrag){ panDrag=null; editCanvas.style.cursor="text"; return; }
     // Klick (kein Drag): Raster-Slice still selektieren. Hoeren NUR per ALT+Klick (Geraete-Konvention).
     // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
@@ -4558,7 +4592,16 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         return;
       }
     }
+    if(editSel && !barSnap){                            // Kanten an Nulldurchgang rasten
+      editSel={ a:snapZero(editSel.a), b:snapZero(editSel.b) };
+    }
     editDrag=null; drawEditWave();
+  });
+  editCanvas.addEventListener("dblclick",(e)=>{
+    if(!buffer) return;
+    editSel={ a:0, b:buffer.duration };
+    editDrag=null; drawEditWave();
+    setStatus("SELECTED ALL // "+buffer.duration.toFixed(2)+"S");
   });
   editCanvas.addEventListener("wheel",(e)=>{
     if (!buffer) return;
@@ -4626,6 +4669,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const A=editSel.a, B=editSel.b;
     applyEdit(concatBuffers(subBuffer(buffer,0,A), subBuffer(buffer,B,buffer.duration)), "SELECTION REMOVED", true, (p)=>p<A?p:(p>B?p-(B-A):A));
   });
+  // Kurvenform für Fades: p=0..1 Fortschritt, gibt Verstärkung 0..1
+  function fadeShape(p){
+    if(fadeCurve==="exp") return p*p;                   // exponentiell: langsam ein, schnell voll
+    if(fadeCurve==="scurve") return p*p*(3-2*p);        // S-Kurve: weich an beiden Enden
+    return p;                                           // linear
+  }
   function applyFade(dir){
     if (!buffer||!editSel) return;
     pushEditUndo(dir>0?"FADE IN":"FADE OUT");
@@ -4635,14 +4684,54 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let c=0;c<nb.numberOfChannels;c++){
       const d=nb.getChannelData(c);
       for (let i=0;i<n && a+i<d.length;i++){
-        const t=i/n;
-        d[a+i]*=(dir>0 ? t : 1-t);                      // lineare Rampe ueber die ganze Auswahl
+        const p=i/n;
+        d[a+i]*=fadeShape(dir>0 ? p : 1-p);
       }
     }
     applyEdit(nb, dir>0?"FADED IN":"FADED OUT", false);
   }
-  edFadeIn.addEventListener("click", ()=>applyFade(1));
-  edFadeOut.addEventListener("click", ()=>applyFade(-1));
+  const fadeInPopup=$("#fadeInPopup"), fadeOutPopup=$("#fadeOutPopup");
+  function closeFadePopups(){ fadeInPopup.classList.add("hidden"); fadeOutPopup.classList.add("hidden"); fadePreview=0; drawEditWave(); }
+  // Klick auf FADE IN/OUT öffnet das Kurven-Popup (nur wenn Auswahl steht)
+  edFadeIn.addEventListener("click",(e)=>{ if(!editSel) return; e.stopPropagation(); fadeOutPopup.classList.add("hidden"); fadeInPopup.classList.toggle("hidden"); });
+  edFadeOut.addEventListener("click",(e)=>{ if(!editSel) return; e.stopPropagation(); fadeInPopup.classList.add("hidden"); fadeOutPopup.classList.toggle("hidden"); });
+  // Kurve wählen → Fade in der jeweiligen Richtung sofort anwenden
+  document.querySelectorAll(".fade-opt").forEach((b)=>{
+    b.addEventListener("pointerenter", ()=>{ if(editSel){ fadeCurve=b.dataset.fc; fadePreview=+b.dataset.dir; drawEditWave(); } });
+    b.addEventListener("click",(e)=>{
+      e.stopPropagation(); fadeCurve=b.dataset.fc;
+      const dir=+b.dataset.dir;
+      fadeInPopup.classList.add("hidden"); fadeOutPopup.classList.add("hidden"); fadePreview=0;
+      applyFade(dir);
+    });
+  });
+  document.addEventListener("click",()=>{ closeFadePopups(); });
+  // Nulldurchgang-Snap: rastet eine Zeit (s) an den nächsten Zero-Crossing (klickfreie Schnitte)
+  function snapZero(t){
+    if(!buffer) return t;
+    const sr=buffer.sampleRate, d=buffer.getChannelData(0);
+    let i=Math.round(t*sr); i=Math.max(1,Math.min(d.length-1,i));
+    const win=Math.round(0.003*sr);                 // max 3ms suchen
+    let best=i, bestD=win+1;
+    for(let k=-win;k<=win;k++){
+      const j=i+k; if(j<1||j>=d.length) continue;
+      if((d[j-1]<=0&&d[j]>=0)||(d[j-1]>=0&&d[j]<=0)){ if(Math.abs(k)<bestD){ bestD=Math.abs(k); best=j; } }
+    }
+    return best/sr;
+  }
+  // REVERSE: Auswahl rückwärts (oder ganzes Material wenn keine Auswahl)
+  const edRev=$("#edRev");
+  edRev.addEventListener("click", ()=>{
+    if(!buffer) return; pushEditUndo("REVERSE");
+    const nb=cloneBuffer(buffer), sr=nb.sampleRate;
+    const a=editSel?Math.round(editSel.a*sr):0;
+    const b=editSel?Math.min(nb.length,Math.round(editSel.b*sr)):nb.length;
+    for(let c=0;c<nb.numberOfChannels;c++){
+      const d=nb.getChannelData(c);
+      for(let i=0,j=b-1;a+i<j;i++,j--){ const tmp=d[a+i]; d[a+i]=d[j]; d[j]=tmp; }
+    }
+    applyEdit(nb, editSel?"SELECTION REVERSED":"MATERIAL REVERSED", false);
+  });
   // ---------- Etappe E1: Halve / Silence / Gain ----------
   const edHalfA=$("#edHalfA"), edHalfB=$("#edHalfB"), edSil=$("#edSil"), edGainP=$("#edGainP"), edGainM=$("#edGainM");
   function applyHalve(keepFirst){
