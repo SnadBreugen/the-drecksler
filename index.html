@@ -26,9 +26,7 @@
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; }
   body {
-    background:
-      radial-gradient(60% 40% at 50% 50%, rgba(255,69,50,.16) 0%, rgba(255,69,50,0) 75%),
-      #08050a;
+    background:#08050a;
     background-attachment:fixed;
     color:var(--ink); font-family:"Space Mono",monospace; -webkit-font-smoothing:antialiased;
     display:flex; align-items:flex-start; justify-content:center; padding:28px 20px; position:relative; overflow:auto; min-height:100vh;
@@ -51,7 +49,8 @@
   @keyframes featBlink { 50% { opacity:0; } }
   .feat-hover { margin-top:20px; padding-top:14px; border-top:1px solid rgba(189,250,255,.18); min-height:4em; }
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
-  #bgWave { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:1; }
+  #bgWave { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
+    filter:blur(6px); opacity:0; transition:opacity 0.7s ease; }
   .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
@@ -606,7 +605,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.49</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.66</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1159,7 +1158,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.49";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.66";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2787,7 +2786,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     selection=editSel ? { start:editSel.a, end:editSel.b } : null;   // Vorschau-Fenster = Editor-Auswahl
     startStraight(ac, (resumeOverride!=null) ? resumeOverride : (resume?resume.offset:null));
     selection=keep;
-    setPlayIcon(true);
+    setPlayIcon(true); bgWaveSetActive(true);
   }
   edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
   edStopBtn.addEventListener("click", ()=>stopPlayback());
@@ -2860,7 +2859,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     } else {
       playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
     }
-    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); rafId=requestAnimationFrame(follow); })();
+    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); drawBgWave("editor"); rafId=requestAnimationFrame(follow); })();
   }
   // ======== MARK-Modus: Schnitzen — ein durchgehender Chop, Markieren teilt ihn ========
   const segEnd=()=>buffer?Math.max(0.05, Math.min(loopDur(), buffer.duration-chopWin)):0;
@@ -3231,6 +3230,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         hl={ start:slF.t0+st0*slF.dur, end:slF.t0+l*slF.dur, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
       }
       drawWave(null, hl);
+      drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps() });
       tc.textContent=fmtTime((ac.currentTime-chopStartTime)%loopDur());
       if (liveFx) updateMeter(liveFx.analyser, outMeterFill);
       rafId=requestAnimationFrame(follow);
@@ -3369,13 +3369,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Stationen (DRECKSLER-Werkbank: Editor / Hecksler / Finalizer) ----------
   const deckEl=document.querySelector(".deck");
-  function drawBgWave(st){
+  function drawBgWave(st, pos, flash){
+    try{
     const cv=document.getElementById("bgWave"); if(!cv) return;
     const W=window.innerWidth, H=window.innerHeight;
     if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
     const g=cv.getContext("2d"); g.clearRect(0,0,W,H);
     if(!buffer) return;
-    // Aktive Station aus Deck-Klasse ableiten wenn kein Argument
     if(!st){
       const dc=document.querySelector(".deck");
       if(dc.classList.contains("st-hecksler")) st="hecksler";
@@ -3386,13 +3386,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const COLS={ editor:"189,250,255", hecksler:"255,69,50", tune:"255,91,208", fin:"255,106,0" };
     const col=COLS[st]||COLS.editor;
     const data=buffer.getChannelData(0), n=data.length;
-    const mid=H*0.5, amp=H*0.38;
+    const mid=H*0.5, amp=H*0.4;
     const step=Math.max(1,Math.floor(n/W));
-    // Waveform — subtile Füllfläche
+    const hasEditorSpec=(st==="editor" && typeof previewFx!=="undefined" && previewFx && previewFx.specAn && audioCtx);
+    // Füllfläche (nicht bei Editor mit Live-Spektrum)
+    if(!hasEditorSpec){
     g.beginPath(); g.moveTo(0,mid);
     for(let x=0;x<W;x++){
-      let mn=0,mx=0;
-      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v<mn)mn=v; if(v>mx)mx=v; }
+      let mx=0;
+      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
       g.lineTo(x, mid-mx*amp);
     }
     for(let x=W-1;x>=0;x--){
@@ -3402,19 +3404,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     g.closePath();
     const grad=g.createLinearGradient(0,mid-amp,0,mid+amp);
-    grad.addColorStop(0,`rgba(${col},0.055)`);
-    grad.addColorStop(0.5,`rgba(${col},0.025)`);
-    grad.addColorStop(1,`rgba(${col},0.055)`);
+    grad.addColorStop(0,`rgba(${col},0.4)`);
+    grad.addColorStop(0.5,`rgba(${col},0.2)`);
+    grad.addColorStop(1,`rgba(${col},0.4)`);
     g.fillStyle=grad; g.fill();
-    // Konturlinie oben
+    // Konturlinie
     g.beginPath(); g.moveTo(0,mid);
     for(let x=0;x<W;x++){
       let mx=-1;
       for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
       g.lineTo(x, mid-mx*amp);
     }
-    g.strokeStyle=`rgba(${col},0.08)`; g.lineWidth=1; g.stroke();
-    // TUNE: Pitch-Track-Kurve drüber
+    g.strokeStyle=`rgba(${col},0.55)`; g.lineWidth=2; g.stroke();
+    }
+    // TUNE: Pitch-Track-Kurve
     if(st==="tune" && tuneF0 && tuneF0.length>1){
       const nF=tuneF0.length;
       const ms=[]; for(let i=0;i<nF;i++) if(tuneF0[i]>0) ms.push(f2m(tuneF0[i]));
@@ -3431,26 +3434,65 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
             moved?g.lineTo(x,y):g.moveTo(x,y); moved=true;
           } else if(moved){ g.lineTo(x,lastY); }
         }
-        g.strokeStyle="rgba(255,91,208,0.13)"; g.lineWidth=2.5;
-        g.shadowColor="rgba(255,91,208,0.18)"; g.shadowBlur=12;
+        g.strokeStyle="rgba(255,91,208,0.35)"; g.lineWidth=3;
+        g.shadowColor="rgba(255,91,208,0.4)"; g.shadowBlur=14;
         g.stroke(); g.shadowBlur=0;
       }
     }
-    // CHOPPER: vertikale Raster-Linien
-    if(st==="hecksler"){
-      const ts=totalSteps(), sd=stepDur(), spb=stepsPerBar();
-      const dur=buffer.duration;
+    // CHOPPER: Raster-Linien + aufleuchtendes aktives Event
+    if(st==="hecksler" && typeof totalSteps==="function"){
+      const ts=totalSteps(), spb=stepsPerBar();
+      // Step-Raster über die volle Breite (gleichmäßig)
       for(let i=0;i<=ts;i++){
-        const x=(i*sd/dur)*W;
+        const x=(i/ts)*W;
         const isBar=(i%spb===0);
-        g.strokeStyle=isBar?"rgba(255,69,50,0.10)":"rgba(255,69,50,0.05)";
-        g.lineWidth=isBar?1:0.5;
+        g.strokeStyle=isBar?"rgba(255,69,50,0.25)":"rgba(255,69,50,0.1)";
+        g.lineWidth=isBar?1.5:0.5;
         g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke();
       }
+      // Aktives Event blitzt auf: hell beim Trigger, klingt über frac ab
+      if(flash && flash.step!=null){
+        const x0=(flash.step/ts)*W, x1=((flash.step+1)/ts)*W;
+        const decay=1-(flash.frac||0);          // 1 frisch → 0 am Step-Ende
+        const a=0.15+0.6*decay*decay;
+        g.save(); g.globalCompositeOperation="lighter";
+        const fg=g.createLinearGradient(0,mid-amp,0,mid+amp);
+        fg.addColorStop(0,`rgba(255,90,60,${a})`);
+        fg.addColorStop(0.5,`rgba(255,140,90,${a*0.6})`);
+        fg.addColorStop(1,`rgba(255,90,60,${a})`);
+        g.fillStyle=fg; g.fillRect(x0,0,x1-x0,H);
+        g.restore();
+      }
     }
+    // EDITOR: Live-Frequenzspektrum in Eisblau (reagiert auf EQ)
+    if(st==="editor" && typeof previewFx!=="undefined" && previewFx && previewFx.specAn && audioCtx){
+      const an=previewFx.specAn, nb=an.frequencyBinCount;
+      const buf=new Uint8Array(nb); an.getByteFrequencyData(buf);
+      const binHz=audioCtx.sampleRate/2/nb;
+      const FMIN=20, FMAX=20000;
+      const x2fL=(x)=>FMIN*Math.pow(FMAX/FMIN, Math.max(0,Math.min(1,x/W)));
+      const base=H*0.92;                          // Spektrum sitzt unten, wächst nach oben
+      g.beginPath(); g.moveTo(0,base);
+      for(let x=0;x<=W;x+=2){
+        const fb=Math.max(0,Math.min(nb-1.001, x2fL(x)/binHz));
+        const b0=Math.floor(fb), fr=fb-b0;
+        const v=(buf[b0]*(1-fr)+buf[Math.min(nb-1,b0+1)]*fr)/255;
+        g.lineTo(x, base-(v*v)*(H*0.8));
+      }
+      g.lineTo(W,base); g.closePath();
+      const sg=g.createLinearGradient(0,0,0,base);
+      sg.addColorStop(0,"rgba(120,240,255,0.7)");
+      sg.addColorStop(1,"rgba(60,210,255,0.25)");
+      g.fillStyle=sg; g.fill();
+      g.strokeStyle="rgba(150,250,255,0.9)"; g.lineWidth=2.5;
+      g.shadowColor="rgba(120,240,255,0.5)"; g.shadowBlur=10;
+      g.stroke(); g.shadowBlur=0;
+    }
+    }catch(e){ /* Zeichenfehler nie Playback blockieren lassen */ }
   }
   function bgWaveSetActive(on){
     const cv=document.getElementById("bgWave"); if(!cv) return;
+    if(on) drawBgWave();
     cv.style.opacity=on?"1":"0";
   }
   function setStation(st){
@@ -5113,6 +5155,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     } catch(e){ console.warn("[DEFAULT MATERIAL]", e); }
   })();
 })();
+
 </script>
 
 </body>
