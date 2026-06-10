@@ -49,8 +49,8 @@
   @keyframes featBlink { 50% { opacity:0; } }
   .feat-hover { margin-top:20px; padding-top:14px; border-top:1px solid rgba(189,250,255,.18); min-height:4em; }
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
-  #bgWave { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
-    filter:blur(6px); opacity:0; transition:opacity 0.7s ease; }
+  .bgwave-layer { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
+    filter:blur(4px); opacity:0; transition:opacity 0.6s ease; }
   .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
@@ -98,7 +98,7 @@
   .eq-tone .etool input[type=range] { flex:1; width:auto; }
   .eq-tone-h { margin:0 0 2px; font-family:"VT323",monospace; font-size:14px; letter-spacing:.14em; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); }
   .eq-tone-btns { display:flex; gap:8px; margin-top:4px; }
-  .edit-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; }
+  .edit-wrap canvas { width:100%; height:100%; display:block; cursor:text; }
   .edit-tools { display:flex; gap:6px; align-items:center; margin-top:12px; flex-wrap:wrap; }
   .edit-tools button { padding:7px 10px; font-size:10px; }
   .tbtn.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 12px rgba(255,106,0,.3), inset 0 0 6px rgba(255,106,0,.12); }
@@ -381,7 +381,10 @@
 </style>
 </head>
 <body>
-<canvas id="bgWave" aria-hidden="true"></canvas>
+<canvas id="bgWave-editor" class="bgwave-layer" aria-hidden="true"></canvas>
+<canvas id="bgWave-hecksler" class="bgwave-layer" aria-hidden="true"></canvas>
+<canvas id="bgWave-tune" class="bgwave-layer" aria-hidden="true"></canvas>
+<canvas id="bgWave-fin" class="bgwave-layer" aria-hidden="true"></canvas>
 <aside class="feat-panel" id="featPanel" aria-hidden="true">
   <div id="featLines"></div>
   <div class="feat-hover" id="featHover"></div>
@@ -605,7 +608,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.71</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.82</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1158,7 +1161,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.71";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.82";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -2859,7 +2862,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     } else {
       playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
     }
-    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); drawBgWave("editor"); rafId=requestAnimationFrame(follow); })();
+    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); drawBgWave(deckEl.classList.contains("st-fin")?"fin":"editor", (buffer&&buffer.duration)?ph/buffer.duration:null); rafId=requestAnimationFrame(follow); })();
   }
   // ======== MARK-Modus: Schnitzen — ein durchgehender Chop, Markieren teilt ihn ========
   const segEnd=()=>buffer?Math.max(0.05, Math.min(loopDur(), buffer.duration-chopWin)):0;
@@ -3230,7 +3233,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         hl={ start:slF.t0+st0*slF.dur, end:slF.t0+l*slF.dur, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
       }
       drawWave(null, hl);
-      drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps(), col:(cch?chopColor(cch,stepIdx):null), src:hl, dur:buffer.duration });
+      if(deckEl.classList.contains("st-fin")){ drawBgWave("fin", (buffer&&buffer.duration)?((ac.currentTime-chopStartTime)%loopDur())/buffer.duration:null); }
+      else drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps(), col:(cch?chopColor(cch,stepIdx):null), src:hl, dur:buffer.duration });
       tc.textContent=fmtTime((ac.currentTime-chopStartTime)%loopDur());
       if (liveFx) updateMeter(liveFx.analyser, outMeterFill);
       rafId=requestAnimationFrame(follow);
@@ -3371,11 +3375,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const deckEl=document.querySelector(".deck");
   function drawBgWave(st, pos, flash){
     try{
-    const cv=document.getElementById("bgWave"); if(!cv) return;
-    const W=window.innerWidth, H=window.innerHeight;
-    if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
-    const g=cv.getContext("2d"); g.clearRect(0,0,W,H);
-    if(!buffer) return;
     if(!st){
       const dc=document.querySelector(".deck");
       if(dc.classList.contains("st-hecksler")) st="hecksler";
@@ -3383,7 +3382,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       else if(dc.classList.contains("st-fin")) st="fin";
       else st="editor";
     }
-    const COLS={ editor:"189,250,255", hecksler:"255,69,50", tune:"255,91,208", fin:"255,106,0" };
+    const cv=document.getElementById("bgWave-"+st); if(!cv) return;
+    const W=window.innerWidth, H=window.innerHeight;
+    if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+    const g=cv.getContext("2d"); g.clearRect(0,0,W,H);
+    if(!buffer) return;
+    const COLS={ editor:"189,250,255", hecksler:"255,234,0", tune:"255,91,208", fin:"255,106,0" };
     const col=COLS[st]||COLS.editor;
     const data=buffer.getChannelData(0), n=data.length;
     const mid=H*0.5, amp=H*0.4;
@@ -3403,7 +3407,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.lineTo(x, mid-mn*amp);
     }
     g.closePath();
-    const wfA=(st==="tune")?0.15:0.4;            // bei Tune Waveform nur dezent im Hintergrund
+    const wfA=(st==="tune")?0.2:0.5;            // bei Tune Waveform nur dezent im Hintergrund
     const grad=g.createLinearGradient(0,mid-amp,0,mid+amp);
     grad.addColorStop(0,`rgba(${col},${wfA})`);
     grad.addColorStop(0.5,`rgba(${col},${wfA*0.5})`);
@@ -3444,7 +3448,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         g.save(); g.lineJoin="round"; g.globalCompositeOperation="lighter";
         const playFr=playP>0?Math.min(nF,Math.ceil(playP)+1):0;
         drawTube("rgba(189,250,255,0.25)",18,8);   // eisblau äußerer Glow
-        drawTube("rgba(189,250,255,0.85)",6,3);    // eisblau Kern
+        drawTube("rgba(189,250,255,1)",6,3.5);    // eisblau Kern
         if(playFr>0){
           drawTube("rgba(255,176,86,0.35)",24,9,playFr);  // orange gespielter Glow
           drawTube("rgba(255,176,86,1)",12,3.5,playFr);   // orange gespielter Kern
@@ -3478,7 +3482,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if(flash && flash.src && flash.dur){
         const sx0=(flash.src.start/flash.dur)*W, sx1=(flash.src.end/flash.dur)*W;
         const decay=1-(flash.frac||0);
-        const a=0.25+0.55*decay;
+        const a=0.35+0.55*decay;
         const rgb=(flash.col||"rgba(255,90,60,1)").replace(/^rgba?\(/,"").replace(/[\d.]+\)$/,"").replace(/,\s*$/,"");
         const c3=rgb.split(",").slice(0,3).map(x=>x.trim()).join(",");
         g.save(); g.globalCompositeOperation="lighter";
@@ -3512,21 +3516,51 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       }
       g.lineTo(W,base); g.closePath();
       const sg=g.createLinearGradient(0,0,0,base);
-      sg.addColorStop(0,"rgba(120,240,255,0.7)");
-      sg.addColorStop(1,"rgba(60,210,255,0.25)");
+      sg.addColorStop(0,"rgba(255,69,50,0.85)");
+      sg.addColorStop(1,"rgba(255,69,50,0.35)");
       g.fillStyle=sg; g.fill();
-      g.strokeStyle="rgba(150,250,255,0.9)"; g.lineWidth=2.5;
-      g.shadowColor="rgba(120,240,255,0.5)"; g.shadowBlur=10;
+      g.strokeStyle="rgba(255,90,70,0.95)"; g.lineWidth=2.5;
+      g.shadowColor="rgba(255,69,50,0.5)"; g.shadowBlur=10;
       g.stroke(); g.shadowBlur=0;
+    }
+    // FINALIZER: Waveform in Orange + wandernder Leuchtspot (grobes Gerüst)
+    if(st==="fin" && pos!=null && pos>=0 && pos<=1){
+      const px=pos*W;
+      g.save(); g.globalCompositeOperation="lighter";
+      const rg=g.createRadialGradient(px,mid,0,px,mid,Math.max(60,W*0.05));
+      rg.addColorStop(0,"rgba(255,106,0,0.5)");
+      rg.addColorStop(1,"rgba(255,106,0,0)");
+      g.fillStyle=rg; g.fillRect(px-W*0.05,0,W*0.1,H);
+      g.restore();
     }
     }catch(e){ /* Zeichenfehler nie Playback blockieren lassen */ }
   }
-  function bgWaveSetActive(on){
-    const cv=document.getElementById("bgWave"); if(!cv) return;
-    if(on) drawBgWave();
-    cv.style.opacity=on?"1":"0";
+  function bgWaveSetActive(on, st){
+    // Nur die aktive Station-Ebene einblenden; bei false alle aus.
+    if(!st){
+      const dc=document.querySelector(".deck");
+      st=dc.classList.contains("st-hecksler")?"hecksler":dc.classList.contains("st-tune")?"tune":dc.classList.contains("st-fin")?"fin":"editor";
+    }
+    if(on) drawBgWave(st);
+    document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity="0"; });
+    if(on){ const cv=document.getElementById("bgWave-"+st); if(cv) cv.style.opacity="1"; }
+  }
+  function bgWaveShow(st){
+    // Cross-Fade: Zielebene rein, alle anderen behalten ihr Standbild und faden aus.
+    document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity=(c.id==="bgWave-"+st)?"1":"0"; });
   }
   function setStation(st){
+    const prevStation=deckEl.classList.contains("st-editor")?"editor":deckEl.classList.contains("st-hecksler")?"hecksler":deckEl.classList.contains("st-tune")?"tune":"fin";
+    // Wechsel zwischen Stationen: laufende Wiedergabe stoppen, Hintergrund sofort aus —
+    // sonst zeichnet der alte RAF-Loop die vorige Animation weiter.
+    if(prevStation!==st){
+      const handover=(st==="hecksler" && playSource && audioCtx && P.chop.on && chopHasContent());
+      if(!handover){
+        if(typeof stopPlayback==="function") stopPlayback();
+        try{ if(typeof tunePrevSrc!=="undefined" && tunePrevSrc){ tunePrevSrc.stop(); tunePrevSrc=null; } }catch(e){}
+        try{ if(typeof tuneRaf!=="undefined" && tuneRaf){ cancelAnimationFrame(tuneRaf); tuneRaf=0; } }catch(e){}
+      }
+    }
     deckEl.classList.remove("st-editor","st-hecksler","st-fin","st-tune");
     deckEl.classList.add("st-"+st);
     $("#stEditor").classList.toggle("active", st==="editor");
@@ -3546,7 +3580,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       })();
     }
     setStatus("STATION // "+(st==="editor"?"EDITOR":st==="hecksler"?"CHOPPER":st==="tune"?"TUNE":"FINALIZER"));
-    drawBgWave(st);
+    // Hintergrund nur beim Abspielen — beim Wechsel ohne laufenden Sound alle Ebenen aus.
+    if(!(typeof isPlaying==="function" && isPlaying())) document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity="0"; });
+    else bgWaveShow(st);
   }
   $("#stTune").addEventListener("click", ()=>setStation("tune"));
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
@@ -4415,7 +4451,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
     edUndo.disabled=!editUndoStack.length;
   }
-  let editDrag=null, panDrag=null, anchorDrag=false;
+  let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null;
   let barSnap=false, barAnchor=0;                                // Takt-Raster: an / Downbeat-Anker (s)
   const barDurS=()=>240/Math.max(30, bufferFitBpm);
   const edBarsBtn=$("#edBarsBtn");
@@ -4433,20 +4469,44 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (!buffer) return;
     if (e.shiftKey && editView){                          // Shift+Drag = Ausschnitt schieben
       panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
+      editCanvas.style.cursor="grabbing";
       editCanvas.setPointerCapture(e.pointerId); return;
     }
     if (barSnap){                                       // Anker-Griff: oberer Streifen nahe des Dreiecks
       const r=editCanvas.getBoundingClientRect();
       const ax=t2px(barAnchor, r.width);
       if (e.clientY-r.top<18 && Math.abs(e.clientX-r.left-ax)<10){
-        anchorDrag=true; editCanvas.setPointerCapture(e.pointerId); return;
+        anchorDrag=true; editCanvas.style.cursor="ew-resize"; editCanvas.setPointerCapture(e.pointerId); return;
       }
+    }
+    // Auswahl-Kante anfassen: nur diese Kante justieren statt neue Auswahl
+    if (editSel && !barSnap){
+      const r=editCanvas.getBoundingClientRect(), mx=e.clientX-r.left;
+      const ax=t2px(editSel.a, r.width), bx=t2px(editSel.b, r.width);
+      if (Math.abs(mx-ax)<7){ edgeDrag={ fixed:editSel.b }; editCanvas.style.cursor="ew-resize"; editCanvas.setPointerCapture(e.pointerId); return; }
+      if (Math.abs(mx-bx)<7){ edgeDrag={ fixed:editSel.a }; editCanvas.style.cursor="ew-resize"; editCanvas.setPointerCapture(e.pointerId); return; }
     }
     editDrag={ a:evtT(e), x:e.clientX }; editSel=null; drawEditWave();
     editCanvas.setPointerCapture(e.pointerId);
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
+    // Hover-Cursor: zeigt was an dieser Stelle möglich ist (nur wenn nicht gerade gezogen)
+    if (!panDrag && !anchorDrag && !editDrag){
+      const r=editCanvas.getBoundingClientRect();
+      let cur="text";                                  // Standard: Auswahl ziehen
+      const mx=e.clientX-r.left;
+      if (e.shiftKey && editView) cur="grab";          // Shift: Ausschnitt schiebbar
+      else if (editSel && !barSnap){                   // Kanten einer bestehenden Auswahl justieren
+        const ax=t2px(editSel.a, r.width), bx=t2px(editSel.b, r.width);
+        if (Math.abs(mx-ax)<7 || Math.abs(mx-bx)<7) cur="ew-resize";
+      }
+      if (cur==="text" && barSnap){                    // Anker-Griff im oberen Streifen
+        const ax=t2px(barAnchor, r.width);
+        if (e.clientY-r.top<18 && Math.abs(mx-ax)<10) cur="ew-resize";
+      }
+      editCanvas.style.cursor=cur;
+    }
     if (panDrag){
       const r=editCanvas.getBoundingClientRect();
       const dt=-(e.clientX-panDrag.x)/r.width*(panDrag.t1-panDrag.t0);
@@ -4462,6 +4522,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       setStatus("DOWNBEAT // "+barAnchor.toFixed(3)+"S");
       return;
     }
+    if (edgeDrag){
+      const t=evtT(e);
+      const a=Math.min(edgeDrag.fixed,t), b=Math.max(edgeDrag.fixed,t);
+      editSel=(b-a>0.01)?{ a, b }:editSel;
+      drawEditWave();
+      setStatus("SELECTION // "+editSel.a.toFixed(2)+"S \u2013 "+editSel.b.toFixed(2)+"S");
+      return;
+    }
     if (!editDrag) return;
     const t=evtT(e);
     let a=Math.min(editDrag.a,t), b=Math.max(editDrag.a,t);
@@ -4474,8 +4542,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     drawEditWave();
   });
   editCanvas.addEventListener("pointerup",(e)=>{
-    if (anchorDrag){ anchorDrag=false; drawEditWave(); return; }
-    if (panDrag){ panDrag=null; return; }
+    if (anchorDrag){ anchorDrag=false; editCanvas.style.cursor="text"; drawEditWave(); return; }
+    if (edgeDrag){ edgeDrag=null; editCanvas.style.cursor="text"; drawEditWave(); return; }
+    if (panDrag){ panDrag=null; editCanvas.style.cursor="text"; return; }
     // Klick (kein Drag): Raster-Slice still selektieren. Hoeren NUR per ALT+Klick (Geraete-Konvention).
     // Klick HINTER dem Chopfenster trifft keinen Slice und loescht wie gehabt nur die Auswahl.
     if (editDrag && Math.abs(e.clientX-editDrag.x)<4){
