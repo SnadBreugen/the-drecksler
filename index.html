@@ -102,6 +102,8 @@
   .edit-tools { display:flex; gap:6px; align-items:center; margin-top:12px; flex-wrap:wrap; }
   .edit-tools button { padding:7px 10px; font-size:10px; }
   .tbtn.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 12px rgba(255,106,0,.3), inset 0 0 6px rgba(255,106,0,.12); }
+  .od-grp { display:flex; gap:6px; flex:none; }
+  #odBtn.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 12px rgba(255,106,0,.3), inset 0 0 6px rgba(255,106,0,.12); }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
   .edit-tools2 { margin-top:8px; }
   .intake-pop { position:fixed; inset:0; visibility:visible; display:flex; align-items:center; justify-content:center; background:rgba(8,4,3,.72); z-index:900; }
@@ -124,12 +126,31 @@
   .edit-selinfo { margin-left:auto; flex:none; white-space:nowrap; font-family:"VT323",monospace; font-size:15px; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); letter-spacing:.06em; }
   .island-fin { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; min-height:430px; }
   .fin-inner { width:100%; }
-  .fin-presets { display:flex; gap:10px; }
-  .fin-pb { flex:1; padding:13px 14px; text-align:left; display:flex; flex-direction:column; gap:5px; }
-  .fin-pb b { font-size:13px; letter-spacing:.18em; }
-  .fin-pb i { font-style:normal; font-size:10px; letter-spacing:.14em; color:rgba(189,250,255,.6); font-weight:normal; }
-  .fin-pb.active { color:#6bff8c !important; border-color:rgba(107,255,140,.7) !important; box-shadow:0 0 12px rgba(107,255,140,.28), inset 0 0 8px rgba(107,255,140,.10); }
-  .fin-pb.active i { color:rgba(107,255,140,.7); }
+  .fin-presets { display:flex; gap:8px; }
+  .fin-pb {
+    --pc:#8e979c;
+    flex:1; padding:15px 12px 14px 15px; text-align:left;
+    display:flex; flex-direction:column; gap:6px; position:relative;
+    border:1px solid color-mix(in srgb, var(--pc) 45%, #000);
+    border-left:3px solid color-mix(in srgb, var(--pc) 30%, #000);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 82%, #fff) 0%, color-mix(in srgb, var(--pc) 88%, #000) 100%);
+    box-shadow:0 2px 0 rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .06s, box-shadow .12s, border-color .12s, filter .12s, background .12s;
+  }
+  .fin-pb b { font-size:13px; letter-spacing:.18em; color:#0a0504; transition:color .12s; }
+  .fin-pb i { font-style:normal; font-size:10px; letter-spacing:.14em; color:rgba(0,0,0,.6); font-weight:normal; }
+  .fin-pb:hover { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 3px 0 rgba(0,0,0,.5), 0 5px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+  .fin-pb.active {
+    transform:translateY(2px);
+    border-color:color-mix(in srgb, var(--pc) 60%, #000) !important; border-left-color:color-mix(in srgb, var(--pc) 60%, #000) !important;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 70%, #fff) 0%, var(--pc) 100%);
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--pc) 70%, transparent),
+               0 0 18px color-mix(in srgb, var(--pc) 55%, transparent),
+               inset 0 2px 4px rgba(0,0,0,.32),
+               inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .fin-pb.active b { color:#000; }
+  .fin-pb.active i { color:rgba(0,0,0,.7); }
   .fin-wave-wrap { height:188px; border:1px solid var(--line); border-radius:6px; background:rgba(0,0,0,.5); overflow:hidden; }
   .fin-wave-wrap canvas { width:100%; height:100%; display:block; }
   .fin-note { text-align:center; font-size:12px; letter-spacing:.3em; line-height:2.4; color:rgba(189,250,255,.7); text-transform:uppercase; }
@@ -320,7 +341,7 @@
   .tune-transport { font-size:13px; padding:5px 11px; background:transparent; color:#ff5bd0; border:1px solid rgba(255,91,208,.4); border-radius:5px; cursor:pointer; }
   .tune-transport:hover { border-color:#ff5bd0; box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneLoop { font-family:"Space Mono",monospace; font-weight:700; font-size:11px; letter-spacing:.1em; padding:4px 10px; margin-left:10px; background:transparent; color:#7a4a66; border:1px solid #5a3048; border-radius:5px; cursor:pointer; }
-  #tuneLoop.active { color:#ff5bd0; border-color:#ff5bd0; text-shadow:0 0 6px rgba(255,91,208,.6); box-shadow:0 0 8px rgba(255,91,208,.25); }
+  #tuneLoop.active, #finLoopBtn.active { color:#fff; border-color:#fff; text-shadow:0 0 6px rgba(255,255,255,.7); box-shadow:0 0 8px rgba(255,91,208,.25); }
   #tuneInfo { margin-left:auto; font-family:"VT323",monospace; font-size:16px; color:#ff6a00; text-shadow:0 0 7px rgba(255,106,0,.5); letter-spacing:.08em; }
   .iconbtn { padding:4px 9px 2px; line-height:0; }
   .modegrp { display:flex; gap:4px; }
@@ -431,6 +452,10 @@
           <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
+          <div class="od-grp">
+            <button id="odBtn" title="OVERDUB — sing over the existing material, the take is mixed in. Headphones required (the mic hears the playback otherwise).">OVERDUB</button>
+            <button id="odLatBtn" title="OVERDUB LATENCY — drag up/down to compensate input delay. Calibrate once by ear so your take lands on the beat.">LAT 120</button>
+          </div>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
@@ -504,10 +529,15 @@
 
     <section class="stage island-fin" data-tag="FINALIZER">
       <div class="fin-inner">
-        <p class="edit-panel-title">FINISHER // PRESET &mdash; PRE-VERSION</p>
-        <div class="fin-presets" id="finPresets"></div>
-        <p class="edit-panel-title" style="margin-top:16px">RESULT // POST-CHOP WAVE</p>
+        <div class="tune-bar" style="margin-top:0;margin-bottom:10px">
+          <button id="finPlayBtn" class="tbtn" title="Play/Pause (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
+          <button id="finStopBtn" class="tbtn" title="Stop (reset position)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
+          <button id="finLoopBtn" class="tbtn" title="Loop the result" aria-label="Loop result"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
+        </div>
+        <p class="edit-panel-title">RESULT // POST-CHOP WAVE</p>
         <div class="fin-wave-wrap"><canvas id="finCanvas"></canvas></div>
+        <p class="edit-panel-title" style="margin-top:16px">FINISHER // PRESET &mdash; PRE-VERSION</p>
+        <div class="fin-presets" id="finPresets"></div>
         <p class="edit-panel-hint">PRESET COLORS THE SUM &middot; THE WAVE IS EXACTLY WHAT EXPORT RENDERS &middot; CRACKLE + APPLY: FULL STATION PENDING</p>
         <div style="margin-top:14px"><button id="finApply" class="primary" title="Commit the processed result as new active sample">APPLY</button></div>
       </div>
@@ -630,7 +660,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.88</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.05</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1183,7 +1213,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.88";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.05";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1192,6 +1222,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     out:  { gain:0 },
     metro:false, metroRoot:69,                          // A4 (MIDI), Bereich C3..C5 = 48..72
     finisher:"RAW",
+    overdub:false, odLatency:120,                       // Overdub: ueber Material singen, Take wird gemischt; Latenz-Offset (ms) einmessen
   };
   // Mastering finishers on the master bus (preview + export). Bass bleibt mono; Mono-Summe löscht die Side -> club-safe.
   const FINISHERS = {
@@ -1199,6 +1230,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     POLISH: { lowcut:90,  pres:2, air:3, comp:{th:-18,ratio:2.5,makeup:2}, sat:0.12, width:0.22, delayMs:8  },
     THICK:  { lowcut:80,  pres:1, air:1, comp:{th:-24,ratio:4,makeup:4},   sat:0.40, width:0.36, delayMs:12 },
     WIDE:   { lowcut:110, pres:3, air:6, comp:{th:-16,ratio:2,makeup:1.5}, sat:0.08, width:0.62, delayMs:16 },
+    FAT:    { lowcut:30,  pres:0, air:0, comp:{th:-20,ratio:6,makeup:6},   sat:0,    width:0,    delayMs:0  },
+    CRUSH:  { lowcut:40,  pres:1, air:-2, comp:{th:-18,ratio:3,makeup:3}, sat:0.45, width:0,   delayMs:0, crush:0.85 },
+    LOFI:   { lowcut:90,  pres:0, air:-7, comp:{th:-20,ratio:2.5,makeup:3}, sat:0.2,  width:0, delayMs:0, lp:5500, wow:0.5, crackle:0.28 },
+    PHONE:  { lowcut:20,  pres:4, air:0, comp:{th:-18,ratio:4,makeup:5},   sat:0.35, width:0, delayMs:0, phone:true },
+    CHORUS: { lowcut:40,  pres:1, air:2, comp:{th:-20,ratio:2,makeup:1.5}, sat:0,   width:0, delayMs:0, chorus:true },
   };
 
   // ---------- State ----------
@@ -1206,6 +1242,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   let buffer=null, reversedBuffer=null, selection=null, rafId=null, analyser=null;
   let carrierBuffer=null;
   let recState="idle", recAborted=false, recTimers=[], recT0=0, recBeatDur=0, recCountInBeats=4, recLenCaptured=0;
+  let odMonSrc=null, odActive=false, odBaseBuffer=null, odBaseSource=null, recStartT=0;   // Overdub: Monitoring-Source, Take-Material, Provenance
   let liveFx=null, playSource=null;
   const pitchCache=new Map();
   // ---------- Undo/Redo (Chop-Arrangement) ----------
@@ -1426,9 +1463,16 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let i=0;i<n;i++){ const x=(i/(n-1))*2-1; c[i]=Math.tanh(k*x)/norm; }
     return c;
   }
+  function makeCrushCurve(bits, n=4096){
+    // Bit-Reduktion: Amplitude auf 2^bits Stufen quantisieren
+    const c=new Float32Array(n), steps=Math.pow(2, Math.max(1,bits));
+    for (let i=0;i<n;i++){ const x=(i/(n-1))*2-1; c[i]=Math.round(x*steps)/steps; }
+    return c;
+  }
   function applyOut(n){ n.out.gain.value = dbToGain(P.out.gain); }
   function buildFinisher(c, input){
     const f=FINISHERS[P.finisher]||FINISHERS.RAW;
+    let _crackleSrc=null, _crackleSrc2=null, _wowLfo=null, _chorusL=null, _chorusR=null;
     const hp=c.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=f.lowcut; hp.Q.value=0.707;
     const pres=c.createBiquadFilter(); pres.type="peaking"; pres.frequency.value=3000; pres.Q.value=1; pres.gain.value=f.pres;
     const air=c.createBiquadFilter(); air.type="highshelf"; air.frequency.value=9000; air.gain.value=f.air;
@@ -1444,9 +1488,38 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const sh=c.createWaveShaper(); sh.oversample="4x"; sh.curve=makeSatCurve(4+f.sat*8); const sum=c.createGain();
       node.connect(dry); dry.connect(sum); node.connect(sh); sh.connect(wet); wet.connect(sum); node=sum;
     }
+    // Bitcrush (Bit-Reduktion via WaveShaper) — der digitale CRUSH-Charakter
+    if (f.crush>0){
+      const sh=c.createWaveShaper(); sh.oversample="none"; sh.curve=makeCrushCurve(Math.max(2, 8-f.crush*6));
+      node.connect(sh); node=sh;
+      const lp=c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=4200-f.crush*1400; lp.Q.value=0.6;
+      node.connect(lp); node=lp;
+    }
+    // Bandbreiten-Beschnitt (LOFI: alte staubige Aufnahme — Höhen weg, kein Glanz)
+    if (f.lp){
+      const lp2=c.createBiquadFilter(); lp2.type="lowpass"; lp2.frequency.value=f.lp; lp2.Q.value=0.5;
+      node.connect(lp2); node=lp2;
+    }
+    // Telefon: schmales Band wie ein Hörer (300Hz–3.4kHz), Mitten betont
+    if (f.phone){
+      const ph=c.createBiquadFilter(); ph.type="highpass"; ph.frequency.value=300; ph.Q.value=0.8;
+      const pl=c.createBiquadFilter(); pl.type="lowpass"; pl.frequency.value=3400; pl.Q.value=0.8;
+      const pk=c.createBiquadFilter(); pk.type="peaking"; pk.frequency.value=1500; pk.Q.value=1.2; pk.gain.value=4;
+      node.connect(ph); ph.connect(pl); pl.connect(pk); node=pk;
+    }
+    // Wow/Flutter: leiernde Tonhöhe wie altes Tape (langsam modulierter Delay)
+    if (f.wow>0){
+      const dl=c.createDelay(0.05); dl.delayTime.value=0.012;
+      const lfo=c.createOscillator(); lfo.type="sine"; lfo.frequency.value=0.7;   // langsames Leiern
+      const lfoG=c.createGain(); lfoG.gain.value=0.0022*f.wow;                    // Tiefe der Modulation
+      lfo.connect(lfoG); lfoG.connect(dl.delayTime);
+      node.connect(dl); node=dl;
+      try{ lfo.start(); }catch(e){}
+      _wowLfo=lfo;
+    }
     // Mid/Side widener: mid centered both channels, side = high-passed + delayed, +/- into L/R. Mono-sum cancels side.
     const merger=c.createChannelMerger(2);
-    const mid=c.createGain(); mid.gain.value=1; node.connect(mid); mid.connect(merger,0,0); mid.connect(merger,0,1);
+    const mid=c.createGain(); mid.gain.value=1; if(!f.chorus){ node.connect(mid); mid.connect(merger,0,0); mid.connect(merger,0,1); }
     if (f.width>0){
       const shp=c.createBiquadFilter(); shp.type="highpass"; shp.frequency.value=320; // bass stays mono
       const dl=c.createDelay(0.05); dl.delayTime.value=f.delayMs/1000;
@@ -1454,7 +1527,58 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       node.connect(shp); shp.connect(dl); dl.connect(sL); dl.connect(sR);
       sL.connect(merger,0,0); sR.connect(merger,0,1);
     }
+    // CHORUS: schimmernde Stimme wie die Snad-Website-Begrüßung (zwei modulierte Delays)
+    if (f.chorus){
+      const dry=c.createGain(); dry.gain.value=1; node.connect(dry); dry.connect(merger,0,0); dry.connect(merger,0,1);
+      const mkTap=(baseMs, rateHz, depthMs, toCh)=>{
+        const dl=c.createDelay(0.1); dl.delayTime.value=baseMs/1000;
+        const lfo=c.createOscillator(); lfo.type="sine"; lfo.frequency.value=rateHz;
+        const lg=c.createGain(); lg.gain.value=depthMs/1000;
+        lfo.connect(lg); lg.connect(dl.delayTime);
+        const wet=c.createGain(); wet.gain.value=0.5;
+        node.connect(dl); dl.connect(wet); wet.connect(merger,0,toCh);
+        try{ lfo.start(); }catch(e){}
+        return lfo;
+      };
+      _chorusL=mkTap(40, 0.25, 1.8, 0);    // Website-Werte: delays 40|55, speeds 0.25|0.3, depths 1.8|1.4
+      _chorusR=mkTap(55, 0.30, 1.4, 1);
+    }
+    // Stereo-Crackle: zerkratzte Platte — weiche, kurz ausklingende Knacker + dezenter Staub
+    if (f.crackle>0){
+      const sr=c.sampleRate, len=Math.floor(sr*4);
+      const mkVinyl=()=>{
+        const nb=c.createBuffer(1, len, sr); const d=nb.getChannelData(0);
+        // sanftes Grundrauschen (Staub in der Rille)
+        for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.006;
+        // weiche Knackser: kurzer Impuls mit exponentiellem Ausklang, variable Lautstärke
+        let i=0;
+        while (i<len){
+          i += Math.floor(sr*(0.04+Math.random()*0.5));   // Abstand zwischen Knacksern
+          if (i>=len) break;
+          const amp=(0.15+Math.random()*0.7)*(Math.random()<0.2?1:0.45);  // wenige laut, meiste leiser
+          const dur=Math.floor(sr*(0.0006+Math.random()*0.0018));         // 0.6–2.4ms
+          const sign=Math.random()<0.5?-1:1;
+          for (let k=0;k<dur && i+k<len;k++){
+            const env=Math.exp(-k/(dur*0.4));            // schneller weicher Abfall
+            d[i+k]+=sign*amp*env;
+          }
+          i+=dur;
+        }
+        const ns=c.createBufferSource(); ns.buffer=nb; ns.loop=true; return ns;
+      };
+      const nsL=mkVinyl(), nsR=mkVinyl();
+      // wärmerer Bandbereich statt spitzer Höhen: Bandpass um ~2–3kHz
+      const mkFilt=()=>{ const bp=c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2400; bp.Q.value=0.7; return bp; };
+      const fL=mkFilt(), fR=mkFilt();
+      const gL=c.createGain(); gL.gain.value=f.crackle;
+      const gR=c.createGain(); gR.gain.value=f.crackle;
+      nsL.connect(fL); fL.connect(gL); gL.connect(merger,0,0);
+      nsR.connect(fR); fR.connect(gR); gR.connect(merger,0,1);
+      try{ nsL.start(); nsR.start(); }catch(e){}
+      _crackleSrc=nsL; _crackleSrc2=nsR;
+    }
     merger.connect(c.destination);
+    hp._crackleSrc=_crackleSrc; hp._crackleSrc2=_crackleSrc2; hp._wowLfo=_wowLfo; hp._chorusL=_chorusL; hp._chorusR=_chorusR;
     return hp;
   }
   function buildChain(c){
@@ -1485,6 +1609,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     applyOut(liveFx);
     if (liveFx._fin!==P.finisher && liveFx.finHead){           // Heisstausch: alter Strang ab, neuer dran — Loop laeuft weiter
       try {
+        if(liveFx.finHead._crackleSrc){ try{ liveFx.finHead._crackleSrc.stop(); }catch{} }
+        if(liveFx.finHead._crackleSrc2){ try{ liveFx.finHead._crackleSrc2.stop(); }catch{} }
+        if(liveFx.finHead._wowLfo){ try{ liveFx.finHead._wowLfo.stop(); }catch{} }
+        if(liveFx.finHead._chorusL){ try{ liveFx.finHead._chorusL.stop(); }catch{} }
+        if(liveFx.finHead._chorusR){ try{ liveFx.finHead._chorusR.stop(); }catch{} }
         liveFx.out.disconnect(liveFx.finHead);
         liveFx.finHead.disconnect();
         liveFx.finHead=buildFinisher(liveFx.out.context, liveFx.out);
@@ -2308,6 +2437,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     set:(v)=>{ srcDragVal=v; },
     fmt:(v)=>"SRC "+Math.round(v)+" BPM",
     end:()=>{ relabelSrcBpm(srcDragVal); } } });
+  // Overdub-Bedienung: Toggle (P.overdub) + Latenz-Knob (P.odLatency, ms)
+  const odBtn=$("#odBtn"), odLatBtn=$("#odLatBtn");
+  odBtn.addEventListener("click", ()=>{
+    P.overdub=!P.overdub; odBtn.classList.toggle("active", P.overdub);
+    setStatus(P.overdub ? "OVERDUB ARMED // SING OVER MATERIAL \u00B7 USE HEADPHONES" : "OVERDUB OFF");
+  });
+  bindKnob(odLatBtn, { min:0, max:400, step:5, get:()=>P.odLatency, set:(v)=>{ P.odLatency=v; odLatBtn.textContent="LAT "+v; }, fmt:(v)=>v+" MS LATENCY" });
   function relabelSrcBpm(v0){
     if (!buffer) return;
     const v=Math.round(Math.max(30, Math.min(300, v0)));
@@ -2403,7 +2539,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (recState==="recording"){ try{recorder.stop();}catch{} return; }   // REC stoppt & uebernimmt den Take
     if (recState==="countin"){ abortRecording(); return; }                // im Count-in: abbrechen
     let stream;
-    try { stream=await navigator.mediaDevices.getUserMedia({ audio:true }); }
+    try { stream=await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }); }
     catch(e){ banner.classList.add("show"); banner.textContent="MIC DENIED OR ABSENT: "+e.message.toUpperCase(); return; }
     const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
     startRecordSequence(ac, stream);
@@ -2413,7 +2549,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     recBeatDur=60/P.chop.bpm; recCountInBeats=4;
     const recBeats=BARS*4; recLenCaptured=recBeats*recBeatDur;
     const lead=0.18; recT0=ac.currentTime+lead;
-    const recStartT=recT0+recCountInBeats*recBeatDur;
+    recStartT=recT0+recCountInBeats*recBeatDur;
+    // Overdub: bestehendes Material liegt vor -> Take wird spaeter dazugemischt; Material laeuft als Monitoring mit
+    odActive = P.overdub && !!buffer;
+    odBaseBuffer = odActive ? buffer : null;
+    odBaseSource = odActive ? bufferSource : null;
+    if (odActive){
+      try {
+        odMonSrc = ac.createBufferSource(); odMonSrc.buffer = buffer;
+        odMonSrc.connect(ac.destination);
+        odMonSrc.start(recStartT);                       // exakt mit dem Aufnahmebeginn (nach Count-in)
+      } catch(e){ console.warn("[OVERDUB MON]", e); odMonSrc=null; }
+    }
     // Count-in klickt immer (Einsatz!), Guide-Klicks waehrend der Aufnahme nur bei aktivem Metronom.
     const clickUntil=P.metro ? recCountInBeats+recBeats : recCountInBeats;
     for (let i=0;i<clickUntil;i++) scheduleClick(ac, recT0+i*recBeatDur, i%4===0);
@@ -2445,22 +2592,49 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function cleanupRecording(){
     recState="idle"; recTimers.forEach(clearTimeout); recTimers=[];
+    if (odMonSrc){ try{ odMonSrc.stop(); }catch{} odMonSrc=null; }     // Overdub-Monitoring beenden
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
     recorder=null; analyser=null;
     recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 bar count-in, record until you press REC again (ESC discards)"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
     cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%";
   }
   async function handleStop(){
-    const wasAborted=recAborted; const blob=new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
+    const wasAborted=recAborted, wasOverdub=odActive, baseBuf=odBaseBuffer, baseSrc=odBaseSource;
+    const blob=new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
     cleanupRecording();
+    odActive=false; odBaseBuffer=null; odBaseSource=null;                  // verbraucht
     if (wasAborted){ recAborted=false; return; }
     try {
       const raw=await ctxGet().decodeAudioData(await blob.arrayBuffer());
-      const beats=Math.max(4, Math.round(raw.duration/recBeatDur));        // auf ganze Beats schnappen: sauberes Raster
-      const fitted=fitBufferToBeats(raw, beats, 60/recBeatDur);
-      const lbl=(beats%4===0) ? (beats/4)+" BARS" : beats+" BEATS";
-      loadDecodedBuffer(fitted, "CAPTURED // "+lbl+" @ "+Math.round(P.chop.bpm)+" BPM", "mic");
+      if (wasOverdub && baseBuf){
+        const mixed=mixOverdub(baseBuf, raw, P.odLatency);
+        const prov=(baseSrc==="audiotool") ? "audiotool" : "mic";          // Library-Sperre bleibt erhalten, sobald audiotool im Spiel war
+        loadDecodedBuffer(mixed, "OVERDUB // MIXED @ "+Math.round(P.chop.bpm)+" BPM"+(prov==="audiotool"?" // LIBRARY-LOCKED":""), prov);
+      } else {
+        const beats=Math.max(4, Math.round(raw.duration/recBeatDur));      // auf ganze Beats schnappen: sauberes Raster
+        const fitted=fitBufferToBeats(raw, beats, 60/recBeatDur);
+        const lbl=(beats%4===0) ? (beats/4)+" BARS" : beats+" BEATS";
+        loadDecodedBuffer(fitted, "CAPTURED // "+lbl+" @ "+Math.round(P.chop.bpm)+" BPM", "mic");
+      }
     } catch(e){ banner.classList.add("show"); banner.textContent="DECODE FAILED: "+e.message.toUpperCase(); }
+  }
+  // Overdub-Mix: Take um die Eingangslatenz nach vorn schieben, dann auf das Material summieren (Material-Laenge bleibt)
+  function mixOverdub(base, take, latencyMs){
+    const ac=ctxGet(), sr=base.sampleRate;
+    const skip=Math.max(0, Math.round((latencyMs/1000)*take.sampleRate));  // Round-Trip-Verzoegerung wegschneiden
+    const outLen=base.length, ch=Math.max(base.numberOfChannels, 1), tN=take.numberOfChannels;
+    const out=ac.createBuffer(ch, outLen, sr);
+    for (let c=0;c<ch;c++){
+      const o=out.getChannelData(c);
+      const b=base.getChannelData(Math.min(c, base.numberOfChannels-1));
+      const t=take.getChannelData(Math.min(c, tN-1));
+      for (let i=0;i<outLen;i++){
+        let v=b[i]; const ti=i+skip;
+        if (ti<t.length) v+=t[ti];
+        o[i]=v>1?1:(v<-1?-1:v);                                            // Clip-Schutz gegen Summen-Uebersteuerung
+      }
+    }
+    return out;
   }
 
   // ---------- Import ----------
@@ -2784,6 +2958,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     playBtn.title = playing ? "PAUSE" : "PLAY";
     edPlayBtn.innerHTML = playing ? PAUSE_SVG : PLAY_SVG;
     edPlayBtn.title = playing ? "PAUSE" : "Preview material / selection (Space)";
+    const fp=$("#finPlayBtn"); if(fp){ fp.innerHTML = playing ? PAUSE_SVG : PLAY_SVG; fp.title = playing ? "PAUSE" : "Play/Pause (Space)"; }
   }
   function pausePlayback(){
     if (!isPlaying()) return;
@@ -2817,6 +2992,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   edStopBtn.addEventListener("click", ()=>stopPlayback());
   let edLoop=false;
   let chopLoop=true;
+  let finLoop=false;
   const edLoopBtn=$("#edLoopBtn"), chopLoopBtn=$("#chopLoopBtn");
   edLoopBtn.addEventListener("click", ()=>{
     edLoop=!edLoop;
@@ -2873,7 +3049,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       previewFx=buildPreviewFx(ac); updatePreviewFx();
       playSource.connect(previewFx.input); previewFx.output.connect(liveFx.input);
     } else { previewFx=null; playSource.connect(liveFx.input); }
-    const wantLoop=(deckEl.classList.contains("st-editor")&&edLoop)||(deckEl.classList.contains("st-hecksler")&&chopLoop);
+    const wantLoop=(deckEl.classList.contains("st-editor")&&edLoop)||(deckEl.classList.contains("st-hecksler")&&chopLoop)||(deckEl.classList.contains("st-fin")&&finLoop);
     const baseOff=selection?selection.start:0, baseDur=selection?selection.end-selection.start:buffer.duration;
     let offset=baseOff, dur=baseDur;
     if (resumeOffset!=null && resumeOffset>baseOff && resumeOffset<baseOff+baseDur-0.01){ offset=resumeOffset; dur=baseOff+baseDur-resumeOffset; }
@@ -3293,7 +3469,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (schedTimer){ clearInterval(schedTimer); schedTimer=null; }
     activeSources.forEach((s)=>{ try{ s.stop(); }catch{} }); activeSources=[];
     if (playSource){ try{ playSource.stop(); }catch{} playSource=null; }
-    if (liveFx){ try{ liveFx.out.disconnect(); }catch{} try{ liveFx.analyser.disconnect(); }catch{} liveFx=null; }
+    if (liveFx){
+      try{ if(liveFx.finHead&&liveFx.finHead._crackleSrc) liveFx.finHead._crackleSrc.stop(); }catch{}
+      try{ if(liveFx.finHead&&liveFx.finHead._crackleSrc2) liveFx.finHead._crackleSrc2.stop(); }catch{}
+      try{ if(liveFx.finHead&&liveFx.finHead._wowLfo) liveFx.finHead._wowLfo.stop(); }catch{}
+      try{ if(liveFx.finHead&&liveFx.finHead._chorusL) liveFx.finHead._chorusL.stop(); }catch{}
+      try{ if(liveFx.finHead&&liveFx.finHead._chorusR) liveFx.finHead._chorusR.stop(); }catch{}
+      try{ liveFx.out.disconnect(); }catch{} try{ liveFx.analyser.disconnect(); }catch{} liveFx=null;
+    }
     previewFx=null;
     cancelAnimationFrame(rafId); _meterLevels.set(outMeterFill,0); outMeterFill.style.width="0%"; setPlayIcon(false); drawWave(); drawGrid(); drawEqGraph(); bgWaveSetActive(false);
   }
@@ -3308,7 +3491,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   async function renderProcessed(){
     const sr=buffer.sampleRate;
-    const outCh=(FINISHERS[P.finisher]||FINISHERS.RAW).width>0 ? 2 : 1;
+    const _fp=(FINISHERS[P.finisher]||FINISHERS.RAW); const outCh=(_fp.width>0||_fp.crackle>0||_fp.chorus) ? 2 : 1;
     let rendered;
     if (P.chop.on && P.chop.mode==="mark" && markSegs.length){
       const loopLen=Math.ceil(loopDur()*sr);
@@ -4216,6 +4399,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   $("#tileHard").addEventListener("click", ()=>tuneTapTile("hard"));
   $("#tuneLoop").addEventListener("click", ()=>{ tuneLoop=!tuneLoop; $("#tuneLoop").classList.toggle("active", tuneLoop); if (tunePrevSrc) tunePrevSrc.loop=tuneLoop; });
+  // Finalizer-Transport: gleiche Mechanik wie sonst (startMonitor / stopPlayback / Loop-Toggle)
+  $("#finPlayBtn").addEventListener("click", ()=>{ if(!buffer) return; if (isPlaying()) pausePlayback(); else startMonitor(); });
+  $("#finStopBtn").addEventListener("click", ()=>stopPlayback());
+  $("#finLoopBtn").addEventListener("click", ()=>{ finLoop=!finLoop; $("#finLoopBtn").classList.toggle("active", finLoop); if (playSource && deckEl.classList.contains("st-fin")) playSource.loop=finLoop; setStatus(finLoop?"FINALIZER LOOP ON":"FINALIZER LOOP OFF"); });
   $("#sampleBack").addEventListener("click", sampleBack);
   $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
   $("#finApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("FINALIZER COMMITTED // SAMPLE UPDATED"); });
@@ -5291,10 +5478,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   setHoverDesc(null);
 
   // ---------- Finalizer Pre-Version: Presets + Ergebnis-Welle ----------
-  const FIN_DESC={ RAW:"UNTOUCHED // PURE SUM", POLISH:"CLEAN LIFT // GENTLE GLUE", THICK:"COMPRESSED // SATURATED", WIDE:"AIR + STEREO SPREAD" };
+  const FIN_DESC={ RAW:"UNTOUCHED // PURE SUM", POLISH:"CLEAN LIFT // GENTLE GLUE", THICK:"COMPRESSED // SATURATED", WIDE:"AIR + STEREO SPREAD", FAT:"LOUD + DENSE // CLEAN GLUE", CRUSH:"BITCRUSH // SATURATED EDGE", LOFI:"DUSTY RECORD // MUFFLED + WOW", PHONE:"NARROW BAND // THROUGH THE LINE", CHORUS:"SHIMMER // ANDROID VOICE" };
+  // Per-Preset-Farbe als Funktionssignal (gedeckte Snad-nahe Palette; Gelb bleibt SNAD-exklusiv)
+  const FIN_COLORS={ RAW:"#8e979c", POLISH:"#bdfaff", THICK:"#5aa6c0", WIDE:"#93d6e6", FAT:"#4f8fcf", CRUSH:"#ff5a2c", LOFI:"#c89a5b", PHONE:"#7fb0a0", CHORUS:"#45d4c0" };
   const finPresets=$("#finPresets"), finCanvas=$("#finCanvas"), fing=finCanvas.getContext("2d");
   for (const name of Object.keys(FINISHERS)){
     const b=document.createElement("button"); b.className="fin-pb"; b.dataset.fin=name;
+    b.style.setProperty("--pc", FIN_COLORS[name]||"#8e979c");
     b.innerHTML="<b>"+name+"</b><i>"+FIN_DESC[name]+"</i>";
     b.addEventListener("click", ()=>{
       P.finisher=name; syncFinBtns(); applyLive();
@@ -5321,13 +5511,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     fing.setTransform(dpr,0,0,dpr,0,0); fing.clearRect(0,0,w,hh);
     const d0=rb.getChannelData(0), d1=rb.numberOfChannels>1?rb.getChannelData(1):d0;
     const mid=hh/2, spp=rb.length/w;
-    fing.fillStyle="#6bff8c";
+    const fg=fing.createLinearGradient(0,0,0,hh);          // ein Orange-Ton, nur hell->dunkel (wie Editor/Material)
+    fg.addColorStop(0,"#ff9a4d"); fg.addColorStop(0.5,"#ff6a00"); fg.addColorStop(1,"#3d1700");
+    fing.fillStyle=fg;
     for (let x=0;x<w;x++){
       let pk=0; const i0=Math.floor(x*spp), i1=Math.min(rb.length, Math.floor((x+1)*spp));
       for (let i=i0;i<i1;i+=4){ const v=Math.max(Math.abs(d0[i]),Math.abs(d1[i])); if (v>pk) pk=v; }
       fing.fillRect(x, mid-Math.max(1, pk*(hh*0.92))/2, 1, Math.max(1, pk*(hh*0.92)));
     }
-    fing.strokeStyle="rgba(107,255,140,.4)"; fing.beginPath(); fing.moveTo(0,mid); fing.lineTo(w,mid); fing.stroke();
+    fing.strokeStyle="rgba(255,106,0,.4)"; fing.beginPath(); fing.moveTo(0,mid); fing.lineTo(w,mid); fing.stroke();
   }
 
   // ---------- Default-Material: Geraet ist ab dem ersten Pixel spielbar ----------
