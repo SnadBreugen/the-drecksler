@@ -102,8 +102,6 @@
   .edit-tools { display:flex; gap:6px; align-items:center; margin-top:12px; flex-wrap:wrap; }
   .edit-tools button { padding:7px 10px; font-size:10px; }
   .tbtn.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 12px rgba(255,106,0,.3), inset 0 0 6px rgba(255,106,0,.12); }
-  .od-grp { display:flex; gap:6px; flex:none; }
-  #odBtn.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 12px rgba(255,106,0,.3), inset 0 0 6px rgba(255,106,0,.12); }
   .edit-sep { width:1px; height:22px; background:var(--line); margin:0 4px; flex:none; }
   .edit-tools2 { margin-top:8px; }
   .intake-pop { position:fixed; inset:0; visibility:visible; display:flex; align-items:center; justify-content:center; background:rgba(8,4,3,.72); z-index:900; }
@@ -452,10 +450,6 @@
           <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
-          <div class="od-grp">
-            <button id="odBtn" title="OVERDUB — sing over the existing material, the take is mixed in. Headphones required (the mic hears the playback otherwise).">OVERDUB</button>
-            <button id="odLatBtn" title="OVERDUB LATENCY — drag up/down to compensate input delay. Calibrate once by ear so your take lands on the beat.">LAT 120</button>
-          </div>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
         <div class="meter"><i id="inMeterFill"></i></div>
@@ -660,7 +654,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.05</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.06</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1213,7 +1207,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.05";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.06";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -1222,7 +1216,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     out:  { gain:0 },
     metro:false, metroRoot:69,                          // A4 (MIDI), Bereich C3..C5 = 48..72
     finisher:"RAW",
-    overdub:false, odLatency:120,                       // Overdub: ueber Material singen, Take wird gemischt; Latenz-Offset (ms) einmessen
   };
   // Mastering finishers on the master bus (preview + export). Bass bleibt mono; Mono-Summe löscht die Side -> club-safe.
   const FINISHERS = {
@@ -1242,7 +1235,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   let buffer=null, reversedBuffer=null, selection=null, rafId=null, analyser=null;
   let carrierBuffer=null;
   let recState="idle", recAborted=false, recTimers=[], recT0=0, recBeatDur=0, recCountInBeats=4, recLenCaptured=0;
-  let odMonSrc=null, odActive=false, odBaseBuffer=null, odBaseSource=null, recStartT=0;   // Overdub: Monitoring-Source, Take-Material, Provenance
   let liveFx=null, playSource=null;
   const pitchCache=new Map();
   // ---------- Undo/Redo (Chop-Arrangement) ----------
@@ -2437,13 +2429,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     set:(v)=>{ srcDragVal=v; },
     fmt:(v)=>"SRC "+Math.round(v)+" BPM",
     end:()=>{ relabelSrcBpm(srcDragVal); } } });
-  // Overdub-Bedienung: Toggle (P.overdub) + Latenz-Knob (P.odLatency, ms)
-  const odBtn=$("#odBtn"), odLatBtn=$("#odLatBtn");
-  odBtn.addEventListener("click", ()=>{
-    P.overdub=!P.overdub; odBtn.classList.toggle("active", P.overdub);
-    setStatus(P.overdub ? "OVERDUB ARMED // SING OVER MATERIAL \u00B7 USE HEADPHONES" : "OVERDUB OFF");
-  });
-  bindKnob(odLatBtn, { min:0, max:400, step:5, get:()=>P.odLatency, set:(v)=>{ P.odLatency=v; odLatBtn.textContent="LAT "+v; }, fmt:(v)=>v+" MS LATENCY" });
   function relabelSrcBpm(v0){
     if (!buffer) return;
     const v=Math.round(Math.max(30, Math.min(300, v0)));
@@ -2539,7 +2524,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (recState==="recording"){ try{recorder.stop();}catch{} return; }   // REC stoppt & uebernimmt den Take
     if (recState==="countin"){ abortRecording(); return; }                // im Count-in: abbrechen
     let stream;
-    try { stream=await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }); }
+    try { stream=await navigator.mediaDevices.getUserMedia({ audio:true }); }
     catch(e){ banner.classList.add("show"); banner.textContent="MIC DENIED OR ABSENT: "+e.message.toUpperCase(); return; }
     const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
     startRecordSequence(ac, stream);
@@ -2549,18 +2534,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     recBeatDur=60/P.chop.bpm; recCountInBeats=4;
     const recBeats=BARS*4; recLenCaptured=recBeats*recBeatDur;
     const lead=0.18; recT0=ac.currentTime+lead;
-    recStartT=recT0+recCountInBeats*recBeatDur;
-    // Overdub: bestehendes Material liegt vor -> Take wird spaeter dazugemischt; Material laeuft als Monitoring mit
-    odActive = P.overdub && !!buffer;
-    odBaseBuffer = odActive ? buffer : null;
-    odBaseSource = odActive ? bufferSource : null;
-    if (odActive){
-      try {
-        odMonSrc = ac.createBufferSource(); odMonSrc.buffer = buffer;
-        odMonSrc.connect(ac.destination);
-        odMonSrc.start(recStartT);                       // exakt mit dem Aufnahmebeginn (nach Count-in)
-      } catch(e){ console.warn("[OVERDUB MON]", e); odMonSrc=null; }
-    }
+    const recStartT=recT0+recCountInBeats*recBeatDur;
     // Count-in klickt immer (Einsatz!), Guide-Klicks waehrend der Aufnahme nur bei aktivem Metronom.
     const clickUntil=P.metro ? recCountInBeats+recBeats : recCountInBeats;
     for (let i=0;i<clickUntil;i++) scheduleClick(ac, recT0+i*recBeatDur, i%4===0);
@@ -2592,49 +2566,22 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function cleanupRecording(){
     recState="idle"; recTimers.forEach(clearTimeout); recTimers=[];
-    if (odMonSrc){ try{ odMonSrc.stop(); }catch{} odMonSrc=null; }     // Overdub-Monitoring beenden
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
     recorder=null; analyser=null;
     recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC — 1 bar count-in, record until you press REC again (ESC discards)"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
     cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%";
   }
   async function handleStop(){
-    const wasAborted=recAborted, wasOverdub=odActive, baseBuf=odBaseBuffer, baseSrc=odBaseSource;
-    const blob=new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
+    const wasAborted=recAborted; const blob=new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
     cleanupRecording();
-    odActive=false; odBaseBuffer=null; odBaseSource=null;                  // verbraucht
     if (wasAborted){ recAborted=false; return; }
     try {
       const raw=await ctxGet().decodeAudioData(await blob.arrayBuffer());
-      if (wasOverdub && baseBuf){
-        const mixed=mixOverdub(baseBuf, raw, P.odLatency);
-        const prov=(baseSrc==="audiotool") ? "audiotool" : "mic";          // Library-Sperre bleibt erhalten, sobald audiotool im Spiel war
-        loadDecodedBuffer(mixed, "OVERDUB // MIXED @ "+Math.round(P.chop.bpm)+" BPM"+(prov==="audiotool"?" // LIBRARY-LOCKED":""), prov);
-      } else {
-        const beats=Math.max(4, Math.round(raw.duration/recBeatDur));      // auf ganze Beats schnappen: sauberes Raster
-        const fitted=fitBufferToBeats(raw, beats, 60/recBeatDur);
-        const lbl=(beats%4===0) ? (beats/4)+" BARS" : beats+" BEATS";
-        loadDecodedBuffer(fitted, "CAPTURED // "+lbl+" @ "+Math.round(P.chop.bpm)+" BPM", "mic");
-      }
+      const beats=Math.max(4, Math.round(raw.duration/recBeatDur));        // auf ganze Beats schnappen: sauberes Raster
+      const fitted=fitBufferToBeats(raw, beats, 60/recBeatDur);
+      const lbl=(beats%4===0) ? (beats/4)+" BARS" : beats+" BEATS";
+      loadDecodedBuffer(fitted, "CAPTURED // "+lbl+" @ "+Math.round(P.chop.bpm)+" BPM", "mic");
     } catch(e){ banner.classList.add("show"); banner.textContent="DECODE FAILED: "+e.message.toUpperCase(); }
-  }
-  // Overdub-Mix: Take um die Eingangslatenz nach vorn schieben, dann auf das Material summieren (Material-Laenge bleibt)
-  function mixOverdub(base, take, latencyMs){
-    const ac=ctxGet(), sr=base.sampleRate;
-    const skip=Math.max(0, Math.round((latencyMs/1000)*take.sampleRate));  // Round-Trip-Verzoegerung wegschneiden
-    const outLen=base.length, ch=Math.max(base.numberOfChannels, 1), tN=take.numberOfChannels;
-    const out=ac.createBuffer(ch, outLen, sr);
-    for (let c=0;c<ch;c++){
-      const o=out.getChannelData(c);
-      const b=base.getChannelData(Math.min(c, base.numberOfChannels-1));
-      const t=take.getChannelData(Math.min(c, tN-1));
-      for (let i=0;i<outLen;i++){
-        let v=b[i]; const ti=i+skip;
-        if (ti<t.length) v+=t[ti];
-        o[i]=v>1?1:(v<-1?-1:v);                                            // Clip-Schutz gegen Summen-Uebersteuerung
-      }
-    }
-    return out;
   }
 
   // ---------- Import ----------
