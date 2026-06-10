@@ -605,7 +605,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 3.66</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 3.71</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1158,7 +1158,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="3.66";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="3.71";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   const BARS = 2;
@@ -3230,7 +3230,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         hl={ start:slF.t0+st0*slF.dur, end:slF.t0+l*slF.dur, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
       }
       drawWave(null, hl);
-      drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps() });
+      drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps(), col:(cch?chopColor(cch,stepIdx):null), src:hl, dur:buffer.duration });
       tc.textContent=fmtTime((ac.currentTime-chopStartTime)%loopDur());
       if (liveFx) updateMeter(liveFx.analyser, outMeterFill);
       rafId=requestAnimationFrame(follow);
@@ -3403,10 +3403,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.lineTo(x, mid-mn*amp);
     }
     g.closePath();
+    const wfA=(st==="tune")?0.15:0.4;            // bei Tune Waveform nur dezent im Hintergrund
     const grad=g.createLinearGradient(0,mid-amp,0,mid+amp);
-    grad.addColorStop(0,`rgba(${col},0.4)`);
-    grad.addColorStop(0.5,`rgba(${col},0.2)`);
-    grad.addColorStop(1,`rgba(${col},0.4)`);
+    grad.addColorStop(0,`rgba(${col},${wfA})`);
+    grad.addColorStop(0.5,`rgba(${col},${wfA*0.5})`);
+    grad.addColorStop(1,`rgba(${col},${wfA})`);
     g.fillStyle=grad; g.fill();
     // Konturlinie
     g.beginPath(); g.moveTo(0,mid);
@@ -3415,28 +3416,50 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
       g.lineTo(x, mid-mx*amp);
     }
-    g.strokeStyle=`rgba(${col},0.55)`; g.lineWidth=2; g.stroke();
+    g.strokeStyle=`rgba(${col},${(st==="tune")?0.2:0.55})`; g.lineWidth=2; g.stroke();
     }
-    // TUNE: Pitch-Track-Kurve
+    // TUNE: Neon-Pitch-Röhre wie im Device — eisblau, gespielter Teil orange, wandernder Spot
     if(st==="tune" && tuneF0 && tuneF0.length>1){
       const nF=tuneF0.length;
       const ms=[]; for(let i=0;i<nF;i++) if(tuneF0[i]>0) ms.push(f2m(tuneF0[i]));
       if(ms.length>4){
         ms.sort((a,b)=>a-b);
         const med=ms[ms.length>>1];
-        const fLo=med-14, fHi=med+14;
-        const yOfM=(m)=>H*0.15+((fHi-m)/(fHi-fLo))*H*0.7;
-        g.beginPath(); let moved=false, lastY=H/2;
-        for(let i=0;i<nF;i++){
-          const x=i/nF*W;
-          if(tuneF0[i]>0){
-            const y=yOfM(f2m(tuneF0[i])); lastY=y;
-            moved?g.lineTo(x,y):g.moveTo(x,y); moved=true;
-          } else if(moved){ g.lineTo(x,lastY); }
+        const mLo=Math.floor(med-15), mHi=Math.ceil(med+27);
+        const yOfM=(m)=>H-((m-mLo)/(mHi-mLo))*H;
+        const totalT=buffer?buffer.duration:(nF*TUNE_HOP/tuneSr);
+        const xOfT=(t)=>(t/totalT)*W;
+        const playP=(pos!=null)?pos*nF:0;        // Frame-Index der Spielposition
+        const drawTube=(color,glow,width,maxI)=>{
+          g.strokeStyle=color; g.lineWidth=width; g.shadowColor=color; g.shadowBlur=glow;
+          g.beginPath(); let mv=false, ly=null; const mi=maxI||nF;
+          for(let i=0;i<mi;i++){
+            const y=tuneF0[i]>0?yOfM(f2m(tuneF0[i])):ly;
+            if(y==null) continue; if(tuneF0[i]>0) ly=y;
+            const xx=xOfT(i*TUNE_HOP/tuneSr);
+            mv?g.lineTo(xx,y):g.moveTo(xx,y); mv=true;
+          }
+          if(mv) g.stroke(); g.shadowBlur=0;
+        };
+        g.save(); g.lineJoin="round"; g.globalCompositeOperation="lighter";
+        const playFr=playP>0?Math.min(nF,Math.ceil(playP)+1):0;
+        drawTube("rgba(189,250,255,0.25)",18,8);   // eisblau äußerer Glow
+        drawTube("rgba(189,250,255,0.85)",6,3);    // eisblau Kern
+        if(playFr>0){
+          drawTube("rgba(255,176,86,0.35)",24,9,playFr);  // orange gespielter Glow
+          drawTube("rgba(255,176,86,1)",12,3.5,playFr);   // orange gespielter Kern
         }
-        g.strokeStyle="rgba(255,91,208,0.35)"; g.lineWidth=3;
-        g.shadowColor="rgba(255,91,208,0.4)"; g.shadowBlur=14;
-        g.stroke(); g.shadowBlur=0;
+        // wandernder weißer Spot an der Spielposition
+        if(pos!=null && playFr>0){
+          let sy=null;
+          for(let i=0;i<nF;i++){ if(tuneF0[i]>0) sy=yOfM(f2m(tuneF0[i])); if(i>=playFr-1) break; }
+          if(sy!=null){
+            const sx=xOfT(pos*totalT);
+            g.shadowColor="#ffffff"; g.shadowBlur=34; g.fillStyle="#ffffff";
+            g.beginPath(); g.arc(sx,sy,7,0,Math.PI*2); g.fill(); g.shadowBlur=0;
+          }
+        }
+        g.restore();
       }
     }
     // CHOPPER: Raster-Linien + aufleuchtendes aktives Event
@@ -3450,18 +3473,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         g.lineWidth=isBar?1.5:0.5;
         g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke();
       }
-      // Aktives Event blitzt auf: hell beim Trigger, klingt über frac ab
-      if(flash && flash.step!=null){
-        const x0=(flash.step/ts)*W, x1=((flash.step+1)/ts)*W;
-        const decay=1-(flash.frac||0);          // 1 frisch → 0 am Step-Ende
-        const a=0.15+0.6*decay*decay;
+      // Auswahl-Rechteck (volle Höhe) an der QUELL-Position des Chops — springt mit,
+      // in Chop-Farbe. Darunter bleibt die statische Welle sichtbar.
+      if(flash && flash.src && flash.dur){
+        const sx0=(flash.src.start/flash.dur)*W, sx1=(flash.src.end/flash.dur)*W;
+        const decay=1-(flash.frac||0);
+        const a=0.25+0.55*decay;
+        const rgb=(flash.col||"rgba(255,90,60,1)").replace(/^rgba?\(/,"").replace(/[\d.]+\)$/,"").replace(/,\s*$/,"");
+        const c3=rgb.split(",").slice(0,3).map(x=>x.trim()).join(",");
         g.save(); g.globalCompositeOperation="lighter";
-        const fg=g.createLinearGradient(0,mid-amp,0,mid+amp);
-        fg.addColorStop(0,`rgba(255,90,60,${a})`);
-        fg.addColorStop(0.5,`rgba(255,140,90,${a*0.6})`);
-        fg.addColorStop(1,`rgba(255,90,60,${a})`);
-        g.fillStyle=fg; g.fillRect(x0,0,x1-x0,H);
-        g.restore();
+        // Füllung über volle Höhe
+        const fg=g.createLinearGradient(0,0,0,H);
+        fg.addColorStop(0,`rgba(${c3},${a*0.35})`);
+        fg.addColorStop(0.5,`rgba(${c3},${a*0.7})`);
+        fg.addColorStop(1,`rgba(${c3},${a*0.35})`);
+        g.fillStyle=fg; g.fillRect(sx0,0,sx1-sx0,H);
+        // leuchtende Kanten links/rechts
+        g.strokeStyle=`rgba(${c3},${Math.min(1,a+0.2)})`; g.lineWidth=2;
+        g.shadowColor=`rgba(${c3},${a})`; g.shadowBlur=14;
+        g.beginPath(); g.moveTo(sx0,0); g.lineTo(sx0,H); g.moveTo(sx1,0); g.lineTo(sx1,H); g.stroke();
+        g.shadowBlur=0; g.restore();
       }
     }
     // EDITOR: Live-Frequenzspektrum in Eisblau (reagiert auf EQ)
@@ -4106,7 +4137,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         let t=ac.currentTime-t0;
         if (tuneLoop){ t=t%dur; }
         else if (t>=dur){ try{tunePrevSrc.stop();}catch{} tunePrevSrc=null; drawTune(); tuneRaf=0; return; }
-        drawTune(t);
+        drawTune(t); drawBgWave("tune", (buffer&&buffer.duration)?t/buffer.duration:null);
         tuneRaf=requestAnimationFrame(beam);
       })();
       tuneInfo.textContent="PREVIEW // LISTEN";
