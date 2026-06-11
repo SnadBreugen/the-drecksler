@@ -679,7 +679,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.31</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.32</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1232,7 +1232,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.31";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.32";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3598,9 +3598,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   let atSession=null, atSdkPromise=null, _carrierPickMode=false;
   async function loadAtSdk(){
     if(!atSdkPromise){
-      // Version 0.0.17 explizit — ohne Version schlägt esm.sh fehl
-      atSdkPromise=import("https://esm.sh/@audiotool/nexus@0.0.17")
-        .catch(()=>import("https://cdn.jsdelivr.net/npm/@audiotool/nexus@0.0.17/dist/index.js"));
+      // ?bundle: esm.sh laesst sonst ein process-Polyfill mit einbuendeln. Das SDK liest
+      // `typeof process` als Server-Erkennung und nimmt dann den Node-Wasm-Loader (Fehler
+      // beim at.open). Im bundle-Modus faellt das Polyfill weg -> typeof process === undefined
+      // -> Browser-Wasm-Loader greift (holt die wasm autark von Audiotools CDN).
+      atSdkPromise=import("https://esm.sh/@audiotool/nexus@0.0.17?bundle")
+        .catch(()=>import("https://esm.run/@audiotool/nexus@0.0.17"));
     }
     const m=await atSdkPromise; return m.default||m;
   }
