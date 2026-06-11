@@ -47,10 +47,17 @@
   .feat-cur { display:inline-block; width:8px; height:14px; background:#ff6a00; vertical-align:-2px; margin-left:2px;
     box-shadow:0 0 7px rgba(255,106,0,.6); animation:featBlink 1.1s steps(1) infinite; }
   @keyframes featBlink { 50% { opacity:0; } }
-  .feat-hover { margin-top:20px; padding-top:14px; border-top:1px solid rgba(189,250,255,.18); min-height:4em; }
+  .feat-hover { margin-top:20px; padding:13px 15px; background:#ff6a00; border:1px solid rgba(255,170,100,.7); border-radius:6px; box-shadow:0 0 22px rgba(255,106,0,.4); min-height:4em; }
+  .feat-hover.empty { display:none; }
+  .feat-hover .f-p, .feat-hover .fh-txt { color:#0a0504; text-shadow:none; }
+  .feat-hover .f-c { color:rgba(10,5,4,.62); text-shadow:none; }
+  #hintOverlay { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:60; opacity:0; transition:opacity .3s ease; }
+  #hintOverlay.show { opacity:1; }
+  #hintLine { stroke:#ff6a00; stroke-width:0.8; stroke-linecap:round; filter:drop-shadow(0 0 4px rgba(255,106,0,.8)); }
+  #hintDotA, #hintDotB { fill:#ff6a00; filter:drop-shadow(0 0 4px rgba(255,106,0,.8)); }
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
   .bgwave-layer { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
-    filter:blur(4px); opacity:0; transition:opacity 0.6s ease; }
+    filter:blur(2px) saturate(1.1); opacity:0; transition:opacity 0.6s ease; }
   .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
@@ -129,18 +136,17 @@
     --pc:#8e979c;
     flex:1; padding:15px 12px 14px 15px; text-align:left;
     display:flex; flex-direction:column; gap:6px; position:relative;
-    border:1px solid color-mix(in srgb, var(--pc) 45%, #000);
-    border-left:3px solid color-mix(in srgb, var(--pc) 30%, #000);
+    border:1px solid transparent;
     background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 82%, #fff) 0%, color-mix(in srgb, var(--pc) 88%, #000) 100%);
     box-shadow:0 2px 0 rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);
     transition:transform .06s, box-shadow .12s, border-color .12s, filter .12s, background .12s;
   }
   .fin-pb b { font-size:13px; letter-spacing:.18em; color:#0a0504; transition:color .12s; }
   .fin-pb i { font-style:normal; font-size:10px; letter-spacing:.14em; color:rgba(0,0,0,.6); font-weight:normal; }
-  .fin-pb:hover { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 3px 0 rgba(0,0,0,.5), 0 5px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+  .fin-pb:hover { transform:translateY(-1px); filter:brightness(1.08); border-color:transparent !important; box-shadow:0 3px 0 rgba(0,0,0,.5), 0 5px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
   .fin-pb.active {
     transform:translateY(2px);
-    border-color:color-mix(in srgb, var(--pc) 60%, #000) !important; border-left-color:color-mix(in srgb, var(--pc) 60%, #000) !important;
+    border-color:transparent !important; border-left-color:transparent !important;
     background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 70%, #fff) 0%, var(--pc) 100%);
     box-shadow:0 0 0 1px color-mix(in srgb, var(--pc) 70%, transparent),
                0 0 18px color-mix(in srgb, var(--pc) 55%, transparent),
@@ -232,7 +238,7 @@
   .corp { font-size:12px; letter-spacing:.32em; font-weight:700; color:#ffea00; text-transform:uppercase; text-shadow:0 0 8px rgba(255,234,0,.5); display:flex; align-items:center; gap:9px; }
   .corp .corp-wave { flex:none; filter:drop-shadow(0 0 4px rgba(255,234,0,.5)); }
   .brand { font-family:"Anton","Rubik Mono One",monospace; font-size:36px; line-height:1; letter-spacing:.06em; word-spacing:-.18em; color:#3a0c09; margin:5px 0 6px; }
-  .brand-tag { font-family:"Space Mono",monospace; font-weight:700; font-size:9.5px; letter-spacing:.42em; text-transform:uppercase; color:#4a1009; margin:-3px 0 7px; text-shadow:0 1px 0 rgba(255,255,255,.18); }
+  .brand-tag { font-family:"Space Mono",monospace; font-weight:700; font-size:13px; line-height:1; letter-spacing:.42em; text-transform:uppercase; color:#4a1009; margin:-1px 0 7px; white-space:nowrap; text-shadow:0 1px 0 rgba(255,255,255,.18); }
   .brand b { color:#140404; font-weight:normal; }
   .status { font-family:"VT323",monospace; font-size:15px; letter-spacing:.12em; font-weight:400; text-transform:uppercase; color:#6bff8c; display:flex; align-items:center; gap:10px; text-shadow:0 0 6px rgba(107,255,140,.35); width:560px; }
   .status #statusText { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:right; }
@@ -298,10 +304,17 @@
   .tune-chip.active { color:#ff6a00; border-color:rgba(255,106,0,.7); text-shadow:0 0 6px rgba(255,106,0,.45); box-shadow:0 0 9px rgba(255,106,0,.2); }
   #tuneKeySrc { font-size:9px; letter-spacing:.13em; color:rgba(189,250,255,.45); }
   .tune-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
-  .tune-tile { text-align:left; padding:18px 20px; background:rgba(0,0,0,.45); border:1px solid rgba(255,106,0,.35); border-radius:6px; cursor:pointer; transition:border-color .2s, box-shadow .2s; }
-  .tune-tile b { display:block; font-family:"VT323",monospace; font-size:28px; letter-spacing:.14em; color:#ff6a00; text-shadow:0 0 9px rgba(255,106,0,.5); font-weight:normal; }
-  .tune-tile span { font-size:9px; letter-spacing:.14em; color:rgba(189,250,255,.65); text-transform:uppercase; }
-  .tune-tile.active { border-color:#ff5bd0; box-shadow:0 0 16px rgba(255,91,208,.4), inset 0 0 12px rgba(255,91,208,.10); }
+  .tune-tile { --pc:#8e979c; text-align:left; padding:16px 18px; border:1px solid transparent; border-radius:6px; cursor:pointer;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 82%, #fff) 0%, color-mix(in srgb, var(--pc) 88%, #000) 100%);
+    box-shadow:0 2px 0 rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .06s, box-shadow .12s, filter .12s, background .12s; }
+  #tileHard{--pc:#ff5bd0;} #tileSoft{--pc:#b48ce0;} #tileRobot{--pc:#6f9bb5;} #tileVoc{--pc:#45d4c0;}
+  .tune-tile b { display:block; font-family:"VT323",monospace; font-size:28px; letter-spacing:.14em; color:#0a0504; text-shadow:none; font-weight:normal; }
+  .tune-tile span { font-size:9px; letter-spacing:.14em; color:rgba(10,5,4,.62); text-transform:uppercase; }
+  .tune-tile:hover { transform:translateY(-1px); filter:brightness(1.08); border-color:transparent !important; }
+  .tune-tile.active { transform:translateY(2px); border-color:transparent !important;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 70%, #fff) 0%, var(--pc) 100%);
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--pc) 70%, transparent), 0 0 18px color-mix(in srgb, var(--pc) 55%, transparent), inset 0 2px 4px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.5); }
   #tuneCanvas { width:100%; height:170px; display:block; background:#0a0805; border:1px solid var(--line); border-radius:6px; }
   #tuneCanvas { cursor:default; }
   .fade-wrap { position:relative; display:inline-block; }
@@ -419,6 +432,7 @@
   <div id="featLines"></div>
   <div class="feat-hover" id="featHover"></div>
 </aside>
+<svg id="hintOverlay" aria-hidden="true"><line id="hintLine" x1="0" y1="0" x2="0" y2="0"/><circle id="hintDotA" cx="0" cy="0" r="2"/><circle id="hintDotB" cx="0" cy="0" r="2"/></svg>
 <div class="deck st-editor">
   <header class="deck-head">
     <div class="dh-brand">
@@ -491,7 +505,7 @@
       <div class="edit-tools edit-tools2">
         <span class="src-grp">
           <button id="srcBpmBtn" disabled title="Material BPM — drag vertically to correct a wrong detection (re-label, no stretch; the grid follows the material)">SRC // 120 BPM</button>
-          <button class="srcfix" data-f="2" disabled title="Half-time material (dubstep & co): the detector hears half speed — this doubles it">&times;2 // HALF-TIME</button>
+          <button class="srcfix" data-f="2" disabled title="Half-time material: the detector hears it at half speed — this doubles the tempo to match">&times;2 // HALF-TIME</button>
         </span>
         <span class="edit-sep"></span>
         <button id="edBarsBtn" disabled title="Bar grid: selections snap to whole bars from the downbeat anchor (orange triangle on top — drag it if the ONE sits elsewhere). TRIM then cuts a bar-exact loop">BARS</button>
@@ -509,11 +523,11 @@
             </div>
             <div class="eq-tone">
               <p class="eq-tone-h">TONE // VOCAL STRIP</p>
-              <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass: removes rumble and plosives (0 = off)"></span>
-              <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts boxiness around 250 Hz"></span>
-              <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="3.5 kHz clarity (center = neutral)"></span>
-              <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz"></span>
-              <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="0" title="Tames sharp S sounds above 5.5 kHz"></span>
+              <span class="etool"><i>LOW CUT</i><input type="range" id="eqLow" min="0" max="100" value="0" title="High-pass filter — removes low rumble and plosive thumps below the voice, tightens the bottom (0 = off)"></span>
+              <span class="etool"><i>MUD</i><input type="range" id="eqMud" min="0" max="100" value="0" title="Cuts the boxy, muddy build-up around 250 Hz for a clearer, more open midrange"></span>
+              <span class="etool"><i>PRESENCE</i><input type="range" id="eqPres" min="0" max="100" value="50" title="Lifts or dips 3.5 kHz — the clarity and bite that pushes the voice forward (center = neutral)"></span>
+              <span class="etool"><i>AIR</i><input type="range" id="eqAir" min="0" max="100" value="0" title="High shelf above 12 kHz — adds open, airy sparkle to the top end"></span>
+              <span class="etool"><i>DE-ESS</i><input type="range" id="edDeEss" min="0" max="100" value="0" title="Tames harsh S and T sibilance above 5.5 kHz without dulling the rest of the voice"></span>
             </div>
           </div>
           <p class="edit-panel-hint">ISO BANDS 63&ndash;8K &middot; &plusmn;12 DB &middot; DRAG THE CURVE POINTS &middot; DOUBLE-CLICK = ZERO &middot; TWEAK LIVE WHILE PREVIEWING &mdash; APPLY BURNS IN THE WHOLE CHAIN</p>
@@ -550,9 +564,9 @@
         <div class="tune-key">
           <span class="tk-label">KEY</span>
           <select id="tuneRoot" title="Root note of the key — picked up from the tuned metronome automatically; change it here if the take is in another key"></select>
-          <button class="tune-chip" data-sc="maj" title="Lock to the major scale of the key">MAJOR</button>
-          <button class="tune-chip" data-sc="min" title="Lock to the minor scale of the key">MINOR</button>
-          <button class="tune-chip" data-sc="chrom" title="Allow every semitone — pure pitch correction, no key">CHROMATIC</button>
+          <button class="tune-chip" data-sc="maj" title="Snap every note to the major scale of the key — only those seven pitches are allowed, off-notes pull to the nearest one">MAJOR</button>
+          <button class="tune-chip" data-sc="min" title="Snap every note to the minor scale of the key — the darker seven-pitch set, off-notes pull to the nearest one">MINOR</button>
+          <button class="tune-chip" data-sc="chrom" title="Every semitone allowed — each note pulls to the nearest of all twelve, correction without locking to a key">CHROMATIC</button>
           <span id="tuneKeySrc">&mdash;</span>
           <span class="tk-label" style="margin-left:16px">VOC</span>
           <button class="tune-chip vc-mode" data-vm="follow" title="Carrier follows the sung melody — the chord moves with you (needs a tracked take)">FOLLOW</button>
@@ -564,17 +578,17 @@
           <div style="position:relative;display:inline-block">
             <button id="carrierBtn" class="tune-chip" style="min-width:120px;text-align:left">CHORD ▾</button>
             <div id="carrierPopup" style="display:none">
-              <button class="vc-carrier" data-vc="chord">CHORD<br><small>machine chord</small></button>
-              <button class="vc-carrier" data-vc="mono">MONO<br><small>follows melody</small></button>
-              <button class="vc-carrier" data-vc="noise">NOISE<br><small>whispered texture</small></button>
-              <button class="vc-carrier" data-vc="track">TRACK // FILE<br><small>upload from disk</small></button>
+              <button class="vc-carrier" data-vc="chord" title="Carrier is a synthesised chord built from the key — the full, classic machine-voice timbre">CHORD<br><small>machine chord</small></button>
+              <button class="vc-carrier" data-vc="mono" title="Carrier is a single tone tracking your melody — a thinner, more speech-like machine voice">MONO<br><small>follows melody</small></button>
+              <button class="vc-carrier" data-vc="noise" title="Carrier is filtered noise — a breathy, whispered texture that emphasises consonants">NOISE<br><small>whispered texture</small></button>
+              <button class="vc-carrier" data-vc="track" title="Use an uploaded audio file as the carrier instead of a synth source">TRACK // FILE<br><small>upload from disk</small></button>
               <button id="trackUplinkBtn" class="vc-track-up" title="Load carrier from Audiotool">TRACK // UPLINK<br><small>from audiotool</small></button>
             </div>
           </div>
           <input type="file" id="carrierFileInput" accept="audio/*" style="display:none">
         </div>
         <div class="tune-tiles">
-          <button class="tune-tile" id="tileHard" title="The trap effect: every note irons flat and transitions SNAP audibly. Tap = render + hear"><b>HARD</b><span>trap snap &middot; instant lock</span></button>
+          <button class="tune-tile" id="tileHard" title="Every note is pulled dead-flat to the grid and transitions jump audibly between pitches — the hard, robotic correction. Tap = render + hear"><b>HARD</b><span>hard snap &middot; instant lock</span></button>
           <button class="tune-tile" id="tileSoft" title="Full correction with musical smoothing — notes lock, phrasing survives. Tap = render + hear"><b>SOFT</b><span>full pull &middot; musical</span></button>
           <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note — monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; machine</span></button>
           <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier — the machine speaks. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
@@ -606,19 +620,19 @@
     <aside class="stage island-fx" id="islandFx" data-tag="CHOP FX">
       <div class="fx-panel disabled" id="fxPanel">
         <p class="fxp-title" id="fxpTitle">CHOP FX // &mdash;</p>
-        <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Pitch ±12 semitones"></div>
-        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-trigger on the note grid (trap stutter)"><button data-sv="0" disabled>OFF</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
-        <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube saturation"></div>
-        <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bitcrusher"></div>
+        <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Shifts this chop up or down in semitones (±12 = an octave each way) — timing stays the same"></div>
+        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-triggers the slice on the note grid — a rapid stutter roll at the chosen rate"><button data-sv="0" disabled>OFF</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
+        <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube-style saturation — warm harmonic drive and grit, stronger as you push it up"></div>
+        <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bit-depth reduction — a harsh, broken digital edge that gets coarser the further you push it"></div>
         <div class="fx-filters">
         <p class="fx-filters-h">FILTER</p>
         <div class="fx-duo">
-          <div class="ctl"><label>HP CUT <span class="v" id="vFxHp">&mdash;</span></label><input type="range" id="fxHp" min="0" max="1" step="0.01" value="0" disabled title="High-pass — cuts the lows"></div>
-          <div class="ctl"><label>RES <span class="v" id="vFxHpQ">&mdash;</span></label><input type="range" id="fxHpQ" min="0" max="1" step="0.01" value="0" disabled title="High-pass resonance"></div>
+          <div class="ctl"><label>HP CUT <span class="v" id="vFxHp">&mdash;</span></label><input type="range" id="fxHp" min="0" max="1" step="0.01" value="0" disabled title="High-pass filter — sweeps the low end away, thinning this chop as you raise the cut"></div>
+          <div class="ctl"><label>RES <span class="v" id="vFxHpQ">&mdash;</span></label><input type="range" id="fxHpQ" min="0" max="1" step="0.01" value="0" disabled title="Resonance at the high-pass cut point — a sharper, more whistling edge as you raise it"></div>
         </div>
         <div class="fx-duo">
-          <div class="ctl"><label>LP CUT <span class="v" id="vFxLp">&mdash;</span></label><input type="range" id="fxLp" min="0" max="1" step="0.01" value="1" disabled title="Low-pass — cuts the highs"></div>
-          <div class="ctl"><label>RES <span class="v" id="vFxLpQ">&mdash;</span></label><input type="range" id="fxLpQ" min="0" max="1" step="0.01" value="0" disabled title="Low-pass resonance"></div>
+          <div class="ctl"><label>LP CUT <span class="v" id="vFxLp">&mdash;</span></label><input type="range" id="fxLp" min="0" max="1" step="0.01" value="1" disabled title="Low-pass filter — sweeps the high end away, darkening this chop as you lower the cut"></div>
+          <div class="ctl"><label>RES <span class="v" id="vFxLpQ">&mdash;</span></label><input type="range" id="fxLpQ" min="0" max="1" step="0.01" value="0" disabled title="Resonance at the low-pass cut point — a sharper, more whistling edge as you raise it"></div>
         </div>
         </div>
       </div>
@@ -637,24 +651,24 @@
         <span class="cb-flex"></span>
         <div class="scat-grp">
           <button class="pbtn" id="densBtn" disabled title="Scatter density: hit chance per slot — drag vertically">DENS 60%</button>
-          <button id="scatterBtn" disabled title="Roll a random arrangement (slices + FX)">&#10227; SCATTER</button>
+          <button id="scatterBtn" disabled title="Roll a fresh random arrangement — re-slices the steps and assigns FX for an instant new pattern">&#10227; SCATTER</button>
         </div>
-        <button id="resetBtn" disabled title="Reset all chops to their original order">RESET</button>
-          <button id="chopApply" class="primary" disabled title="Commit the chopped result as new active sample">APPLY</button>
-        <button id="clearChopBtn" disabled title="Clear all steps">CLEAR</button>
+        <button id="resetBtn" disabled title="Reset all chops back to the material's original order — one slice per step, no FX">RESET</button>
+          <button id="chopApply" class="primary" disabled title="Commit the chopped result as the new active sample — the chopper sum becomes the material">APPLY</button>
+        <button id="clearChopBtn" disabled title="Clear every step — empties the whole arrangement to start from scratch">CLEAR</button>
       </div>
       <div class="grid-wrap"><canvas class="grid" id="grid"></canvas></div>
     </section>
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
-      <button id="sampleBack" class="back-btn" disabled title="Restore the previous sample version">SAMPLE ZURÜCK</button>
-      <button id="uplinkBtn" title="Connect to Audiotool (login)">UPLINK</button>
-      <button class="primary" id="wavBtn" disabled title="Render the arrangement as a WAV file">EXPORT // WAV</button>
-      <button id="atBtn" disabled title="Send straight to your Audiotool library">TRANSMIT TO AUDIOTOOL</button>
+      <button id="sampleBack" class="back-btn" disabled title="Step back to the previous version of the sample — undoes the last commit">SAMPLE ZURÜCK</button>
+      <button id="uplinkBtn" title="Connect to your Audiotool account (opens login) — needed for transmit and for library carriers">UPLINK</button>
+      <button class="primary" id="wavBtn" disabled title="Render the full chopped arrangement incl. finisher and download it as a WAV file">EXPORT // WAV</button>
+      <button id="atBtn" disabled title="Render the result and send it straight into your Audiotool sample library">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.06</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.27</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1190,7 +1204,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
           <p class="ip-name" id="ipName">&mdash;</p>
           <div class="ip-row" id="ipBpmRow">
             <button id="ipBpmBtn" title="Detected tempo of the material — drag vertically to correct it">128 BPM</button>
-            <button class="ipfix" data-f="2" title="Half-time material (dubstep & co): the detector hears half speed — this doubles it">&times;2 // HALF-TIME</button>
+            <button class="ipfix" data-f="2" title="Half-time material: the detector hears it at half speed — this doubles the tempo to match">&times;2 // HALF-TIME</button>
           </div>
           <div class="ip-row">
             <button id="ipLoop" class="ip-mode" title="Cut to whole bars at this BPM and stretch to the project tempo">LOOP</button>
@@ -1207,8 +1221,24 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.06";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.27";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
+
+  function fitBrandTag(){
+    // VOCAL WORKBENCH exakt auf die Breite von THE DRECKSLER spreizen (schliesst buendig unter dem letzten Я ab)
+    const brand=document.querySelector(".brand"), tag=document.querySelector(".brand-tag");
+    if (!brand || !tag) return;
+    const target=brand.getBoundingClientRect().width;
+    tag.style.letterSpacing="0px";
+    const base=tag.getBoundingClientRect().width;
+    const n=(tag.textContent||"").length;
+    if (n>1 && target>base) tag.style.letterSpacing=((target-base)/(n-1))+"px";
+    else tag.style.letterSpacing="";          // Fallback: CSS-Wert (.42em)
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBrandTag);
+  window.addEventListener("load", fitBrandTag);
+  window.addEventListener("resize", fitBrandTag);
+  fitBrandTag();
 
   const BARS = 2;
   const P = {
@@ -1462,8 +1492,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return c;
   }
   function applyOut(n){ n.out.gain.value = dbToGain(P.out.gain); }
-  function buildFinisher(c, input){
-    const f=FINISHERS[P.finisher]||FINISHERS.RAW;
+  // Finisher wirkt nur im Finalizer (Vorschau) bzw. nach APPLY/Export — sonst neutral.
+  // Live-Hörkette: kein finName -> effFin() (station-abhängig). Render/Export: finName explizit (gewähltes Preset).
+  const effFin=()=> deckEl.classList.contains("st-fin") ? P.finisher : "RAW";
+  function buildFinisher(c, input, finName){
+    const f=FINISHERS[(finName!==undefined?finName:effFin())]||FINISHERS.RAW;
     let _crackleSrc=null, _crackleSrc2=null, _wowLfo=null, _chorusL=null, _chorusR=null;
     const hp=c.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=f.lowcut; hp.Q.value=0.707;
     const pres=c.createBiquadFilter(); pres.type="peaking"; pres.frequency.value=3000; pres.Q.value=1; pres.gain.value=f.pres;
@@ -1573,14 +1606,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     hp._crackleSrc=_crackleSrc; hp._crackleSrc2=_crackleSrc2; hp._wowLfo=_wowLfo; hp._chorusL=_chorusL; hp._chorusR=_chorusR;
     return hp;
   }
-  function buildChain(c){
+  function buildChain(c, finName){
     const n={};
     n.input=c.createGain(); n.out=c.createGain();
     n.input.connect(n.out);
-    n.analyser=c.createAnalyser(); n.analyser.fftSize=512;
+    n.analyser=c.createAnalyser(); n.analyser.fftSize=4096; n.analyser.smoothingTimeConstant=0.82;
     n.out.connect(n.analyser);
-    n.finHead=buildFinisher(c, n.out);
-    n._fin=P.finisher;
+    n.finHead=buildFinisher(c, n.out, finName);
+    n._fin=(finName!==undefined?finName:effFin());
     applyOut(n);
     return n; // input = n.input
   }
@@ -1599,7 +1632,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const applyLive=()=>{
     if (!liveFx) return;
     applyOut(liveFx);
-    if (liveFx._fin!==P.finisher && liveFx.finHead){           // Heisstausch: alter Strang ab, neuer dran — Loop laeuft weiter
+    if (liveFx._fin!==effFin() && liveFx.finHead){           // Heisstausch: alter Strang ab, neuer dran — Loop laeuft weiter
       try {
         if(liveFx.finHead._crackleSrc){ try{ liveFx.finHead._crackleSrc.stop(); }catch{} }
         if(liveFx.finHead._crackleSrc2){ try{ liveFx.finHead._crackleSrc2.stop(); }catch{} }
@@ -1609,7 +1642,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         liveFx.out.disconnect(liveFx.finHead);
         liveFx.finHead.disconnect();
         liveFx.finHead=buildFinisher(liveFx.out.context, liveFx.out);
-        liveFx._fin=P.finisher;
+        liveFx._fin=effFin();
       } catch(e){ console.warn("[FIN HOTSWAP]", e); }
     }
   };
@@ -1716,6 +1749,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- Per-chop voice ----------
   const STUT_VALS=[0,16,32,64], STUT_LABELS=["OFF","1/16","1/32","1/64"];
+  // Chopper-Slice-Kompensation: die GRID-Rekonstruktion klingt einen Tick dumpfer (Crossfade-Rest).
+  // Leichter Präsenz-Tilt + Mini-Pegel gleichen das aus — NUR GRID, nicht FREE/Editor/Finalizer. Zum Feinjustieren:
+  const CHOP_COMP_FREQ=2800, CHOP_COMP_Q=0.9, CHOP_COMP_DB=1.5, CHOP_COMP_GAIN=1.04;
   function playChop(ac, n, chop, when, sd, tab, sink){
     const sc=tab.length; if (!sc) return null;
     const idx=chop.slice % sc, sl=tab[idx], sliceDur=sl.dur;  // uniform == stepDur (Tempo-Fit haelt das Raster)
@@ -1752,7 +1788,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const offset=sliceBase+srcOffWithin;
     const durEx=Math.min(effPlay+tail, Math.max(0.01, useBuf.duration-offset));
     const holdEnd=(full&&tempoMatch)?(when+sd):(when+effPlay-F);  // Fade-out am echten Spielende
-    const gv=(chop.gain==null?1:chop.gain);
+    const gv=(chop.gain==null?1:chop.gain) * ((P.chop.mode!=="mark") ? CHOP_COMP_GAIN : 1);
     const g=ac.createGain(); g.connect(n.input);
     g.gain.setValueAtTime(0, when);
     g.gain.linearRampToValueAtTime(gv, when+F);
@@ -1763,6 +1799,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const hpv=chop.hp||0, lpv=(chop.lp==null?1:chop.lp);
     if (hpv>0.001){ const f=ac.createBiquadFilter(); f.type="highpass"; f.frequency.value=hpFreq(hpv); f.Q.value=(chop.hpq||0)*18; head.connect(f); head=f; }
     if (lpv<0.999){ const f=ac.createBiquadFilter(); f.type="lowpass"; f.frequency.value=lpFreq(lpv); f.Q.value=(chop.lpq||0)*18; head.connect(f); head=f; }
+    if (P.chop.mode!=="mark" && CHOP_COMP_DB){ const tf=ac.createBiquadFilter(); tf.type="peaking"; tf.frequency.value=CHOP_COMP_FREQ; tf.Q.value=CHOP_COMP_Q; tf.gain.value=CHOP_COMP_DB; head.connect(tf); head=tf; }   // GRID-Slice-Kompensation
     head.connect(g);
     if (semi===0 && crush===0 && tube===0){
       src.buffer=useBuf; try { src.start(when, offset, durEx); } catch(e){}
@@ -1778,6 +1815,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (pb){ src.buffer=pb; try { src.start(when, Math.min(srcOffWithin, Math.max(0, pb.duration-0.01)), durEx); } catch(e){} }
       else { src.buffer=useBuf; try { src.start(when, offset, durEx); } catch(e){} }
     }
+    src._g=g;                                                 // Gain referenzierbar fürs sanfte Ausblenden (Moduswechsel)
     return src;
   }
 
@@ -2950,7 +2988,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function buildPreviewFx(ac){
     const mk=(type,freq,Q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=freq; b.Q.value=Q; b.gain.value=0; return b; };
     const low=mk("highpass",10,0.71), mud=mk("peaking",250,1.0), pres=mk("peaking",3500,0.9), air=mk("highshelf",12000,0.71);
-    const lo=mk("lowpass",5500,0.5), hi=mk("highpass",5500,0.5);   // LR-Split: Q 0.5 + invertierter HF-Zweig = flache Summe
+    const hi=mk("highpass",5500,0.5);                  // De-Esser: nur der Hochband-Zweig wird abgezweigt
     const inv=ac.createGain(); inv.gain.value=-1;
     const comp=ac.createDynamicsCompressor();
     comp.threshold.value=0; comp.ratio.value=1; comp.attack.value=0.002; comp.release.value=0.06; comp.knee.value=6;
@@ -2966,9 +3004,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const b=mk(type, EQ8F[i], 1.41);                    // Oktavbandbreite; Enden als Shelves
       tail.connect(b); tail=b; eq8.push(b);
     }
-    tail.connect(lo); lo.connect(sum);
-    tail.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum);
-    return { input:low, output:sum, low, mud, pres, air, comp, eq8, specAn };
+    // De-Esser = volles Signal + Wirk-Anteil*(komprimierte - rohe Höhen). Bei De-Ess 0: Wirk 0 -> exakt das Original, kein Kompressor im Weg
+    const dryFull=ac.createGain(); dryFull.gain.value=1;
+    tail.connect(dryFull); dryFull.connect(sum);
+    const deDiff=ac.createGain();                          // comp(hi) - hi
+    tail.connect(hi); hi.connect(comp); comp.connect(deDiff);
+    hi.connect(inv); inv.connect(deDiff);                  // inv.gain = -1
+    const deWet=ac.createGain(); deWet.gain.value=0;       // bei neutral 0
+    deDiff.connect(deWet); deWet.connect(sum);
+    return { input:low, output:sum, low, mud, pres, air, comp, deWet, eq8, specAn };
   }
   function updatePreviewFx(){
     if (!previewFx) return;
@@ -2982,6 +3026,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const a=(Number($("#edDeEss").value)||0)/100;
     fx.comp.threshold.setTargetAtTime(a>0.01 ? -15-30*a : 0, t, T);
     fx.comp.ratio.setTargetAtTime(a>0.01 ? 6 : 1, t, T);
+    if (fx.deWet) fx.deWet.gain.setTargetAtTime(a>0.01 ? 1 : 0, t, T);   // De-Esser-Pfad nur wirksam wenn aktiv
     if (fx.eq8) for (let i=0;i<fx.eq8.length;i++) fx.eq8[i].gain.setTargetAtTime(eq8Db(i), t, T);
   }
   function straightPlayheadT(){
@@ -3007,7 +3052,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     } else {
       playSource.start(0, offset, dur); playSource.onended=()=>stopPlayback();
     }
-    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); drawBgWave(deckEl.classList.contains("st-fin")?"fin":"editor", (buffer&&buffer.duration)?ph/buffer.duration:null); rafId=requestAnimationFrame(follow); })();
+    (function follow(){ if (!playSource) return; let ph=offset+(ac.currentTime-straightStartedAt); if (playSource.loop) ph=baseOff+((ph-baseOff)%baseDur); drawWave(ph); drawEditWave(ph); tc.textContent=fmtTime(ph); if (liveFx) updateMeter(liveFx.analyser, outMeterFill); if (previewFx) drawEqGraph(); const finP=(buffer&&buffer.duration)?ph/buffer.duration:null; drawBgWave(deckEl.classList.contains("st-fin")?"fin":"editor", finP); if(deckEl.classList.contains("st-fin")&&finLastRB){ lastFinPos=finP||0; drawFinWave(finLastRB, finCanvas.parentElement.getBoundingClientRect(), finP); } rafId=requestAnimationFrame(follow); })();
   }
   // ======== MARK-Modus: Schnitzen — ein durchgehender Chop, Markieren teilt ihn ========
   const segEnd=()=>buffer?Math.max(0.05, Math.min(loopDur(), buffer.duration-chopWin)):0;
@@ -3097,28 +3142,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       }
     }
   }
+  function fadeOutActive(srcs, fade){
+    const ac=audioCtx; if(!ac||!srcs||!srcs.length) return;
+    const t=ac.currentTime, f=fade||0.035;
+    for(const s of srcs){
+      try{ if(s._g){ s._g.gain.cancelScheduledValues(t); s._g.gain.setTargetAtTime(0, t, f*0.4); } }catch(e){}
+      try{ s.stop(t+f+0.05); }catch(e){}
+    }
+  }
   function setChopMode(m){
     if (P.chop.mode===m) return;
+    const _fadeOld=(schedTimer && audioCtx) ? activeSources.slice() : null;   // alte/vorgescheduelte Chops des bisherigen Modus
+    if (_fadeOld) activeSources=[];                                           // neue Stücke sammeln sich getrennt
     P.chop.mode=m; markPreview=null; markDrag=null; segTlDrag=null;
     syncSetBtn(); syncSnapBtns();
     canvas.style.cursor=(m==="mark")?"default":""; grid.style.cursor="";
     if (m==="mark" && (!markSegs.length || Math.abs((markSegs[markSegs.length-1]||{b:0}).b-segEnd())>0.01)) resetMarkSegs();
-    if (m==="mark" && schedTimer && audioCtx && liveFx && markSegs.length){
-      // Kein Abbruch beim Umschalten: das gerade faellige Stueck wird ab aktueller Position fortgesetzt
-      const ld=loopDur(), curT=((audioCtx.currentTime-chopStartTime)%ld+ld)%ld;
-      for (const seg of markSegs){
-        const pd=segPlayDur(seg);
-        if (curT>seg.trig+0.01 && curT<seg.trig+pd-0.03){
-          const srcD=segSrcDur(seg), skip=curT-seg.trig;
-          const part={ ...seg, slice:0, stut:0, st:Math.max(0,seg.st||0)+skip/srcD };
-          const src=playChop(audioCtx, liveFx, part, audioCtx.currentTime+0.03, srcD, [{ t0:chopWin+seg.a, dur:srcD }], activeSources);
-          if (src){ activeSources.push(src); src.onended=()=>{ const k=activeSources.indexOf(src); if (k>=0) activeSources.splice(k,1); }; }
-        }
-      }
-    }
     selectedStep=null; selectedSteps.clear(); markSel=-1; markEditIdx=-1;
     updateFxPanel(); syncModeBtns(); drawWave(); drawGrid();
     if (m==="mark") resumeMarkMidLoop();                       // kein Loch bis zum Loop-Anfang
+    if (_fadeOld) fadeOutActive(_fadeOld);                      // alten Modus sanft wegblenden -> kein Doppel-Signal
     setStatus(m==="mark" ? "FREE MODE // ONE CHOP \u2014 CLAIM THE WAVE TO CUT IT" : "GRID MODE // 16 SLOTS");
   }
   modeGridBtn.addEventListener("click", ()=>setChopMode("grid"));
@@ -3378,7 +3421,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         hl={ start:slF.t0+st0*slF.dur, end:slF.t0+l*slF.dur, col:chopColor(cch, stepIdx).replace(/,[\d.]+\)$/, ",1)") };
       }
       drawWave(null, hl);
-      if(deckEl.classList.contains("st-fin")){ drawBgWave("fin", (buffer&&buffer.duration)?((ac.currentTime-chopStartTime)%loopDur())/buffer.duration:null); }
+      if(deckEl.classList.contains("st-fin")){
+        const _ld=loopDur()||1, _el=(((ac.currentTime-chopStartTime)%_ld)+_ld)%_ld, finP=_el/_ld;
+        drawBgWave("fin", finP);
+        if(finLastRB){ lastFinPos=finP; drawFinWave(finLastRB, finCanvas.parentElement.getBoundingClientRect(), finP); }
+      }
       else drawBgWave("hecksler", null, { step:stepIdx, frac:frac, total:totalSteps(), col:(cch?chopColor(cch,stepIdx):null), src:hl, dur:buffer.duration });
       tc.textContent=fmtTime((ac.currentTime-chopStartTime)%loopDur());
       if (liveFx) updateMeter(liveFx.analyser, outMeterFill);
@@ -3426,6 +3473,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     previewFx=null;
     cancelAnimationFrame(rafId); _meterLevels.set(outMeterFill,0); outMeterFill.style.width="0%"; setPlayIcon(false); drawWave(); drawGrid(); drawEqGraph(); bgWaveSetActive(false);
+    if(deckEl.classList.contains("st-fin")&&finLastRB){ lastFinPos=0; try{ drawFinWave(finLastRB, finCanvas.parentElement.getBoundingClientRect(), null); }catch(e){} }   // Marker zurücksetzen
   }
 
   // ---------- Offline render ----------
@@ -3436,25 +3484,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const g=dbToGain(-1)/peak;
     for (let c=0;c<buf.numberOfChannels;c++){ const d=buf.getChannelData(c); for (let i=0;i<d.length;i++) d[i]=Math.max(-1,Math.min(1,d[i]*g)); }
   }
-  async function renderProcessed(){
+  async function renderProcessed(finName){
+    const fin=(finName!==undefined?finName:P.finisher);     // Export/APPLY: gewähltes Preset; Aufrufer kann "RAW" erzwingen (Chop-Commit)
     const sr=buffer.sampleRate;
-    const _fp=(FINISHERS[P.finisher]||FINISHERS.RAW); const outCh=(_fp.width>0||_fp.crackle>0||_fp.chorus) ? 2 : 1;
+    const _fp=(FINISHERS[fin]||FINISHERS.RAW); const outCh=(_fp.width>0||_fp.crackle>0||_fp.chorus) ? 2 : 1;
     let rendered;
     if (P.chop.on && P.chop.mode==="mark" && markSegs.length){
       const loopLen=Math.ceil(loopDur()*sr);
-      const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off);
+      const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off, fin);
       for (const seg of markSegs) playSeg(off, n, seg, seg.trig, null);
       rendered=await off.startRendering();
     } else if (P.chop.on && P.chop.mode!=="mark" && arrangement.some((x)=>x!=null)){
       const sd=stepDur(), tab=sliceTable(), ts=totalSteps(), loopLen=Math.ceil(loopDur()*sr);
-      const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off);
+      const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off, fin);
       for (let step=0; step<ts; step++){
         const ch=arrangement[step]; if (!ch || !tab.length) continue;
         playChop(off, n, ch, step*sd, sd, tab, null);
       }
       rendered=await off.startRendering();
     } else {
-      const off=new OfflineAudioContext(outCh, buffer.length, sr); const n=buildChain(off);
+      const off=new OfflineAudioContext(outCh, buffer.length, sr); const n=buildChain(off, fin);
       const src=off.createBufferSource(); src.buffer=buffer; src.connect(n.input); src.start();
       rendered=await off.startRendering();
     }
@@ -3541,38 +3590,57 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if(!buffer) return;
     const COLS={ editor:"189,250,255", hecksler:"255,234,0", tune:"255,91,208", fin:"255,106,0" };
     const col=COLS[st]||COLS.editor;
-    const data=buffer.getChannelData(0), n=data.length;
-    const mid=H*0.5, amp=H*0.4;
+    const data=buffer.getChannelData(0), n=Math.min(data.length, Math.max(1, Math.round(viewDur()*buffer.sampleRate)));   // nur der gespielte Bereich (bei Chopper die 2 Takte)
+    const base=H, amp=H*0.95;                    // unten verankert, gross — Spitzen bis Bildmitte/oben, Rand-Clipping egal
     const step=Math.max(1,Math.floor(n/W));
-    const hasEditorSpec=(st==="editor" && typeof previewFx!=="undefined" && previewFx && previewFx.specAn && audioCtx);
-    // Füllfläche (nicht bei Editor mit Live-Spektrum)
-    if(!hasEditorSpec){
-    g.beginPath(); g.moveTo(0,mid);
-    for(let x=0;x<W;x++){
-      let mx=0;
-      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
-      g.lineTo(x, mid-mx*amp);
-    }
-    for(let x=W-1;x>=0;x--){
-      let mn=0;
-      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v<mn)mn=v; }
-      g.lineTo(x, mid-mn*amp);
-    }
-    g.closePath();
-    const wfA=(st==="tune")?0.2:0.5;            // bei Tune Waveform nur dezent im Hintergrund
-    const grad=g.createLinearGradient(0,mid-amp,0,mid+amp);
+    // Spektrum-Quelle je Station (tanzendes Frequenzbild wie im Editor, in Stationsfarbe)
+    let specSrc=null;
+    if(st==="editor"){ if(typeof previewFx!=="undefined" && previewFx && previewFx.specAn) specSrc=previewFx.specAn; }
+    else if(st==="tune"){ if(typeof tuneAnalyser!=="undefined" && tuneAnalyser) specSrc=tuneAnalyser; }
+    else { if(typeof liveFx!=="undefined" && liveFx && liveFx.analyser) specSrc=liveFx.analyser; }
+    const hasSpec=!!(specSrc && audioCtx);
+    // Grundebene: Hüllkurven-Welle nur als Fallback, wenn (noch) kein Spektrum läuft
+    if(!hasSpec){
+    const wfA=(st==="tune")?0.45:0.5;            // Tune präsenter — das Lila ging vorher unter
+    const envAt=(x)=>{
+      let mx=0; for(let k=0;k<step;k++){ const v=Math.abs(data[x*step+k]||0); if(v>mx)mx=v; }  // positive Hüllkurve
+      return mx;
+    };
+    g.beginPath(); g.moveTo(0,base);
+    for(let x=0;x<W;x++) g.lineTo(x, base-envAt(x)*amp);
+    g.lineTo(W,base); g.closePath();
+    const grad=g.createLinearGradient(0,base-amp,0,base);     // ein Ton, hell oben -> dunkel unten
     grad.addColorStop(0,`rgba(${col},${wfA})`);
-    grad.addColorStop(0.5,`rgba(${col},${wfA*0.5})`);
-    grad.addColorStop(1,`rgba(${col},${wfA})`);
+    grad.addColorStop(1,`rgba(${col},${wfA*0.22})`);
     g.fillStyle=grad; g.fill();
-    // Konturlinie
-    g.beginPath(); g.moveTo(0,mid);
-    for(let x=0;x<W;x++){
-      let mx=-1;
-      for(let k=0;k<step;k++){ const v=data[x*step+k]||0; if(v>mx)mx=v; }
-      g.lineTo(x, mid-mx*amp);
+    // Konturlinie auf der Hüllkurve
+    g.beginPath();
+    for(let x=0;x<W;x++){ const y=base-envAt(x)*amp; if(x===0) g.moveTo(x,y); else g.lineTo(x,y); }
+    g.strokeStyle=`rgba(${col},${(st==="tune")?0.55:0.6})`; g.lineWidth=2; g.stroke();
     }
-    g.strokeStyle=`rgba(${col},${(st==="tune")?0.2:0.55})`; g.lineWidth=2; g.stroke();
+    // Grundebene: tanzendes Frequenz-Spektrum (wie im Editor) — überall, in Stationsfarbe
+    if(hasSpec){
+      const an=specSrc, nb=an.frequencyBinCount;
+      const fbuf=new Uint8Array(nb); an.getByteFrequencyData(fbuf);
+      const binHz=audioCtx.sampleRate/2/nb;
+      const FMIN=20, FMAX=20000;
+      const x2fL=(x)=>FMIN*Math.pow(FMAX/FMIN, Math.max(0,Math.min(1,x/W)));
+      const sbase=H;
+      g.beginPath(); g.moveTo(0,sbase);
+      for(let x=0;x<=W;x+=2){
+        const fb=Math.max(0,Math.min(nb-1.001, x2fL(x)/binHz));
+        const b0=Math.floor(fb), fr=fb-b0;
+        const v=(fbuf[b0]*(1-fr)+fbuf[Math.min(nb-1,b0+1)]*fr)/255;
+        g.lineTo(x, sbase-(v*v)*(H*0.96));
+      }
+      g.lineTo(W,sbase); g.closePath();
+      const sg=g.createLinearGradient(0,0,0,sbase);
+      sg.addColorStop(0,`rgba(${col},0.85)`);
+      sg.addColorStop(1,`rgba(${col},0.35)`);
+      g.fillStyle=sg; g.fill();
+      g.strokeStyle=`rgba(${col},0.95)`; g.lineWidth=2.5;
+      g.shadowColor=`rgba(${col},0.5)`; g.shadowBlur=10;
+      g.stroke(); g.shadowBlur=0;
     }
     // TUNE: Neon-Pitch-Röhre wie im Device — eisblau, gespielter Teil orange, wandernder Spot
     if(st==="tune" && tuneF0 && tuneF0.length>1){
@@ -3598,6 +3666,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
           if(mv) g.stroke(); g.shadowBlur=0;
         };
         g.save(); g.lineJoin="round"; g.globalCompositeOperation="lighter";
+        // Snap-Ziel-Balken (orange) — nur HARD/SOFT/ROBOT; bei VOCODER bleibt es bei der reinen Röhre
+        if(typeof tuneMode!=="undefined" && tuneMode!=="vocoder" && tuneMode!=="raw" && typeof segsWithOverrides==="function"){
+          try{
+            for(const sg of segsWithOverrides()){
+              const x1=xOfT(sg.a/tuneSr), x2=xOfT(sg.b/tuneSr), yy=yOfM(sg.note);
+              g.fillStyle="rgba(255,106,0,0.9)"; g.shadowColor="rgba(255,106,0,0.6)"; g.shadowBlur=12;
+              g.fillRect(x1, yy-3, Math.max(3,x2-x1-1), 6);
+            }
+            g.shadowBlur=0;
+          }catch(e){}
+        }
         const playFr=playP>0?Math.min(nF,Math.ceil(playP)+1):0;
         drawTube("rgba(189,250,255,0.25)",18,8);   // eisblau äußerer Glow
         drawTube("rgba(189,250,255,1)",6,3.5);    // eisblau Kern
@@ -3629,6 +3708,25 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         g.lineWidth=isBar?1.5:0.5;
         g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke();
       }
+      // Alle belegten Chops als Bloecke (unten verankert, Hoehe nach Gain) — das Pattern sichtbar im Hintergrund
+      if(typeof arrangement!=="undefined" && arrangement && typeof chopColor==="function"){
+        const cw=W/ts;
+        g.save(); g.globalCompositeOperation="lighter";
+        for(let i=0;i<ts;i++){
+          const ch=arrangement[i]; if(!ch) continue;
+          const gain=Math.max(0,Math.min(1.5, ch.gain==null?1:ch.gain));
+          const bh=H*(0.30+0.45*(gain/1.5));                          // Höhe nach Lautstärke
+          const cst=Math.max(0,Math.min(0.9, ch.st||0)), cl=(ch.len==null)?1:ch.len;
+          const bx=i*cw+cw*cst, bw=Math.max(2, cw*(cl-cst)-1);
+          const rgb=(chopColor(ch,i)||"rgba(255,90,60,1)").replace(/^rgba?\(/,"").replace(/[\d.]+\)$/,"").replace(/,\s*$/,"");
+          const c3=rgb.split(",").slice(0,3).map(s=>s.trim()).join(",");
+          const fg=g.createLinearGradient(0,H-bh,0,H);
+          fg.addColorStop(0,`rgba(${c3},0.42)`); fg.addColorStop(1,`rgba(${c3},0.10)`);
+          g.fillStyle=fg; g.fillRect(bx, H-bh, bw, bh);
+          g.fillStyle=`rgba(${c3},0.7)`; g.fillRect(bx, H-bh, bw, 2);  // leuchtende Oberkante
+        }
+        g.restore();
+      }
       // Auswahl-Rechteck (volle Höhe) an der QUELL-Position des Chops — springt mit,
       // in Chop-Farbe. Darunter bleibt die statische Welle sichtbar.
       if(flash && flash.src && flash.dur){
@@ -3651,38 +3749,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         g.shadowBlur=0; g.restore();
       }
     }
-    // EDITOR: Live-Frequenzspektrum in Eisblau (reagiert auf EQ)
-    if(st==="editor" && typeof previewFx!=="undefined" && previewFx && previewFx.specAn && audioCtx){
-      const an=previewFx.specAn, nb=an.frequencyBinCount;
-      const buf=new Uint8Array(nb); an.getByteFrequencyData(buf);
-      const binHz=audioCtx.sampleRate/2/nb;
-      const FMIN=20, FMAX=20000;
-      const x2fL=(x)=>FMIN*Math.pow(FMAX/FMIN, Math.max(0,Math.min(1,x/W)));
-      const base=H*0.92;                          // Spektrum sitzt unten, wächst nach oben
-      g.beginPath(); g.moveTo(0,base);
-      for(let x=0;x<=W;x+=2){
-        const fb=Math.max(0,Math.min(nb-1.001, x2fL(x)/binHz));
-        const b0=Math.floor(fb), fr=fb-b0;
-        const v=(buf[b0]*(1-fr)+buf[Math.min(nb-1,b0+1)]*fr)/255;
-        g.lineTo(x, base-(v*v)*(H*0.8));
-      }
-      g.lineTo(W,base); g.closePath();
-      const sg=g.createLinearGradient(0,0,0,base);
-      sg.addColorStop(0,"rgba(255,69,50,0.85)");
-      sg.addColorStop(1,"rgba(255,69,50,0.35)");
-      g.fillStyle=sg; g.fill();
-      g.strokeStyle="rgba(255,90,70,0.95)"; g.lineWidth=2.5;
-      g.shadowColor="rgba(255,69,50,0.5)"; g.shadowBlur=10;
-      g.stroke(); g.shadowBlur=0;
-    }
-    // FINALIZER: Waveform in Orange + wandernder Leuchtspot (grobes Gerüst)
-    if(st==="fin" && pos!=null && pos>=0 && pos<=1){
-      const px=pos*W;
+    // FINALIZER: nur die ruhige statische Welle im Hintergrund — der Positionsmarker sitzt in der echten Waveform
+    // Animierter Positionsmarker im Hintergrund — überall gleich (Leucht-Abschnitt + Schweif + Puls), außer Chopper (dort das Chop-Flash)
+    if(st!=="hecksler" && pos!=null && pos>=0 && pos<=1){
+      const tt=performance.now()/1000, pulse=0.5+0.5*Math.sin(tt*2.3);
+      const px=pos*W, segW=W*0.06;
       g.save(); g.globalCompositeOperation="lighter";
-      const rg=g.createRadialGradient(px,mid,0,px,mid,Math.max(60,W*0.05));
-      rg.addColorStop(0,"rgba(255,106,0,0.5)");
-      rg.addColorStop(1,"rgba(255,106,0,0)");
-      g.fillStyle=rg; g.fillRect(px-W*0.05,0,W*0.1,H);
+      const lg=g.createLinearGradient(px-segW*1.6,0,px+segW*0.4,0);     // Schweif nach links
+      lg.addColorStop(0,"rgba(255,170,80,0)");
+      lg.addColorStop(0.7,`rgba(255,175,90,${0.18+0.16*pulse})`);
+      lg.addColorStop(1,`rgba(255,210,150,${0.5+0.3*pulse})`);
+      g.fillStyle=lg; g.fillRect(px-segW*1.6,0,segW*2,H);
+      g.strokeStyle=`rgba(255,225,180,${0.6+0.3*pulse})`; g.lineWidth=2;
+      g.shadowColor="rgba(255,160,60,0.9)"; g.shadowBlur=16+10*pulse;
+      g.beginPath(); g.moveTo(px,0); g.lineTo(px,H); g.stroke(); g.shadowBlur=0;
       g.restore();
     }
     }catch(e){ /* Zeichenfehler nie Playback blockieren lassen */ }
@@ -4109,11 +4189,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const tuneCv=$("#tuneCanvas"), tuneCtx2=tuneCv.getContext("2d");
   let tuneOverrides={}, tuneMidiLo=48, tuneMidiHi=72, tuneDragSeg=-1, tuneDragBaseNote=0, tuneHoverSeg=-1;
   const tuneRootSel=$("#tuneRoot"), tuneInfo=$("#tuneInfo"), tuneKeySrc=$("#tuneKeySrc");
-  let tuneScaleVal="maj", tuneMode="hard", tuneRootTouched=false;   // hard | soft | robot
+  let tuneScaleVal="maj", tuneMode="raw", tuneRootTouched=false;   // raw | hard | soft | robot | vocoder — Grundzustand raw: kein Effekt
   const TUNE_NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
   TUNE_NOTES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; tuneRootSel.appendChild(o); });
   const TUNE_HOP=1024, TUNE_FRAME=2048;
-  let tuneF0=null, tuneConf=null, tuneSr=44100, tuneBusy=false, tunePrevSrc=null, tuneBufRef=null, tuneRaf=0;
+  let tuneF0=null, tuneConf=null, tuneSr=44100, tuneBusy=false, tunePrevSrc=null, tuneBufRef=null, tuneRaf=0, tuneAnalyser=null;
   let tuneLoop=false;
   function tuneLeave(){
     if (tunePrevSrc){ try{ tunePrevSrc.stop(); }catch{} tunePrevSrc=null; bgWaveSetActive(false); }
@@ -4247,7 +4327,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         g.beginPath(); g.arc(bx_,bLast_,4.5,0,Math.PI*2); g.fill(); g.shadowBlur=0;
       }
     }
-    if(tuneMode!=="vocoder"){
+    if(tuneMode!=="vocoder" && tuneMode!=="raw"){
     let sgi_=0;
     for (const sg of segs){                                      // das Ergebnis: orange Lichtbalken im Kern
       const x1=xOfT(sg.a/tuneSr), x2=xOfT(sg.b/tuneSr);
@@ -4306,7 +4386,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function tunePlayPreview(){
     if (!buffer){ tuneInfo.textContent="NO MATERIAL // FEED THE UNIT"; return; }
     if (tuneBusy){ tuneInfo.textContent="STILL TRACKING \u2014 ONE MOMENT"; return; }
-    if (!tuneF0 && tuneMode!=="vocoder"){ tuneInfo.textContent="NO TRACK // RE-ENTER THE STATION"; return; }
+    if (!tuneF0 && tuneMode!=="vocoder" && tuneMode!=="raw"){ tuneInfo.textContent="NO TRACK // RE-ENTER THE STATION"; return; }
     if (isPlaying()) pausePlayback();                           // KEIN Doppeldecker: Vorschau uebernimmt den Transport
     const ac0=ctxGet(); if (ac0.state==="suspended") ac0.resume();   // Autoplay-Sperre: Geraet aufwecken
     tuneInfo.textContent="RENDERING \u2026";
@@ -4318,6 +4398,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const src=ac.createBufferSource(); src.buffer=nb;
       const gg=ac.createGain(); gg.gain.value=0.95;
       src.connect(gg); gg.connect(ac.destination);
+      try{ if(!tuneAnalyser){ tuneAnalyser=ac.createAnalyser(); tuneAnalyser.fftSize=4096; tuneAnalyser.smoothingTimeConstant=0.82; } gg.connect(tuneAnalyser); }catch(e){}
       src.loop=tuneLoop; src.loopStart=0; src.loopEnd=nb.duration; src.start(); tunePrevSrc=src; bgWaveSetActive(true);
       const t0=ac.currentTime, dur=nb.duration;
       (function beam(){
@@ -4351,8 +4432,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#finStopBtn").addEventListener("click", ()=>stopPlayback());
   $("#finLoopBtn").addEventListener("click", ()=>{ finLoop=!finLoop; $("#finLoopBtn").classList.toggle("active", finLoop); if (playSource && deckEl.classList.contains("st-fin")) playSource.loop=finLoop; setStatus(finLoop?"FINALIZER LOOP ON":"FINALIZER LOOP OFF"); });
   $("#sampleBack").addEventListener("click", sampleBack);
-  $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
-  $("#finApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(); commit(rb, bufferSource, bufferFitBpm); setStatus("FINALIZER COMMITTED // SAMPLE UPDATED"); });
+  $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed("RAW"); commit(rb, bufferSource, bufferFitBpm); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
+  $("#finApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(P.finisher); commit(rb, bufferSource, bufferFitBpm); P.finisher="RAW"; syncFinBtns(); applyLive(); setStatus("FINALIZER COMMITTED // SAMPLE UPDATED"); renderFinWave(); });
   $("#tunePlay").addEventListener("click", ()=>{ tunePlayPreview(); });
   chopLoopBtn.addEventListener("click", ()=>{ chopLoop=!chopLoop; chopLoopBtn.classList.toggle("active", chopLoop); setStatus(chopLoop?"CHOPPER LOOP ON":"CHOPPER LOOP OFF"); if(schedTimer){ stopPlayback(); startMonitor(); } });
   chopLoopBtn.classList.toggle("active", chopLoop);
@@ -4380,7 +4461,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const xc_=e.clientX-r_.left, yc_=e.clientY-r_.top;
       const cw_=tuneCv.clientWidth, ch_=tuneCv.clientHeight;
       const tS_=Math.max(0,(xc_-48)/(cw_-48))*buffer.duration*tuneSr;
-      const segsH_=tuneMode!=="vocoder"?segsWithOverrides():[];
+      const segsH_=(tuneMode!=="vocoder" && tuneMode!=="raw")?segsWithOverrides():[];
       let found_=-1;
       for(let i=0;i<segsH_.length;i++){
         const sg=segsH_[i];
@@ -4453,6 +4534,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function tuneRender(){
     const nc=buffer.numberOfChannels, chs=[];
     for (let c=0;c<nc;c++) chs.push(buffer.getChannelData(c));
+    if (tuneMode==="raw") return chs.map((d)=>d.slice());   // Grundzustand: rohes Material, kein Snap
     if (tuneMode==="vocoder"){
       const rootM_=48+(+tuneRootSel.value)+vocReg; let car=null;
       if (vocCarrierType==="noise"){
@@ -4484,6 +4566,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       tuneLeave();
       applyEdit(nb, (tuneMode==="vocoder"?"VOCODED // ":"TUNED // ")+tuneMode.toUpperCase()+" \u00B7 "+TUNE_NOTES[+tuneRootSel.value]+(tuneMode==="robot"?"":" "+tuneScaleVal.toUpperCase()), false, null);
       commit(nb, bufferSource, bufferFitBpm);
+      tuneMode="raw"; tuneLastTap=false; syncTuneUi();           // Material ist gebrannt -> Grundzustand, kein Doppel-Effekt
       tuneBufRef=null; enterTuneStation();                       // frische Analyse: die gelbe Linie wird zur cyanen
     }, 30);
   });
@@ -5091,14 +5174,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         tail.connect(b); tail=b;
       }
       const sp=deEssSpec(dAmt);
-      const lo=mk("lowpass", sp.split, 0.5), hi=mk("highpass", sp.split, 0.5);
+      const hi=mk("highpass", sp.split, 0.5);
       const inv=off.createGain(); inv.gain.value=-1;
       const comp=off.createDynamicsCompressor();
       comp.threshold.value=dAmt>0.01?sp.threshold:0; comp.ratio.value=dAmt>0.01?sp.ratio:1;
       comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
       const sum=off.createGain();
-      tail.connect(lo); lo.connect(sum);
-      tail.connect(hi); hi.connect(comp); comp.connect(inv); inv.connect(sum);
+      // De-Esser = volles Signal + Wirk*(komprimierte - rohe Höhen); bei De-Ess 0 -> Wirk 0 -> Original
+      const dryFull=off.createGain(); dryFull.gain.value=1;
+      tail.connect(dryFull); dryFull.connect(sum);
+      const deDiff=off.createGain();
+      tail.connect(hi); hi.connect(comp); comp.connect(deDiff);
+      hi.connect(inv); inv.connect(deDiff);
+      const deWet=off.createGain(); deWet.gain.value = dAmt>0.01 ? 1 : 0;
+      deDiff.connect(deWet); deWet.connect(sum);
       return sum;
     });
     eqLow.value=0; eqMud.value=0; eqPres.value=50; eqAir.value=0; $("#edDeEss").value=0;
@@ -5316,7 +5405,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["c","# vocoder: FOLLOW tracks your melody \u00B7 SUB/LOW/MID = register"]],
     ],
     editor:[
-      [["p","$ "],["k","SRC BPM"],["t",": drag to fix a wrong detection \u00B7 "],["v","\u00D72 HALF-TIME"],["t"," for the dubstep trap"]],
+      [["p","$ "],["k","SRC BPM"],["t",": drag to fix a wrong detection \u00B7 "],["v","\u00D72 HALF-TIME"],["t"," for half-speed, heavy material"]],
       [["p","$ "],["k","BARS"],["t",": grid on \u00B7 selections = whole bars \u00B7 "],["v","TRIM"],["t"," = loop cut"]],
       [["p","> "],["k","EDITOR"],["t"," // prep the material"]],
       [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t"," \u2014 count-in, "],["v","2 bars"],["t"," auto"]],
@@ -5389,19 +5478,40 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // Hover-Beschreibung: Tooltips wandern ins Panel (nur wenn das Panel sichtbar ist)
   let hoverTimer=null, hoverLast=null;
-  function setHoverDesc(txt){
+  let hintCount=0, hintTimer=null;
+  const HINT_PREVIEW=/[?&]hints\b/.test(location.search);   // ?hints: Linie bei jedem Hover (nur zum Beurteilen)
+  try{ hintCount=parseInt(localStorage.getItem("drecksler_hint_count")||"0",10)||0; }catch(e){ hintCount=0; }
+  function drawHintLine(el){                                 // erste 5 Mal: feine Linie vom Control zum Erklärkasten
+    if (!HINT_PREVIEW && hintCount>=5) return;
+    try{
+      const ov=$("#hintOverlay"), ln=$("#hintLine"), da=$("#hintDotA"), db=$("#hintDotB");
+      if (!ov||!ln) return;
+      const box=featHover.getBoundingClientRect(), er=el.getBoundingClientRect();
+      if (!box.width || !er.width) return;
+      const x1=box.left+box.width, y1=box.top+26;                  // fester Punkt am Kasten (höhen-unabhängig)
+      const x2=er.left+er.width/2, y2=er.top+er.height/2;          // Mitte des Controls
+      ln.setAttribute("x1",x1); ln.setAttribute("y1",y1); ln.setAttribute("x2",x2); ln.setAttribute("y2",y2);
+      da.setAttribute("cx",x1); da.setAttribute("cy",y1); db.setAttribute("cx",x2); db.setAttribute("cy",y2);
+      ov.classList.add("show");
+      clearTimeout(hintTimer); hintTimer=setTimeout(()=>{ ov.classList.remove("show"); }, 950);
+      if (!HINT_PREVIEW){ hintCount++; try{ localStorage.setItem("drecksler_hint_count", String(hintCount)); }catch(e){} }
+    }catch(e){}
+  }
+  function setHoverDesc(txt, el){
     if (!featHover || txt===hoverLast) return;
     hoverLast=txt;
     if (hoverTimer){ clearInterval(hoverTimer); hoverTimer=null; }
+    if (!txt){ featHover.classList.add("empty"); featHover.innerHTML=""; return; }   // kein Erklär-Control: Kasten verbergen
+    featHover.classList.remove("empty");
+    if (el) drawHintLine(el);
     featHover.innerHTML="";
     const p=document.createElement("span"); p.className="f-p"; p.textContent="? ";
-    const s=document.createElement("span"); s.className=txt?"fh-txt":"f-c";
+    const s=document.createElement("span"); s.className="fh-txt";
     featHover.appendChild(p); featHover.appendChild(s);
-    const full=txt||"hover a control for details";
     let i=0;
     hoverTimer=setInterval(()=>{                            // gleicher Tipp-Effekt wie die Tutorial-Zeilen
-      s.textContent+=full.slice(i, i+3); i+=3;
-      if (i>=full.length){ clearInterval(hoverTimer); hoverTimer=null; }
+      s.textContent+=txt.slice(i, i+3); i+=3;
+      if (i>=txt.length){ clearInterval(hoverTimer); hoverTimer=null; }
     }, 12);
   }
   // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
@@ -5419,18 +5529,31 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     });
     document.addEventListener("mouseover",(e)=>{
       const t=(e.target && e.target.closest) ? e.target.closest("[data-desc]") : null;
-      setHoverDesc(t ? t.dataset.desc : null);
+      setHoverDesc(t ? t.dataset.desc : null, t);
     });
   }
   setHoverDesc(null);
 
   // ---------- Finalizer Pre-Version: Presets + Ergebnis-Welle ----------
   const FIN_DESC={ RAW:"UNTOUCHED // PURE SUM", POLISH:"CLEAN LIFT // GENTLE GLUE", THICK:"COMPRESSED // SATURATED", WIDE:"AIR + STEREO SPREAD", FAT:"LOUD + DENSE // CLEAN GLUE", CRUSH:"BITCRUSH // SATURATED EDGE", LOFI:"DUSTY RECORD // MUFFLED + WOW", PHONE:"NARROW BAND // THROUGH THE LINE", CHORUS:"SHIMMER // ANDROID VOICE" };
+  // Ausfuehrliche Tooltip-Texte je Preset — Wirkung + Klang, keine Genres/Namen
+  const FIN_FULL={
+    RAW:"No processing. The pure sum of the arrangement, exactly as chopped — the reference point before any colour is added.",
+    POLISH:"Gentle broadband lift with light glue compression. Tightens the overall level and adds a clean sheen, character left intact.",
+    THICK:"Heavier compression plus saturation. Pulls the whole sum forward and dense, harmonics added for body and weight.",
+    WIDE:"High-shelf air with stereo widening. Opens the top end and spreads the image outward for a sense of space.",
+    FAT:"Loud, dense glue compression with a clean lift. Maximum level and solidity without obvious distortion.",
+    CRUSH:"Bit-depth reduction with saturated drive. A gritty, broken edge — controlled digital damage.",
+    LOFI:"Highs rolled off, a touch of noise and slow pitch drift. The dull, low-fidelity character of worn playback.",
+    PHONE:"Narrow band-pass, lows and highs removed. The thin, boxed character of a voice carried down a line.",
+    CHORUS:"Modulated detune layered under the dry sum. A shimmering, doubled, faintly synthetic voice."
+  };
   // Per-Preset-Farbe als Funktionssignal (gedeckte Snad-nahe Palette; Gelb bleibt SNAD-exklusiv)
   const FIN_COLORS={ RAW:"#8e979c", POLISH:"#bdfaff", THICK:"#5aa6c0", WIDE:"#93d6e6", FAT:"#4f8fcf", CRUSH:"#ff5a2c", LOFI:"#c89a5b", PHONE:"#7fb0a0", CHORUS:"#45d4c0" };
   const finPresets=$("#finPresets"), finCanvas=$("#finCanvas"), fing=finCanvas.getContext("2d");
   for (const name of Object.keys(FINISHERS)){
     const b=document.createElement("button"); b.className="fin-pb"; b.dataset.fin=name;
+    b.dataset.desc=(FIN_FULL[name]||FIN_DESC[name]||name);   // ausführlicher Tooltip im Erklärkasten
     b.style.setProperty("--pc", FIN_COLORS[name]||"#8e979c");
     b.innerHTML="<b>"+name+"</b><i>"+FIN_DESC[name]+"</i>";
     b.addEventListener("click", ()=>{
@@ -5442,17 +5565,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function syncFinBtns(){ for (const b of finPresets.children) b.classList.toggle("active", b.dataset.fin===P.finisher); }
   syncFinBtns();
-  let finToken=0;
+  let finToken=0, finLastRB=null, lastFinPos=0;    // finLastRB: zuletzt gerenderter Finisher-Buffer; lastFinPos: aktuelle Spielposition (0..1)
   async function renderFinWave(){
     const r=finCanvas.parentElement.getBoundingClientRect();
     if (!r.width || !deckEl.classList.contains("st-fin")) return;
-    if (!buffer){ fing.clearRect(0,0,finCanvas.width,finCanvas.height); return; }
+    if (!buffer){ fing.clearRect(0,0,finCanvas.width,finCanvas.height); finLastRB=null; return; }
     const tok=++finToken;
     const rb=await renderProcessed();
     if (tok!==finToken) return;                       // ein neuerer Render hat uebernommen
-    drawFinWave(rb, finCanvas.parentElement.getBoundingClientRect());
+    finLastRB=rb;
+    drawFinWave(rb, finCanvas.parentElement.getBoundingClientRect(), isPlaying()&&buffer&&buffer.duration ? (lastFinPos||0) : null);
   }
-  function drawFinWave(rb, r){
+  function drawFinWave(rb, r, pos){
     const dpr=window.devicePixelRatio||1, w=r.width, hh=r.height;
     if (finCanvas.width!==Math.round(w*dpr)){ finCanvas.width=Math.round(w*dpr); finCanvas.height=Math.round(hh*dpr); }
     fing.setTransform(dpr,0,0,dpr,0,0); fing.clearRect(0,0,w,hh);
@@ -5467,6 +5591,21 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       fing.fillRect(x, mid-Math.max(1, pk*(hh*0.92))/2, 1, Math.max(1, pk*(hh*0.92)));
     }
     fing.strokeStyle="rgba(255,106,0,.4)"; fing.beginPath(); fing.moveTo(0,mid); fing.lineTo(w,mid); fing.stroke();
+    // Animierter Positionsmarker — wandernder Leucht-Abschnitt mit Nachzieh-Schweif + pulsierender Kern
+    if(pos!=null && pos>=0 && pos<=1){
+      const t=performance.now()/1000, pulse=0.5+0.5*Math.sin(t*2.3);
+      const px=pos*w, segW=w*0.10;
+      fing.save(); fing.globalCompositeOperation="lighter";
+      const lg=fing.createLinearGradient(px-segW*1.6,0,px+segW*0.4,0);     // Schweif nach links
+      lg.addColorStop(0,"rgba(255,170,80,0)");
+      lg.addColorStop(0.7,`rgba(255,175,90,${0.18+0.16*pulse})`);
+      lg.addColorStop(1,`rgba(255,210,150,${0.5+0.3*pulse})`);
+      fing.fillStyle=lg; fing.fillRect(px-segW*1.6,0,segW*2,hh);
+      fing.strokeStyle=`rgba(255,225,180,${0.6+0.3*pulse})`; fing.lineWidth=2;
+      fing.shadowColor="rgba(255,160,60,0.9)"; fing.shadowBlur=16+10*pulse;
+      fing.beginPath(); fing.moveTo(px,0); fing.lineTo(px,hh); fing.stroke(); fing.shadowBlur=0;
+      fing.restore();
+    }
   }
 
   // ---------- Default-Material: Geraet ist ab dem ersten Pixel spielbar ----------
