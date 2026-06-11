@@ -82,6 +82,11 @@
   .station-tabs button { border-radius:0; border-left:none; padding:9px 24px; letter-spacing:.24em; }
   .station-tabs button:first-child { border-radius:var(--radius) 0 0 var(--radius); border-left:1px solid var(--line); }
   .station-tabs button:last-child { border-radius:0 var(--radius) var(--radius) 0; }
+  .station-tabs #stFin { border-radius:0 var(--radius) var(--radius) 0; }   /* FINALIZER behält rechte Rundung — bgToggle ist jetzt last-child */
+  .bg-toggle { margin-left:auto; border-radius:var(--radius) !important; border-left:1px solid var(--line) !important; padding:0 14px !important; display:inline-flex; align-items:center; gap:7px; letter-spacing:.2em; }
+  .bg-toggle.active { color:#ff6a00; border-color:rgba(255,106,0,.6) !important; box-shadow:0 0 10px rgba(255,106,0,.18), inset 0 0 8px rgba(255,106,0,.06); }
+  .bg-toggle:not(.active) { opacity:.42; }
+  body.bg-off .bgwave-layer { display:none !important; }
   .island-editor { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; }
   /* Stations-Identitaet als LICHT statt Lack: aktiver Tab + Stage-Tag leuchten in der Stationsfarbe */
   .deck.st-editor #stEditor { color:#3fc9e0; border-color:rgba(63,201,224,.75); text-shadow:0 0 8px rgba(63,201,224,.6); box-shadow:0 0 12px rgba(63,201,224,.28), inset 0 0 8px rgba(63,201,224,.10); }
@@ -187,7 +192,9 @@
   .metro-grp { position:relative; display:flex; gap:0; flex:none; }
   .scat-grp { position:relative; display:flex; gap:0; flex:none; }
   .scat-grp::before { content:"RANDOMIZER"; position:absolute; top:-11px; left:0; right:0; font-size:8px; letter-spacing:.3em; text-indent:.3em; color:#fff; pointer-events:none; text-align:center; }
-  .scat-grp #densBtn { border-radius:var(--radius) 0 0 var(--radius); }
+  .scat-grp #harmBtn { border-radius:var(--radius) 0 0 var(--radius); }
+  .scat-grp #densBtn { border-radius:0; }
+  .scat-grp #harmBtn.active { color:#ff6a00; border-color:rgba(255,106,0,.6); box-shadow:inset 0 0 8px rgba(255,106,0,.12); }
   .scat-grp #scatterBtn { border-radius:0 var(--radius) var(--radius) 0; border-left:none; }
   .metro-grp::before { content:"M E T R O N O M E"; position:absolute; top:-11px; left:1px; right:1px; font-size:8px; color:#fff; pointer-events:none; text-align:justify; text-align-last:justify; }
   .tbtn { width:46px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
@@ -361,6 +368,8 @@
   .win-grp { display:inline-flex; align-items:center; gap:6px; margin-left:10px; }
   .win-lbl { font-size:10px; letter-spacing:.12em; color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.3); min-width:70px; text-align:center; }
   .stutgrp { display:flex; gap:4px; }
+  .stutmode { font-size:8px; letter-spacing:.1em; padding:2px 7px; border-radius:4px; vertical-align:middle; }
+  .stutmode.gate { color:#ff6a00 !important; border-color:rgba(255,106,0,.7) !important; box-shadow:0 0 7px rgba(255,106,0,.22), inset 0 0 4px rgba(255,106,0,.1); }
   .stutgrp button { flex:1; padding:6px 2px; font-size:10px; letter-spacing:.06em; }
   .stutgrp button.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 8px rgba(255,106,0,.25), inset 0 0 5px rgba(255,106,0,.10); }
   .fx-filters-h { font-size:10px; letter-spacing:.34em; color:rgba(255,106,0,.85); text-transform:uppercase; margin:0; }
@@ -451,6 +460,7 @@
 
   <div class="station-tabs">
     <button id="stEditor" class="active" data-st="editor" title="Capture and prepare material">EDITOR</button><button id="stHecksler" data-st="hecksler" title="Chop and arrange">CHOPPER</button><button id="stTune" data-st="tune" title="Pitch discipline unit — track the melody, snap it to a scale">TUNE</button><button id="stFin" data-st="fin" title="Finishing presets (under construction)">FINALIZER</button>
+    <button id="bgToggle" class="bg-toggle active" title="Background spectrum animation on/off — turn it off to save GPU on slow or 4K displays" aria-label="Toggle background animation"><svg viewBox="0 0 40 16" width="22" height="11" aria-hidden="true"><g fill="currentColor"><rect x="0" y="6.5" width="2.4" height="3"/><rect x="4.7" y="4" width="2.4" height="8"/><rect x="9.4" y="1" width="2.4" height="14"/><rect x="14.1" y="5" width="2.4" height="6"/><rect x="18.8" y="2.5" width="2.4" height="11"/><rect x="23.5" y="6" width="2.4" height="4"/><rect x="28.2" y="3.5" width="2.4" height="9"/><rect x="32.9" y="5.5" width="2.4" height="5"/><rect x="37.6" y="6.5" width="2.4" height="3"/></g></svg><span>BG</span></button>
   </div>
   <div class="deck-grid">
     <section class="stage island-editor" data-tag="EDITOR">
@@ -582,7 +592,7 @@
               <button class="vc-carrier" data-vc="mono" title="Carrier is a single tone tracking your melody — a thinner, more speech-like machine voice">MONO<br><small>follows melody</small></button>
               <button class="vc-carrier" data-vc="noise" title="Carrier is filtered noise — a breathy, whispered texture that emphasises consonants">NOISE<br><small>whispered texture</small></button>
               <button class="vc-carrier" data-vc="track" title="Use an uploaded audio file as the carrier instead of a synth source">TRACK // FILE<br><small>upload from disk</small></button>
-              <button id="trackUplinkBtn" class="vc-track-up" title="Load carrier from Audiotool">TRACK // UPLINK<br><small>from audiotool</small></button>
+              <button id="trackUplinkBtn" class="vc-track-up" title="Load a carrier from an Audiotool project — the vocoder fuses this sound with your voice's rhythm. Steps: 1) open your project on audiotool.com, 2) paste its project link here, 3) pick a sample from the timeline. To use a whole arrangement, bounce it to a sample first.">TRACK // UPLINK<br><small>from audiotool</small></button>
             </div>
           </div>
           <input type="file" id="carrierFileInput" accept="audio/*" style="display:none">
@@ -621,7 +631,7 @@
       <div class="fx-panel disabled" id="fxPanel">
         <p class="fxp-title" id="fxpTitle">CHOP FX // &mdash;</p>
         <div class="ctl"><label>PITCH <span class="v" id="vFxPitch">&mdash;</span></label><input type="range" id="fxPitch" min="-12" max="12" step="1" value="0" disabled title="Shifts this chop up or down in semitones (±12 = an octave each way) — timing stays the same"></div>
-        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span></label><div class="stutgrp" id="fxStutGrp" title="Re-triggers the slice on the note grid — a rapid stutter roll at the chosen rate"><button data-sv="0" disabled>OFF</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
+        <div class="ctl"><label>STUTTER <span class="v" id="vFxStut">&mdash;</span> <button class="stutmode" id="fxStutMode" disabled title="RETRIG repeats the slice start (classic stutter). GATE keeps the melody playing through, muting it rhythmically at the same rate.">RETRIG</button></label><div class="stutgrp" id="fxStutGrp" title="Re-triggers the slice on the note grid — a rapid stutter roll at the chosen rate"><button data-sv="0" disabled>OFF</button><button data-sv="16" disabled>1/16</button><button data-sv="32" disabled>1/32</button><button data-sv="64" disabled>1/64</button></div></div>
         <div class="ctl"><label>TUBE <span class="v" id="vFxTube">&mdash;</span></label><input type="range" id="fxTube" min="0" max="1" step="0.01" value="0" disabled title="Tube-style saturation — warm harmonic drive and grit, stronger as you push it up"></div>
         <div class="ctl"><label>CRUSH <span class="v" id="vFxCrush">&mdash;</span></label><input type="range" id="fxCrush" min="0" max="1" step="0.01" value="0" disabled title="Bit-depth reduction — a harsh, broken digital edge that gets coarser the further you push it"></div>
         <div class="fx-filters">
@@ -650,6 +660,7 @@
         </div>
         <span class="cb-flex"></span>
         <div class="scat-grp">
+          <button class="pbtn" id="harmBtn" disabled title="Scatter pitch mode — DISH: full semitone set · HARM: octaves only (-12/+12), stays consonant with the material">DISH</button>
           <button class="pbtn" id="densBtn" disabled title="Scatter density: hit chance per slot — drag vertically">DENS 60%</button>
           <button id="scatterBtn" disabled title="Roll a fresh random arrangement — re-slices the steps and assigns FX for an instant new pattern">&#10227; SCATTER</button>
         </div>
@@ -668,7 +679,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.27</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.31</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1221,7 +1232,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.27";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.31";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -1240,9 +1251,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   window.addEventListener("resize", fitBrandTag);
   fitBrandTag();
 
+  let bgWaveEnabled = true;                  // Hintergrund-Spektrum an/aus (persistiert in localStorage)
+  try { bgWaveEnabled = localStorage.getItem("drecksler_bg") !== "0"; } catch(e){}
+
   const BARS = 2;
   const P = {
-    chop: { on:true,  bpm:120, res:0.5, density:0.6, mode:"grid", snapMode:"mag" }, // mode: grid|mark; snapMode: mag = rastet, hand = frei
+    chop: { on:true,  bpm:120, res:0.5, density:0.6, mode:"grid", snapMode:"mag", scatterHarm:false }, // mode: grid|mark; snapMode: mag = rastet, hand = frei; scatterHarm: true = nur Oktaven
     out:  { gain:0 },
     metro:false, metroRoot:69,                          // A4 (MIDI), Bereich C3..C5 = 48..72
     finisher:"RAW",
@@ -1355,7 +1369,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return out;
   }
   const sliceCount=()=>sliceTable().length;
-  const makeChop=(slice)=>({ slice, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, len:1 });
+  const makeChop=(slice)=>({ slice, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, len:1, stutMode:"retrig" });
 
   function cloneBuffer(buf){
     const out=ctxGet().createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
@@ -1369,7 +1383,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
-    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply].forEach((b)=>(b.disabled=!on));
+    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, harmBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply].forEach((b)=>(b.disabled=!on));
     if (typeof syncModeBtns==="function") syncModeBtns();
     if (typeof updateWinUi==="function") updateWinUi();
   }
@@ -1752,21 +1766,25 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // Chopper-Slice-Kompensation: die GRID-Rekonstruktion klingt einen Tick dumpfer (Crossfade-Rest).
   // Leichter Präsenz-Tilt + Mini-Pegel gleichen das aus — NUR GRID, nicht FREE/Editor/Finalizer. Zum Feinjustieren:
   const CHOP_COMP_FREQ=2800, CHOP_COMP_Q=0.9, CHOP_COMP_DB=1.5, CHOP_COMP_GAIN=1.04;
+  const CHOP_MIN_GAIN=0.08;   // leiseste Chop-Stufe bleibt hörbar — sonst wäre "ganz leise" identisch mit gelöscht
   function playChop(ac, n, chop, when, sd, tab, sink){
     const sc=tab.length; if (!sc) return null;
     const idx=chop.slice % sc, sl=tab[idx], sliceDur=sl.dur;  // uniform == stepDur (Tempo-Fit haelt das Raster)
     const room=sd;                                            // jeder Chop besitzt exakt seinen Slot
     const stut=chop.stut||0;
     if (stut>0){
-      // Re-Trigger des Chop-Anfangs im Notenraster (taktbezogen, RASTER-Zeit).
-      // Jeder Trigger ist ein normaler playChop mit verkürztem len -> erbt Fades, Pitch-Cache, Filter.
+      // RETRIG: Chop-Anfang im Notenraster wiederholen (Position springt zurück).
+      // GATE: Position läuft fort (Melodie bleibt), nur ein Teil jedes Ticks klingt -> rhythmisches Mute-Raster.
+      const gate=(chop.stutMode==="gate");
       const st0=Math.max(0,Math.min(0.9,chop.st||0)), lenO=(chop.len==null)?1:chop.len;
       const effPlay=Math.max(0.01, Math.min(sliceDur*Math.max(0.05,lenO-st0), room));
       const stutDur=sd*stepsPerBar()/stut;
+      const onFrac=gate?0.55:1;                               // GATE: Tick teils Stille
       let first=null;
       for (let t=0; t<effPlay-0.001; t+=stutDur){
-        const tl=Math.min(stutDur, effPlay-t);                // Echtzeit == Materialzeit (Originalgeschwindigkeit)
-        const src=playChop(ac, n, { ...chop, stut:0, st:st0, len:st0+tl/sliceDur }, when+t, sd, tab);
+        const stTick=gate ? Math.min(0.95, st0 + t/sliceDur) : st0;   // GATE: fortlaufend, RETRIG: zurück auf st0
+        const tl=Math.min(stutDur*onFrac, effPlay-t);                 // Echtzeit == Materialzeit (Originalgeschwindigkeit)
+        const src=playChop(ac, n, { ...chop, stut:0, st:stTick, len:Math.min(lenO, stTick+tl/sliceDur) }, when+t, sd, tab);
         if (src){ if (!first) first=src; else if (sink) sink.push(src); }
       }
       return first;
@@ -1883,31 +1901,34 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function doScatter(){
     const ts=totalSteps(), sc=sliceCount();
     if (sc===0){ selectChop(null); drawGrid(); return; }
-    const semis=[-12,-7,-5,-3,-2,2,3,4,5,7,12];
+    const semis = P.chop.scatterHarm ? [-12,12] : [-12,-7,-5,-3,-2,2,3,4,5,7,12];   // HARMONIC: nur Oktaven
     const rollFx=(ch)=>{
       if (Math.random()<0.40){ ch.pitch=semis[Math.floor(Math.random()*semis.length)]; markOp(ch,"pitch",!ch.pitch); }   // GOLD
       if (Math.random()<0.22){ ch.reverse=true; markOp(ch,"rev",false); }                                                 // WEISS
       if (Math.random()<0.30){ ch.gain=Math.round((0.55+Math.random()*0.7)*100)/100; markOp(ch,"vol",Math.abs(ch.gain-1)<0.005); } // EISBLAU
     };
     arrangement=new Array(ts).fill(null);
+
+    // Beat-Prioritaet: Takt-Einsen -> andere Viertel -> Achtel-Offbeats -> Sechzehntel.
+    // So entsteht auch bei kleiner Density ein Groove statt verstreuter Einzeltoene.
+    const spb=Math.max(1, stepsPerBar());
+    const q=Math.max(1, Math.round(spb/4)), e=Math.max(1, Math.round(spb/8));
+    const tierD=[], tierQ=[], tierE=[], tierS=[];
     for (let i=0;i<ts;i++){
-      if (Math.random()<P.chop.density){
-        const ch=makeChop(winPick(sc)); rollFx(ch); arrangement[i]=ch;
-      }
+      if (i%spb===0) tierD.push(i);            // die "Eins" jedes Takts
+      else if (i%q===0) tierQ.push(i);         // andere Viertel
+      else if (i%e===0) tierE.push(i);         // Achtel-Offbeats
+      else tierS.push(i);                      // Sechzehntel
     }
-    // Mindestanzahl PRO TAKT: nie weniger als das halbe Density-Soll des Takts, mindestens 2.
-    // Verhindert, dass ein Takt voll und der andere fast leer gewürfelt wird.
-    const spb=stepsPerBar(), bars=Math.max(1, Math.round(ts/spb));
-    const minPerBar=Math.max(2, Math.ceil(P.chop.density*spb*0.5));
-    for (let b=0;b<bars;b++){
-      const lo=b*spb, hi=Math.min(ts, lo+spb);
-      let count=0; for (let i=lo;i<hi;i++) if (arrangement[i]) count++;
-      while (count<minPerBar){
-        const empty=[]; for (let i=lo;i<hi;i++) if (!arrangement[i]) empty.push(i);
-        if (!empty.length) break;
-        const i=empty[Math.floor(Math.random()*empty.length)];
-        const ch=makeChop(winPick(sc)); rollFx(ch); arrangement[i]=ch; count++;
-      }
+    const shuffle=(a)=>{ for (let k=a.length-1;k>0;k--){ const j=Math.floor(Math.random()*(k+1)); const t=a[k]; a[k]=a[j]; a[j]=t; } return a; };
+    const anchor=tierD.shift();                // Step 1 bleibt immer zuerst belegt
+    const order=[anchor, ...shuffle(tierD), ...shuffle(tierQ), ...shuffle(tierE), ...shuffle(tierS)];
+
+    // Zielanzahl: nie unter dem Groove-Floor (>=5), darueber nach Density.
+    const floorMin=Math.min(ts, Math.max(5, Math.round(P.chop.density*ts*0.55)));
+    const target=Math.min(ts, Math.max(floorMin, Math.round(P.chop.density*ts)));
+    for (let n=0;n<target && n<order.length;n++){
+      const i=order[n]; const ch=makeChop(winPick(sc)); rollFx(ch); arrangement[i]=ch;
     }
     selectChop(null); drawGrid();
   }
@@ -1971,14 +1992,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let b=0;b<=BARS;b++){ const x=b*spb*cw; gctx.fillStyle="rgba(255,69,50,0.30)"; gctx.fillRect(x-0.5,0,1,h); }
     selectedSteps.forEach((st)=>{ const x=st*cw; gctx.strokeStyle="#fff"; gctx.lineWidth=1.5; gctx.strokeRect(x+1, 3, cw-2, h-6); });
     if (playPos!=null){ const px=(playPos/ts)*w; gctx.fillStyle="#fff"; gctx.fillRect(px,0,1.5,h); }
-    if (preview && preview.to!=null){
-      const x=preview.to*cw, col=preview.dup?"#ffd24d":"#ffffff";
+    if (preview && preview.pairs && preview.pairs.length){
+      const col=preview.dup?"#ffd24d":"#ffffff";
       gctx.save();
       gctx.fillStyle=preview.dup?"rgba(255,210,77,0.25)":"rgba(255,255,255,0.18)";
-      gctx.fillRect(x+1.5, 8, cw-3, h-16);
-      gctx.setLineDash([4,3]); gctx.strokeStyle=col; gctx.lineWidth=1.5; gctx.strokeRect(x+1,3,cw-2,h-6); gctx.setLineDash([]);
-      if (preview.from!=null){ gctx.strokeStyle=preview.dup?"rgba(255,210,77,0.8)":"rgba(255,255,255,0.5)"; gctx.lineWidth=1.5; gctx.strokeRect(preview.from*cw+1,3,cw-2,h-6); }
-      if (preview.dup){ gctx.fillStyle=col; gctx.font="bold 14px 'Space Mono', monospace"; gctx.textAlign="center"; gctx.fillText("+", x+cw/2, 16); }
+      for (const p of preview.pairs) gctx.fillRect(p.to*cw+1.5, 8, cw-3, h-16);
+      gctx.setLineDash([4,3]); gctx.strokeStyle=col; gctx.lineWidth=1.5;
+      for (const p of preview.pairs) gctx.strokeRect(p.to*cw+1,3,cw-2,h-6);
+      gctx.setLineDash([]);
+      gctx.strokeStyle=preview.dup?"rgba(255,210,77,0.8)":"rgba(255,255,255,0.5)"; gctx.lineWidth=1.5;
+      for (const p of preview.pairs){ if (p.from!=null) gctx.strokeRect(p.from*cw+1,3,cw-2,h-6); }
+      if (preview.dup){ gctx.fillStyle=col; gctx.font="bold 14px 'Space Mono', monospace"; gctx.textAlign="center"; for (const p of preview.pairs) gctx.fillText("+", p.to*cw+cw/2, 16); }
       gctx.restore();
     }
   }
@@ -1991,13 +2015,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const en=!!ch;
     [fxPitch,fxTube,fxCrush,fxHp,fxHpQ,fxLp,fxLpQ].forEach((s)=>(s.disabled=!en));
     stutBtns.forEach((b)=>(b.disabled=!en));
+    fxStutMode.disabled=!en;
     fxPanel.classList.toggle("disabled", !en);
     $("#islandFx").classList.toggle("lit", en);
     if (ch){
       const lp=(ch.lp==null?1:ch.lp), hp=ch.hp||0;
       fxpTitle.textContent= mark ? "CHOP FX // PIECE "+(markSel+1)+"/"+markSegs.length
         : (selectedSteps.size>1 ? "CHOP FX // "+selectedSteps.size+" CHOPS" : "CHOP FX // STEP "+(selectedStep+1));
-      fxPitch.value=ch.pitch||0; syncStutBtns(ch.stut||0); fxTube.value=ch.tube||0; fxCrush.value=ch.crush||0;
+      fxPitch.value=ch.pitch||0; syncStutBtns(ch.stut||0); syncStutMode(ch.stutMode||"retrig"); fxTube.value=ch.tube||0; fxCrush.value=ch.crush||0;
       fxHp.value=hp; fxHpQ.value=ch.hpq||0; fxLp.value=lp; fxLpQ.value=ch.lpq||0;
       vFxPitch.textContent=fmtSemi(ch.pitch||0);
       vFxStut.textContent=STUT_LABELS[Math.max(0, STUT_VALS.indexOf(ch.stut||0))];
@@ -2009,7 +2034,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       vFxLpQ.textContent=Math.round((ch.lpq||0)*100)+"%";
     } else {
       fxpTitle.textContent="CHOP FX // \u2014";
-      syncStutBtns(-1);
+      syncStutBtns(-1); syncStutMode("retrig");
       [vFxPitch,vFxStut,vFxTube,vFxCrush,vFxHp,vFxHpQ,vFxLp,vFxLpQ].forEach((v)=>(v.textContent="\u2014"));
     }
   }
@@ -2112,7 +2137,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       }
       if (!d.mode) return;
       const s=markSegs[d.i], srcD=segSrcDur(s);
-      if (d.mode==="vol"){ s.gain=Math.max(0, Math.min(1.5, Math.round((d.gain0 - dy/120)*100)/100)); markOp(s,"vol",Math.abs(s.gain-1)<0.005); }
+      if (d.mode==="vol"){ s.gain=Math.max(CHOP_MIN_GAIN, Math.min(1.5, Math.round((d.gain0 - dy/120)*100)/100)); markOp(s,"vol",Math.abs(s.gain-1)<0.005); }
       else if (d.mode==="pitch"){
         s.pitch=Math.max(-12, Math.min(12, Math.round(d.pitch0 - dy/14)));
         markOp(s,"pitch",!s.pitch); vFxPitch.textContent=fmtSemi(s.pitch); fxPitch.value=s.pitch;
@@ -2169,7 +2194,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     if (gridDrag.mode==="vol"){
       const dG=(gridDrag.y0-e.clientY)/80;
-      gridDrag.group.forEach((m)=>{ const c=arrangement[m.st]; if (c){ c.gain=Math.max(0, Math.min(1.5, m.gain+dG)); markOp(c,"vol",Math.abs(c.gain-1)<0.005); } });
+      gridDrag.group.forEach((m)=>{ const c=arrangement[m.st]; if (c){ c.gain=Math.max(CHOP_MIN_GAIN, Math.min(1.5, m.gain+dG)); markOp(c,"vol",Math.abs(c.gain-1)<0.005); } });
       const ch=arrangement[gridDrag.startStep];
       setStatus("VOLUME "+(ch?Math.round((ch.gain==null?1:ch.gain)*100):0)+"% // "+(gridDrag.group.length>1?gridDrag.group.length+" CHOPS":"STEP "+(gridDrag.startStep+1)));
       drawGrid();
@@ -2204,9 +2229,24 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     } else if (gridDrag.mode==="move"){
       gridDrag.duplicate=(e.altKey||e.ctrlKey||e.metaKey);
       gridDrag.target=stepFromX(e.clientX);
-      if (gridDrag.fromChop) drawGrid(null, { from:gridDrag.startStep, to:gridDrag.target, dup:gridDrag.duplicate });
+      if (gridDrag.fromChop){
+        const pl=moveGroupPlan(gridDrag);
+        const pairs=pl.members.map((m)=>({ from:m, to:m+pl.offset }));
+        drawGrid(null, { pairs, dup:gridDrag.duplicate });
+      }
     }
   });
+  function moveGroupPlan(d){
+    // Mitglieder: ganze Auswahl, wenn der angefasste Chop Teil einer Mehrfach-Auswahl ist; sonst nur er selbst.
+    const members=(selectedSteps.size>1 && selectedSteps.has(d.startStep))
+      ? [...selectedSteps].filter((st)=>arrangement[st])
+      : [d.startStep];
+    const ts=totalSteps();
+    const lo=Math.min(...members), hi=Math.max(...members);
+    // Offset so begrenzen, dass die ganze Gruppe im Raster bleibt (kein Mitglied fällt raus).
+    const offset=Math.max(-lo, Math.min(ts-1-hi, d.target-d.startStep));
+    return { members, offset };
+  }
   function endGridDrag(e){
     if (!gridDrag||!gridDrag.active) return;
     const d=gridDrag; gridDrag=null; try{ grid.releasePointerCapture(e.pointerId); }catch{}
@@ -2219,11 +2259,24 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (d.mode==="vol"||d.mode==="pitch"||d.mode==="resize"){ selectChop(d.startStep); return; }
     const to=d.target;
     if (to==null || !d.fromChop || to===d.startStep){ selectChop(d.fromChop?d.startStep:null); return; }
+    const pl=moveGroupPlan(d);
+    if (pl.offset===0){ selectChop(d.startStep); return; }   // geklampt auf 0 -> nichts zu tun
     snapshot();
-    arrangement[to]={ ...d.fromChop, op:(d.duplicate?"dup":"mov") };
-    if (!d.duplicate) arrangement[d.startStep]=null;
-    selectChop(to);
-    setStatus((d.duplicate?"CHOP COPIED // STEP ":"CHOP MOVED // STEP ")+(to+1));
+    // Erst alle Quell-Chops sichern, dann (bei Move) Quellen leeren, dann Ziele schreiben:
+    // verhindert, dass ein bewegter Chop einen noch ungesicherten Nachbarn überschreibt.
+    const moved=pl.members.map((m)=>({ st:m, chop:{ ...arrangement[m] } }));
+    if (!d.duplicate){ for (const m of moved) arrangement[m.st]=null; }
+    const newSel=[];
+    for (const m of moved){
+      const dst=m.st+pl.offset;
+      arrangement[dst]={ ...m.chop, op:(d.duplicate?"dup":"mov") };
+      newSel.push(dst);
+    }
+    setSelection(newSel, d.startStep+pl.offset);
+    const n=pl.members.length;
+    setStatus(n>1
+      ? (d.duplicate?"GROUP COPIED // ":"GROUP MOVED // ")+n+" CHOPS"
+      : (d.duplicate?"CHOP COPIED // STEP ":"CHOP MOVED // STEP ")+(d.startStep+pl.offset+1));
   }
   grid.addEventListener("dblclick",(e)=>{
     if (P.chop.mode==="mark"){
@@ -2398,6 +2451,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     vFxStut.textContent=STUT_LABELS[Math.max(0, STUT_VALS.indexOf(val))];
     syncStutBtns(val); drawGrid();
   }));
+  const fxStutMode=$("#fxStutMode");
+  function syncStutMode(mode){ const g=(mode==="gate"); fxStutMode.textContent=g?"GATE":"RETRIG"; fxStutMode.classList.toggle("gate", g); }
+  fxStutMode.addEventListener("click", ()=>{
+    const targets=fxTargets(); if (!targets.length) return;
+    if (P.chop.mode==="mark") pushMark("stut"); else nudgeSnapshot("stutmode:"+[...selectedSteps].join(","));
+    const nm=((targets[0].stutMode||"retrig")==="gate") ? "retrig" : "gate";   // einheitlich umschalten
+    targets.forEach((c)=>{ c.stutMode=nm; });
+    syncStutMode(nm); drawGrid();
+  });
   bindFx(fxTube,"tube",vFxTube,(v)=>Math.round(v*100)+"%");
   bindFx(fxCrush,"crush",vFxCrush,(v)=>Math.round(v*100)+"%");
   bindFx(fxHp,"hp",vFxHp,(v)=> v<=0.001 ? "OFF" : fmtHz(hpFreq(v)));
@@ -2407,7 +2469,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   // ---------- FX UI (slider bindings) ----------
   // ---------- Knopf-Drag (FL-Style: beschleunigt) — BPM / DENSITY ----------
-  const bpmBtn=$("#bpmBtn"), densBtn=$("#densBtn");
+  const bpmBtn=$("#bpmBtn"), densBtn=$("#densBtn"), harmBtn=$("#harmBtn");
   const popEl=$("#popSlider"), popVal=$("#popVal");
   let knobDrag=null;
   function showPopAt(anchor){
@@ -2419,7 +2481,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     popEl.style.left=Math.round(x)+"px"; popEl.style.top=Math.round(y)+"px";
   }
   function hidePop(){ popEl.classList.add("hidden"); }
-  function syncChopBtns(){ bpmBtn.textContent=Math.round(P.chop.bpm)+" BPM"; densBtn.textContent="DENS "+Math.round(P.chop.density*100)+"%"; }
+  function syncChopBtns(){ bpmBtn.textContent=Math.round(P.chop.bpm)+" BPM"; densBtn.textContent="DENS "+Math.round(P.chop.density*100)+"%"; harmBtn.textContent=P.chop.scatterHarm?"HARM":"DISH"; harmBtn.classList.toggle("active", P.chop.scatterHarm); }
+  harmBtn.addEventListener("click", ()=>{ P.chop.scatterHarm=!P.chop.scatterHarm; syncChopBtns(); setStatus(P.chop.scatterHarm ? "SCATTER PITCH // HARMONIC \u2014 OCTAVES ONLY" : "SCATTER PITCH // DISHARMONIC \u2014 FULL SET"); });
   function startKnob(btn, cfg, e){
     if (knobDrag) return;
     knobDrag={ btn, cfg, lastY:e.clientY, val:cfg.get() };
@@ -3056,7 +3119,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   // ======== MARK-Modus: Schnitzen — ein durchgehender Chop, Markieren teilt ihn ========
   const segEnd=()=>buffer?Math.max(0.05, Math.min(loopDur(), buffer.duration-chopWin)):0;
-  function blankSeg(a,b){ return { a, b, trig:a, st:0, len:1, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, stut:0 }; }
+  function blankSeg(a,b){ return { a, b, trig:a, st:0, len:1, reverse:false, pitch:0, gain:1, tube:0, crush:0, hp:0, lp:1, hpq:0, lpq:0, stut:0, stutMode:"retrig" }; }
   const segSrcDur=(s)=>Math.max(0.02, s.b-s.a);
   const segPlayDur=(s)=>Math.max(0.01, segSrcDur(s)*(((s.len==null)?1:s.len)-Math.max(0,s.st||0)));
   // MARK-Undo: eigener Verlauf (tiefe Kopien)
@@ -3104,11 +3167,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const base={ ...seg, slice:0 };                            // st/len = Kanten-Trim, wie im Grid
     const stut=seg.stut||0;
     if (stut>0){
+      const gate=(seg.stutMode==="gate");
       const st0=Math.max(0, seg.st||0), effPlay=segPlayDur(seg);
-      const stutDur=(stepDur()*stepsPerBar())/stut; let first=null;
+      const stutDur=(stepDur()*stepsPerBar())/stut;
+      const onFrac=gate?0.55:1; let first=null;
       for (let t=0; t<effPlay-0.001; t+=stutDur){
-        const tl=Math.min(stutDur, effPlay-t);
-        const src=playChop(ac, n, { ...base, stut:0, st:st0, len:st0+tl/segDur }, when+t, segDur, tab, sink);
+        const stTick=gate ? Math.min(0.95, st0 + t/segDur) : st0;     // GATE: fortlaufend (Melodie bleibt)
+        const tl=Math.min(stutDur*onFrac, effPlay-t);
+        const src=playChop(ac, n, { ...base, stut:0, st:stTick, len:stTick+tl/segDur }, when+t, segDur, tab, sink);
         if (src){ if (!first) first=src; else if (sink) sink.push(src); }
       }
       return first;
@@ -3125,7 +3191,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function syncModeBtns(){
     const mark=(P.chop.mode==="mark"), hasBuf=!!buffer;
     modeGridBtn.classList.toggle("active", !mark); modeMarkBtn.classList.toggle("active", mark);
-    [densBtn, $("#scatterBtn"), $("#clearChopBtn")].forEach((b)=>{ b.disabled = mark || !hasBuf; });
+    [densBtn, $("#harmBtn"), $("#scatterBtn"), $("#clearChopBtn")].forEach((b)=>{ b.disabled = mark || !hasBuf; });
     $("#resetBtn").disabled=!hasBuf;                            // RESET wirkt in beiden Modi
   }
   function resumeMarkMidLoop(){
@@ -3575,6 +3641,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   // ---------- Stationen (DRECKSLER-Werkbank: Editor / Hecksler / Finalizer) ----------
   const deckEl=document.querySelector(".deck");
   function drawBgWave(st, pos, flash){
+    if(!bgWaveEnabled) return;                // Hintergrund aus -> kein Canvas-Zeichnen, kein blur-Posten
     try{
     if(!st){
       const dc=document.querySelector(".deck");
@@ -3820,6 +3887,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#stEditor").addEventListener("click", ()=>setStation("editor"));
   $("#stHecksler").addEventListener("click", ()=>setStation("hecksler"));
   $("#stFin").addEventListener("click", ()=>setStation("fin"));
+
+  // Hintergrund-Spektrum an/aus
+  (function initBgToggle(){
+    const btn=document.getElementById("bgToggle"); if(!btn) return;
+    function apply(){
+      btn.classList.toggle("active", bgWaveEnabled);
+      document.body.classList.toggle("bg-off", !bgWaveEnabled);
+      if(bgWaveEnabled){
+        if(typeof isPlaying==="function" && isPlaying()) bgWaveSetActive(true);
+        else document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity="0"; });
+      }
+    }
+    apply();
+    btn.addEventListener("click", ()=>{
+      bgWaveEnabled=!bgWaveEnabled;
+      try { localStorage.setItem("drecksler_bg", bgWaveEnabled?"1":"0"); } catch(e){}
+      apply();
+      setStatus(bgWaveEnabled ? "BACKGROUND // SPECTRUM ON" : "BACKGROUND // OFF \u2014 GPU SAVED");
+    });
+  })();
 
   // ===================== STATION 4: TUNE // PITCH DISCIPLINE =====================
   // [TUNE-DSP-BEGIN] — reine Funktionen, von test_tune.js direkt mitgetestet
