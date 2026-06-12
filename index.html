@@ -58,7 +58,8 @@
   .vtog svg { display:block; }
   .vtog.active { color:#ff6a00; border-color:rgba(255,106,0,.6); box-shadow:0 0 10px rgba(255,106,0,.18), inset 0 0 8px rgba(255,106,0,.06); }
   .vtog:not(.active) { opacity:.42; }
-  body.text-off .feat-panel, body.text-off .edit-panel-hint, body.text-off .hint { display:none !important; }
+  body.text-off .feat-panel, body.text-off .hint { display:none !important; }
+  body.text-off .edit-panel-hint { visibility:hidden; }
   #hintDotA, #hintDotB { fill:#ff6a00; filter:drop-shadow(0 0 4px rgba(255,106,0,.8)); }
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
   .bgwave-layer { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
@@ -693,7 +694,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.39</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.40</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1246,7 +1247,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.39";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.40";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -4581,7 +4582,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#finStopBtn").addEventListener("click", ()=>stopPlayback());
   $("#finLoopBtn").addEventListener("click", ()=>{ finLoop=!finLoop; $("#finLoopBtn").classList.toggle("active", finLoop); if (playSource && deckEl.classList.contains("st-fin")) playSource.loop=finLoop; setStatus(finLoop?"FINALIZER LOOP ON":"FINALIZER LOOP OFF"); });
   $("#sampleBack").addEventListener("click", sampleBack);
-  $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed("RAW"); commit(rb, bufferSource, bufferFitBpm); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
+  $("#chopApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed("RAW"); commit(rb, bufferSource, bufferFitBpm); chopWin=0; if (P.chop.mode==="mark"){ resetMarkSegs(); updateFxPanel(); } else fillOrdered(); selectChop(null); drawGrid(); drawWave(); setStatus("CHOP COMMITTED // SAMPLE UPDATED"); });
   $("#finApply").addEventListener("click", async ()=>{ if (!buffer) return; setStatus("RENDERING…"); const rb=await renderProcessed(P.finisher); commit(rb, bufferSource, bufferFitBpm); P.finisher="RAW"; syncFinBtns(); applyLive(); setStatus("FINALIZER COMMITTED // SAMPLE UPDATED"); renderFinWave(); });
   $("#tunePlay").addEventListener("click", ()=>{ tunePlayPreview(); });
   chopLoopBtn.addEventListener("click", ()=>{ chopLoop=!chopLoop; chopLoopBtn.classList.toggle("active", chopLoop); setStatus(chopLoop?"CHOPPER LOOP ON":"CHOPPER LOOP OFF"); if(schedTimer){ stopPlayback(); startMonitor(); } });
