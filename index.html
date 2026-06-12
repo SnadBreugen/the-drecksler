@@ -44,15 +44,18 @@
   }
   body[data-theme="white"] {
     --chassis-grad-a: #f0f0f0; --chassis-grad-b: #e0e0e0; --chassis-border: #bbb;
-    --brand-col: #1a1a1a; --brand-tag-col: #333; --brand-b-col: #000;
+    --brand-col: #444; --brand-tag-col: #555; --brand-b-col: #333;
     --chassis-rev-col: #555; --chassis-slogan-col: #444;
     --body-bg: #08050a; --bgwave-opacity: 1;
   }
   body[data-theme="black"] .theme-skin-btn { color:#111; }
+  body[data-theme="black"] .corp { color:#ffea00; text-shadow:0 0 8px rgba(255,234,0,.4); }
+  body[data-theme="white"] .corp { color:#c0001a; text-shadow:none; }
   body[data-theme="white"] .corp .corp-wave { filter:none; }
-  body[data-theme="yellow"] .corp .corp-wave { filter:drop-shadow(0 0 4px rgba(192,0,26,.4)); }
+  body[data-theme="yellow"] .corp { color:#1a1a1a; text-shadow:none; }
+  body[data-theme="yellow"] .corp .corp-wave { filter:none; }
   body[data-theme="black"] { --ink:#e8e8e8; }
-  body[data-theme="black"] .deck-head .status { background:#111; border-color:#333; }
+  body[data-theme="black"] .deck-head .status { background:#2a2a2a; border-color:#444; }
   body[data-theme="black"] .status, body[data-theme="black"] .status .tc, body[data-theme="black"] .status .tc::after { color:#f0f0f0; text-shadow:none; }
   body[data-theme="black"] .f-p { color:rgba(180,60,40,.9); }
   body[data-theme="black"] .f-k { color:#1a8a9a; }
@@ -101,6 +104,7 @@
   .theme-skin-btn:hover { opacity:1; }
   .deck-skin { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; border-radius:6px; }
   .deck-skin ~ * { position:relative; z-index:1; }
+  #skinGlow { position:fixed; inset:0; z-index:-1; background-size:cover; background-position:center; filter:blur(90px) brightness(.5); opacity:.35; pointer-events:none; transform:scale(1.2); }
   .deck.has-skin .dh-brand { background:#000; padding:8px 12px; }
   .deck.has-skin .corp { color:#ffea00 !important; text-shadow:none !important; }
   .deck.has-skin .brand { color:#ffffff !important; text-shadow:none !important; }
@@ -755,7 +759,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.55</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.60</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -1323,7 +1327,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.55";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.60";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -4057,6 +4061,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       try { localStorage.setItem("drecksler_theme", t); } catch(e){}
       const existing=deckEl2.querySelector(".deck-skin"); if(existing) existing.remove();
       deckEl2.classList.remove("has-skin");
+      const glow=document.getElementById("skinGlow"); if(glow) glow.remove();
     };
     applyTheme(currentTheme);
     document.querySelectorAll(".theme-dot").forEach((b)=>{
@@ -4073,6 +4078,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         if(!skinEl){ skinEl=document.createElement("div"); skinEl.className="deck-skin"; deckEl2.insertBefore(skinEl,deckEl2.firstChild); }
         skinEl.style.backgroundImage="url('"+e.target.result+"')";
         deckEl2.classList.add("has-skin");
+        let glow=document.getElementById("skinGlow");
+        if(!glow){ glow=document.createElement("div"); glow.id="skinGlow"; document.body.appendChild(glow); }
+        glow.style.backgroundImage="url('"+e.target.result+"')";
         setStatus("SKIN // LOADED");
       };
       r.readAsDataURL(f);
