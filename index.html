@@ -368,6 +368,10 @@
   .modegrp button { padding:8px 12px; font-size:10px; letter-spacing:.1em; }
   .modegrp button.active { color:#ff6a00 !important; border-color:rgba(255,106,0,.75) !important; box-shadow:0 0 8px rgba(255,106,0,.25), inset 0 0 5px rgba(255,106,0,.10); }
   .win-grp { display:inline-flex; align-items:center; gap:6px; margin-left:10px; }
+  .loop-grp { display:inline-flex; align-items:center; gap:3px; }
+  .loop-grp .lb { padding:7px 9px; min-width:26px; font-size:11px; }
+  #loopTool.active { color:#bdfaff; border-color:rgba(189,250,255,.6); box-shadow:0 0 10px rgba(189,250,255,.18), inset 0 0 8px rgba(189,250,255,.06); }
+  .loop-grp .lb.active { color:#bdfaff; border-color:rgba(189,250,255,.55); box-shadow:inset 0 0 7px rgba(189,250,255,.1); }
   .win-lbl { font-size:10px; letter-spacing:.12em; color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.3); min-width:70px; text-align:center; }
   .stutgrp { display:flex; gap:4px; }
   .stutmode { font-size:8px; letter-spacing:.1em; padding:2px 7px; border-radius:4px; vertical-align:middle; }
@@ -475,6 +479,7 @@
             <button id="metroBtn" title="Metronome on/off: use headphones while recording, the mic picks up the click"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
             <button id="metroNote" title="Root note: click to pick">A4</button>
           </div>
+          <button class="tbtn" id="edHome" disabled title="Jump to start (Home): scrolls the view to the beginning and restarts the preview from zero"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="2" width="3" height="20" fill="currentColor"/><polygon points="22,2 22,22 8,12" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edPlayBtn" disabled title="Preview material / selection (Space)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><polygon points="4,1 23,12 4,23" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edStopBtn" disabled title="Stop preview"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg></button>
           <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
@@ -520,6 +525,11 @@
         <span class="src-grp">
           <button id="srcBpmBtn" disabled title="Material BPM: drag vertically to correct a wrong detection (re-label, no stretch; the grid follows the material)">SRC // 120 BPM</button>
           <button class="srcfix" data-f="2" disabled title="Half-time material: the detector hears it at half speed: this doubles the tempo to match">&times;2 // HALF-TIME</button>
+        </span>
+        <span class="edit-sep"></span>
+        <span class="loop-grp">
+          <button id="loopTool" disabled title="LOOP tool: pick a length, then click the waveform. The loop locks to whole bars from the downbeat, so it always runs seamless. Click again or drag to move the start.">&#8635; LOOP</button>
+          <button class="lb" data-lb="1" disabled>1</button><button class="lb" data-lb="2" disabled>2</button><button class="lb active" data-lb="4" disabled>4</button><button class="lb" data-lb="8" disabled>8</button><button class="lb" data-lb="16" disabled>16</button>
         </span>
         <span class="edit-sep"></span>
         <button id="edBarsBtn" disabled title="Bar grid: selections snap to whole bars from the downbeat anchor (orange triangle on top: drag it if the ONE sits elsewhere). TRIM then cuts a bar-exact loop">BARS</button>
@@ -683,7 +693,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.38</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.39</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1236,7 +1246,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.38";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.39";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3063,6 +3073,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
   edStopBtn.addEventListener("click", ()=>stopPlayback());
+  $("#edHome").addEventListener("click", ()=>{
+    if (!buffer) return;
+    if (editView){ const len=editView.t1-editView.t0; editView={ t0:0, t1:Math.min(buffer.duration, len) }; }
+    drawEditWave();
+    if (isPlaying()) startPreview(0);                    // Wiedergabe von vorne
+    setStatus("TO START");
+  });
   let edLoop=false;
   let chopLoop=true;
   let finLoop=false;
@@ -4758,8 +4775,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     if (editSel){
       const x1=t2px(editSel.a,w), x2=t2px(editSel.b,w);
-      ectx.fillStyle="rgba(255,84,98,.16)"; ectx.fillRect(x1,0,x2-x1,h);
-      ectx.strokeStyle="rgba(255,108,92,.9)";
+      const lf=loopMode?"rgba(189,250,255,.16)":"rgba(255,84,98,.16)";
+      const ls=loopMode?"rgba(189,250,255,.95)":"rgba(255,108,92,.9)";
+      ectx.fillStyle=lf; ectx.fillRect(x1,0,x2-x1,h);
+      ectx.strokeStyle=ls;
       ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,h); ectx.moveTo(x2,0); ectx.lineTo(x2,h); ectx.stroke();
       if(fadePreview!==0){                            // Fade-Vorschau-Rampe (folgt der gewählten Kurve)
         ectx.fillStyle="rgba(189,250,255,.18)"; ectx.strokeStyle="rgba(189,250,255,.85)"; ectx.lineWidth=2;
@@ -4832,10 +4851,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     $("#edSil").disabled=!hasSel; $("#edRev").disabled=!hasBuf;
     $("#eq8Apply").disabled=!hasBuf;
     $("#edZoomIn").disabled=$("#edZoomOut").disabled=$("#edFitBtn").disabled=$("#edLoopBtn").disabled=!hasBuf;
+    $("#loopTool").disabled=$("#edHome").disabled=!hasBuf;
+    document.querySelectorAll(".loop-grp .lb").forEach((b)=>b.disabled=!hasBuf);
     edUndo.disabled=!editUndoStack.length;
   }
-  let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null, fadePreview=0, fadeCurve="lin";
+  let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null, loopDrag=false, fadePreview=0, fadeCurve="lin";
   let barSnap=false, barAnchor=0;                                // Takt-Raster: an / Downbeat-Anker (s)
+  let loopMode=false, loopBars=4;                                // Loop-Werkzeug: aktiv / gewaehlte Taktzahl
   const barDurS=()=>240/Math.max(30, bufferFitBpm);
   const edBarsBtn=$("#edBarsBtn");
   edBarsBtn.addEventListener("click", ()=>{
@@ -4843,6 +4865,41 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     edBarsBtn.classList.toggle("active", barSnap);
     drawEditWave();
     setStatus(barSnap ? "BAR GRID ON // SELECTIONS SNAP TO WHOLE BARS" : "BAR GRID OFF");
+  });
+  // ---- Loop-Werkzeug: Klick auf die Welle legt einen taktgenauen, rundlaufenden Loop ----
+  function loopSnap(t){                                          // Klick-Zeit -> Loop, der auf ganze Takte vom Anker rastet
+    if(!buffer) return null;
+    const bd=barDurS();
+    const maxBars=Math.max(1, Math.floor((buffer.duration-barAnchor)/bd+1e-6));
+    const nb=Math.min(loopBars, maxBars);                        // nie mehr Takte als das Material hergibt
+    let k=Math.round((t-barAnchor)/bd);                          // Takt-Index der Klickstelle
+    k=Math.max(0, Math.min(k, maxBars-nb));                      // so verschieben, dass nb Takte reinpassen
+    const a=barAnchor+k*bd;
+    return { a, b:a+nb*bd, nb };
+  }
+  function setLoopAt(t, announce){
+    const L=loopSnap(t); if(!L) return;
+    editSel={ a:L.a, b:L.b };
+    syncEditTools(); drawEditWave();
+    if(announce) setStatus("LOOP // "+L.nb+" BAR"+(L.nb===1?"":"S")+(L.nb<loopBars?" // MATERIAL LIMIT":""));
+  }
+  const loopToolBtn=$("#loopTool");
+  loopToolBtn.addEventListener("click", ()=>{
+    loopMode=!loopMode;
+    loopToolBtn.classList.toggle("active", loopMode);
+    if(loopMode){
+      if(!edLoop){ edLoop=true; edLoopBtn.classList.toggle("active", true); }   // rundlaufende Vorschau an
+      if(buffer && !editSel) setLoopAt(barAnchor, false);                        // Default: Loop ab dem Anfang
+      setStatus("LOOP TOOL // CLICK THE WAVE TO PLACE A SEAMLESS "+loopBars+"-BAR LOOP");
+    } else setStatus("LOOP TOOL // OFF");
+    drawEditWave();
+  });
+  document.querySelectorAll(".loop-grp .lb").forEach((b)=>{
+    b.addEventListener("click", ()=>{
+      loopBars=parseInt(b.dataset.lb,10)||4;
+      document.querySelectorAll(".loop-grp .lb").forEach((x)=>x.classList.toggle("active", x===b));
+      if(loopMode) setLoopAt(editSel?editSel.a:barAnchor, true);                 // gleiche Startstelle, neue Laenge
+    });
   });
   function evtT(e){
     const r=editCanvas.getBoundingClientRect();
@@ -4854,6 +4911,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       panDrag={ x:e.clientX, t0:editView.t0, t1:editView.t1 };
       editCanvas.style.cursor="grabbing";
       editCanvas.setPointerCapture(e.pointerId); return;
+    }
+    if (loopMode){                                        // Loop-Werkzeug: Klick legt den taktgenauen Loop
+      setLoopAt(evtT(e), true);
+      editCanvas.setPointerCapture(e.pointerId); loopDrag=true; return;
     }
     if (barSnap){                                       // Anker-Griff: oberer Streifen nahe des Dreiecks
       const r=editCanvas.getBoundingClientRect();
@@ -4874,6 +4935,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   editCanvas.addEventListener("pointermove",(e)=>{
     if (!buffer) return;
+    if (loopDrag){ setLoopAt(evtT(e), false); return; }
     // Hover-Cursor: zeigt was an dieser Stelle möglich ist (nur wenn nicht gerade gezogen)
     if (!panDrag && !anchorDrag && !editDrag){
       const r=editCanvas.getBoundingClientRect();
@@ -4925,6 +4987,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     drawEditWave();
   });
   editCanvas.addEventListener("pointerup",(e)=>{
+    if (loopDrag){ loopDrag=false; return; }
     if (anchorDrag){ anchorDrag=false; editCanvas.style.cursor="text"; drawEditWave(); return; }
     if (edgeDrag){ if(editSel && !barSnap) editSel={ a:snapZero(editSel.a), b:snapZero(editSel.b) }; edgeDrag=null; editCanvas.style.cursor="text"; drawEditWave(); return; }
     if (panDrag){ panDrag=null; editCanvas.style.cursor="text"; return; }
