@@ -40,7 +40,7 @@
     --chassis-grad-a: #1a1a1a; --chassis-grad-b: #111; --chassis-border: #333;
     --brand-col: #f0f0f0; --brand-tag-col: #ccc; --brand-b-col: #fff;
     --chassis-rev-col: #555; --chassis-slogan-col: #444;
-    --body-bg: #ffffff; --bgwave-opacity: 0.25;
+    --body-bg: #ffffff; --bgwave-opacity: 0.8;
   }
   body[data-theme="white"] {
     --chassis-grad-a: #f0f0f0; --chassis-grad-b: #e0e0e0; --chassis-border: #bbb;
@@ -49,6 +49,7 @@
     --body-bg: #08050a; --bgwave-opacity: 1;
   }
   body[data-theme="black"] .theme-skin-btn { color:#111; }
+  body[data-theme="black"] .bgwave-layer { filter:blur(2px) saturate(1.1) invert(1) hue-rotate(180deg) brightness(.7); }
   body[data-theme="black"] .corp { color:#ffea00; text-shadow:0 0 8px rgba(255,234,0,.4); }
   body[data-theme="white"] .corp { color:#c0001a; text-shadow:none; }
   body[data-theme="white"] .corp .corp-wave { filter:none; }
@@ -109,6 +110,8 @@
   .deck.has-skin .corp { color:#ffea00 !important; text-shadow:none !important; }
   .deck.has-skin .brand { color:#ffffff !important; text-shadow:none !important; }
   .deck.has-skin .brand-tag { color:#ffffff !important; text-shadow:none !important; }
+  body.has-skin .chassis-rev { display:none; }
+  body.has-skin .chassis-slogan { background:#000; color:#fff !important; padding:6px 12px; text-shadow:none !important; }
   .vtog { font-family:"VT323",monospace; font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
     background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; display:inline-flex; align-items:center; gap:7px; cursor:pointer; }
   .vtog svg { display:block; }
@@ -759,7 +762,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.60</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.63</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -1327,7 +1330,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.60";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.63";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -4061,6 +4064,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       try { localStorage.setItem("drecksler_theme", t); } catch(e){}
       const existing=deckEl2.querySelector(".deck-skin"); if(existing) existing.remove();
       deckEl2.classList.remove("has-skin");
+      document.body.classList.remove("has-skin");
       const glow=document.getElementById("skinGlow"); if(glow) glow.remove();
     };
     applyTheme(currentTheme);
@@ -4078,6 +4082,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         if(!skinEl){ skinEl=document.createElement("div"); skinEl.className="deck-skin"; deckEl2.insertBefore(skinEl,deckEl2.firstChild); }
         skinEl.style.backgroundImage="url('"+e.target.result+"')";
         deckEl2.classList.add("has-skin");
+        document.body.classList.add("has-skin");
         let glow=document.getElementById("skinGlow");
         if(!glow){ glow=document.createElement("div"); glow.id="skinGlow"; document.body.appendChild(glow); }
         glow.style.backgroundImage="url('"+e.target.result+"')";
