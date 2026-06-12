@@ -679,7 +679,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.33</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.34</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1232,7 +1232,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.33";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.34";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -2859,12 +2859,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       console.log("[UPLINK] sample names:", [...seen]);
       if (!seen.size){ setStatus("NO SAMPLES IN TIMELINE"); return; }
       setStatus("READING SAMPLE INFO");
-      const items=[];
+      const items=[]; const diag=[];
       for (const nm of seen){
-        let meta=null;
-        try { const m=await c.samples.get(nm); if (!(m instanceof Error)) meta=m; } catch(err){}
+        let meta=null, err="";
+        try { const m=await c.samples.get(nm); if (m instanceof Error){ err=String(m.code||"")+" "+String(m.message||m); } else meta=m; }
+        catch(e2){ err=String((e2&&e2.message)||e2); }
+        diag.push("NAME: "+nm+"\n  get -> "+(meta?("OK // canonical: "+meta.name):("FAIL // "+err)));
         items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:{ name:(meta&&meta.name)||nm, bpm:(meta&&Number(meta.bpm))||0, displayName:(meta&&meta.displayName)||"" } });
       }
+      try { alert("[UPLINK] DIAGNOSE — bitte abfotografieren / abtippen:\n\n"+diag.join("\n\n")); } catch(_){}
       showListPop(forCarrier_?"SELECT CARRIER":"SELECT SAMPLE", items, forCarrier_?(sample)=>atDownloadCarrier(c,sample):(sample)=>atDownloadSample(c, sample, projBpm));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
     finally { try { if (nexus && nexus.stop) nexus.stop(); } catch(err){} }
