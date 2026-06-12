@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=VT323&family=Rubik+Mono+One&family=Anton&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg:#0a0405; --bg2:#120708; --panel:#150909; --panel2:#1d0e0e; --line:#3a1719;
+    --bg:#0a0405; --bg2:#120708; --panel:#150909; --panel2:#1d0e0e; --line:#3a3a40;
     --ink:#f2ddd8; --ink-dim:#b9e9f4; --sig:#ff4532; --sig-dim:#b22a20; --sig-deep:#5e130d;
     --red:#ff5c4a; --mag:#7dcdff; --info:#ff6a00; --radius:4px;
   }
@@ -106,12 +106,13 @@
   .deck-skin { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; border-radius:6px; }
   .deck-skin ~ * { position:relative; z-index:1; }
   #skinGlow { position:fixed; inset:0; z-index:-1; background-size:cover; background-position:center; filter:blur(90px) brightness(.5); opacity:.35; pointer-events:none; transform:scale(1.2); }
+  .deck.has-skin { border:1px solid var(--line); }
   .deck.has-skin .dh-brand { background:#000; padding:8px 12px; }
   .deck.has-skin .corp { color:#ffea00 !important; text-shadow:none !important; }
   .deck.has-skin .brand { color:#ffffff !important; text-shadow:none !important; }
   .deck.has-skin .brand-tag { color:#ffffff !important; text-shadow:none !important; }
   body.has-skin .chassis-rev { display:none; }
-  body.has-skin .chassis-slogan { background:#000; color:#fff !important; padding:6px 12px; text-shadow:none !important; }
+  body.has-skin .chassis-slogan { background:#000; color:#fff !important; padding:6px 12px; text-shadow:none !important; margin-left:auto; }
   .vtog { font-family:"VT323",monospace; font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
     background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; display:inline-flex; align-items:center; gap:7px; cursor:pointer; }
   .vtog svg { display:block; }
@@ -762,7 +763,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.64</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.69</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -1330,7 +1331,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.64";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.69";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -4925,19 +4926,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         ectx.stroke();
         ectx.lineTo(x2, h); ectx.lineTo(x1, h); ectx.closePath(); ectx.fill();
       }
-    }
-    // Slice-Leiste: ruhige 8tel-Grenzen als Orientierung (Feinrhythmik macht QUANTIZE)
-    if (buffer && P.chop.on){
-      const tab=sliceTable(), ssd=stepDur();
-      ectx.fillStyle="rgba(0,0,0,.35)"; ectx.fillRect(0,0,w,10);
-      for (let i=0;i<tab.length;i++){
-        const x1=t2px(i*ssd,w);
-        if (x1<0||x1>w) continue;
-        ectx.strokeStyle="rgba(189,250,255,.25)";
-        ectx.beginPath(); ectx.moveTo(x1,0); ectx.lineTo(x1,10); ectx.stroke();
-      }
-      ectx.strokeStyle="rgba(189,250,255,.25)";
-      ectx.beginPath(); ectx.moveTo(0,10.5); ectx.lineTo(w,10.5); ectx.stroke();
     }
     if (defaultMaterial && !sourceHintGone){                 // Quellen-Hinweis, nur bis zum ersten Klick
       const dtx="RECORD AUDIO \u00B7 UPLOAD FILE \u00B7 IMPORT FROM AUDIOTOOL";
