@@ -24,9 +24,47 @@
     --red:#ff5c4a; --mag:#7dcdff; --info:#ff6a00; --radius:4px;
   }
   * { box-sizing:border-box; }
-  html,body { margin:0; height:100%; }
+  :root {
+    --chassis-grad-a: #c92a1d; --chassis-grad-b: #b62115; --chassis-border: #5e130d;
+    --brand-col: #3a0c09; --brand-tag-col: #4a1009; --brand-b-col: #140404;
+    --chassis-rev-col: #3a0d08; --chassis-slogan-col: #8c2014;
+    --body-bg: #08050a; --bgwave-opacity: 1;
+  }
+  body[data-theme="yellow"] {
+    --chassis-grad-a: #ffea00; --chassis-grad-b: #e8d400; --chassis-border: #c8b800;
+    --brand-col: #c0001a; --brand-tag-col: #a00015; --brand-b-col: #800010;
+    --chassis-rev-col: #a00015; --chassis-slogan-col: #c0001a;
+    --body-bg: #08050a; --bgwave-opacity: 1;
+  }
+  body[data-theme="black"] {
+    --chassis-grad-a: #1a1a1a; --chassis-grad-b: #111; --chassis-border: #333;
+    --brand-col: #f0f0f0; --brand-tag-col: #ccc; --brand-b-col: #fff;
+    --chassis-rev-col: #555; --chassis-slogan-col: #444;
+    --body-bg: #ffffff; --bgwave-opacity: 0.25;
+  }
+  body[data-theme="white"] {
+    --chassis-grad-a: #f0f0f0; --chassis-grad-b: #e0e0e0; --chassis-border: #bbb;
+    --brand-col: #1a1a1a; --brand-tag-col: #333; --brand-b-col: #000;
+    --chassis-rev-col: #555; --chassis-slogan-col: #444;
+    --body-bg: #08050a; --bgwave-opacity: 1;
+  }
+  body[data-theme="black"] .theme-skin-btn { color:#111; }
+  body[data-theme="white"] .corp .corp-wave { filter:none; }
+  body[data-theme="yellow"] .corp .corp-wave { filter:drop-shadow(0 0 4px rgba(192,0,26,.4)); }
+  body[data-theme="black"] { --ink:#e8e8e8; }
+  body[data-theme="black"] .deck-head .status { background:#111; border-color:#333; }
+  body[data-theme="black"] .status, body[data-theme="black"] .status .tc, body[data-theme="black"] .status .tc::after { color:#f0f0f0; text-shadow:none; }
+  body[data-theme="black"] .f-p { color:rgba(180,60,40,.9); }
+  body[data-theme="black"] .f-k { color:#1a8a9a; }
+  body[data-theme="black"] .f-v { color:#c05000; text-shadow:none; }
+  body[data-theme="black"] .f-t { color:rgba(40,140,160,.9); }
+  body[data-theme="black"] .f-c { color:rgba(40,140,160,.55); }
+  body[data-theme="black"] .fh-txt { color:#c05000; text-shadow:none; }
+  body[data-theme="black"] .feat-hover { background:#111; border-color:#333; box-shadow:none; }
+  body[data-theme="black"] .feat-hover .f-p, body[data-theme="black"] .feat-hover .fh-txt { color:#f0f0f0; }
+  body[data-theme="black"] .feat-hover .f-c { color:rgba(240,240,240,.6); }
   body {
-    background:#08050a;
+    background:var(--body-bg);
     background-attachment:fixed;
     color:var(--ink); font-family:"Space Mono",monospace; -webkit-font-smoothing:antialiased;
     display:flex; align-items:flex-start; justify-content:center; padding:28px 20px; position:relative; overflow:auto; min-height:100vh;
@@ -52,7 +90,21 @@
   .feat-hover .f-p, .feat-hover .fh-txt { color:#0a0504; text-shadow:none; }
   .feat-hover .f-c { color:rgba(10,5,4,.62); text-shadow:none; }
   /* View-Toggles oben rechts: Hintergrund-Animation + Erklaer-Text getrennt schaltbar */
-  .view-toggles { position:fixed; top:14px; right:16px; display:flex; gap:8px; z-index:45; }
+  .view-toggles { position:fixed; top:14px; right:16px; display:flex; gap:8px; align-items:center; z-index:45; }
+  .theme-dot { width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(255,255,255,.3); padding:0; cursor:pointer; flex:none; }
+  .theme-dot[data-theme="red"] { background:#c0001a; }
+  .theme-dot[data-theme="yellow"] { background:#ffea00; border-color:rgba(0,0,0,.2); }
+  .theme-dot[data-theme="black"] { background:#1a1a1a; border-color:#555; }
+  .theme-dot[data-theme="white"] { background:#f0f0f0; border-color:#aaa; }
+  .theme-dot.active { box-shadow:0 0 0 2px rgba(255,255,255,.7); }
+  .theme-skin-btn { display:flex; align-items:center; justify-content:center; width:22px; height:22px; cursor:pointer; font-size:13px; opacity:.6; transition:opacity .2s; }
+  .theme-skin-btn:hover { opacity:1; }
+  .deck-skin { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; border-radius:6px; }
+  .deck-skin ~ * { position:relative; z-index:1; }
+  .deck.has-skin .dh-brand { background:#000; padding:8px 12px; }
+  .deck.has-skin .corp { color:#ffea00 !important; text-shadow:none !important; }
+  .deck.has-skin .brand { color:#ffffff !important; text-shadow:none !important; }
+  .deck.has-skin .brand-tag { color:#ffffff !important; text-shadow:none !important; }
   .vtog { font-family:"VT323",monospace; font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
     background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; display:inline-flex; align-items:center; gap:7px; cursor:pointer; }
   .vtog svg { display:block; }
@@ -64,7 +116,7 @@
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
   .bgwave-layer { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
     filter:blur(2px) saturate(1.1); opacity:0; transition:opacity 0.6s ease; }
-  .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, #c92a1d 0%, #b62115 100%); border:1px solid #5e130d; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
+  .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, var(--chassis-grad-a) 0%, var(--chassis-grad-b) 100%); border:1px solid var(--chassis-border); border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
   .deck-head .status { flex:none; margin-left:auto; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:7px 14px; box-shadow:inset 0 0 12px rgba(0,0,0,.55); }
@@ -188,8 +240,8 @@
   .deck-foot { grid-area:foot; margin-bottom:0; display:flex; align-items:center; gap:12px; }
   .deck-foot .foot-meter { flex:1; max-width:380px; margin-left:14px; }
   .chassis-foot { display:flex; align-items:baseline; justify-content:space-between; margin-top:12px; }
-  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:16px; letter-spacing:.3em; color:#3a0d08; text-shadow:0 -1px 1px rgba(0,0,0,.45), 0 1px 1px rgba(255,255,255,.34); }
-  .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:#8c2014; text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
+  .chassis-rev { font-family:"Anton","Rubik Mono One",monospace; font-size:16px; letter-spacing:.3em; color:var(--chassis-rev-col); text-shadow:0 -1px 1px rgba(0,0,0,.45), 0 1px 1px rgba(255,255,255,.34); }
+  .chassis-slogan { text-align:right; margin-top:0; font-family:"Anton","Rubik Mono One",monospace; font-size:16px; font-weight:400; letter-spacing:.3em; color:var(--chassis-slogan-col); text-shadow:0 -1px 1px rgba(0,0,0,.55), 0 1px 1px rgba(255,255,255,.28); text-transform:uppercase; white-space:nowrap; }
   .cap-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
   .cap-head .transport { margin-top:0; flex:none; }
   .metro-grp { position:relative; display:flex; gap:0; flex:none; }
@@ -247,9 +299,9 @@
   header { border:none; }
   .corp { font-size:12px; letter-spacing:.32em; font-weight:700; color:#ffea00; text-transform:uppercase; text-shadow:0 0 8px rgba(255,234,0,.5); display:flex; align-items:center; gap:9px; }
   .corp .corp-wave { flex:none; filter:drop-shadow(0 0 4px rgba(255,234,0,.5)); }
-  .brand { font-family:"Anton","Rubik Mono One",monospace; font-size:36px; line-height:1; letter-spacing:.06em; word-spacing:-.18em; color:#3a0c09; margin:5px 0 6px; }
-  .brand-tag { font-family:"Space Mono",monospace; font-weight:700; font-size:13px; line-height:1; letter-spacing:.42em; text-transform:uppercase; color:#4a1009; margin:-1px 0 7px; white-space:nowrap; text-shadow:0 1px 0 rgba(255,255,255,.18); }
-  .brand b { color:#140404; font-weight:normal; }
+  .brand { font-family:"Anton","Rubik Mono One",monospace; font-size:36px; line-height:1; letter-spacing:.06em; word-spacing:-.18em; color:var(--brand-col); margin:5px 0 6px; }
+  .brand-tag { font-family:"Space Mono",monospace; font-weight:700; font-size:13px; line-height:1; letter-spacing:.42em; text-transform:uppercase; color:var(--brand-tag-col); margin:-1px 0 7px; white-space:nowrap; text-shadow:0 1px 0 rgba(255,255,255,.18); }
+  .brand b { color:var(--brand-b-col); font-weight:normal; }
   .status { font-family:"VT323",monospace; font-size:15px; letter-spacing:.12em; font-weight:400; text-transform:uppercase; color:#6bff8c; display:flex; align-items:center; gap:10px; text-shadow:0 0 6px rgba(107,255,140,.35); width:560px; }
   .status #statusText { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:right; }
   .status .tc { font-family:"VT323",monospace; font-weight:400; font-size:20px; letter-spacing:.05em; color:#6bff8c; text-shadow:0 0 4px rgba(107,255,140,.3); }
@@ -454,6 +506,12 @@
 <div class="view-toggles">
   <button id="animToggle" class="vtog active" title="Background animation on/off" aria-label="Toggle background animation"><svg viewBox="0 0 40 16" width="20" height="10" aria-hidden="true"><g fill="currentColor"><rect x="0" y="6.5" width="2.4" height="3"/><rect x="4.7" y="4" width="2.4" height="8"/><rect x="9.4" y="1" width="2.4" height="14"/><rect x="14.1" y="5" width="2.4" height="6"/><rect x="18.8" y="2.5" width="2.4" height="11"/><rect x="23.5" y="6" width="2.4" height="4"/><rect x="28.2" y="3.5" width="2.4" height="9"/><rect x="32.9" y="5.5" width="2.4" height="5"/><rect x="37.6" y="6.5" width="2.4" height="3"/></g></svg><span>ANIM</span></button>
   <button id="textToggle" class="vtog active" title="Explainer text on/off" aria-label="Toggle explainer text"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><g fill="currentColor"><rect x="1" y="3" width="14" height="1.8"/><rect x="1" y="7.1" width="14" height="1.8"/><rect x="1" y="11.2" width="9" height="1.8"/></g></svg><span>TEXT</span></button>
+  <span style="width:1px; height:16px; background:rgba(255,255,255,.15); display:inline-block; margin:0 4px;"></span>
+  <button class="theme-dot" data-theme="red" title="Red chassis"></button>
+  <button class="theme-dot" data-theme="yellow" title="Yellow chassis"></button>
+  <button class="theme-dot" data-theme="black" title="Black chassis"></button>
+  <button class="theme-dot" data-theme="white" title="White chassis"></button>
+  <label class="theme-skin-btn" title="Upload custom skin image"><input type="file" id="skinUpload" accept="image/*" style="display:none;">&#9096;</label>
 </div>
 <div class="deck st-editor">
   <header class="deck-head">
@@ -697,7 +755,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.55</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -1265,7 +1323,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.46";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.55";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3898,18 +3956,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }catch(e){ /* Zeichenfehler nie Playback blockieren lassen */ }
   }
   function bgWaveSetActive(on, st){
-    // Nur die aktive Station-Ebene einblenden; bei false alle aus.
+    const themeOpacity=parseFloat(getComputedStyle(document.body).getPropertyValue("--bgwave-opacity"))||1;
     if(!st){
       const dc=document.querySelector(".deck");
       st=dc.classList.contains("st-hecksler")?"hecksler":dc.classList.contains("st-tune")?"tune":dc.classList.contains("st-fin")?"fin":"editor";
     }
     if(on) drawBgWave(st);
     document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity="0"; });
-    if(on){ const cv=document.getElementById("bgWave-"+st); if(cv) cv.style.opacity="1"; }
+    if(on){ const cv=document.getElementById("bgWave-"+st); if(cv) cv.style.opacity=String(themeOpacity); }
   }
   function bgWaveShow(st){
-    // Cross-Fade: Zielebene rein, alle anderen behalten ihr Standbild und faden aus.
-    document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity=(c.id==="bgWave-"+st)?"1":"0"; });
+    const themeOpacity=parseFloat(getComputedStyle(document.body).getPropertyValue("--bgwave-opacity"))||1;
+    document.querySelectorAll(".bgwave-layer").forEach((c)=>{ c.style.opacity=(c.id==="bgWave-"+st)?String(themeOpacity):"0"; });
   }
   function setStation(st){
     const prevStation=deckEl.classList.contains("st-editor")?"editor":deckEl.classList.contains("st-hecksler")?"hecksler":deckEl.classList.contains("st-tune")?"tune":"fin";
@@ -3987,6 +4045,38 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         setStatus(textOn ? "EXPLAINER TEXT // ON" : "EXPLAINER TEXT // OFF");
       });
     }
+    // ---- Theme-Switcher ----
+    const deckEl2=document.querySelector(".deck");
+    let currentTheme="red";
+    try { currentTheme=localStorage.getItem("drecksler_theme")||"red"; } catch(e){}
+    const applyTheme=(t)=>{
+      currentTheme=t;
+      document.body.dataset.theme= t==="red" ? "" : t;
+      if(t==="red") delete document.body.dataset.theme;
+      document.querySelectorAll(".theme-dot").forEach((b)=>b.classList.toggle("active", b.dataset.theme===t));
+      try { localStorage.setItem("drecksler_theme", t); } catch(e){}
+      const existing=deckEl2.querySelector(".deck-skin"); if(existing) existing.remove();
+      deckEl2.classList.remove("has-skin");
+    };
+    applyTheme(currentTheme);
+    document.querySelectorAll(".theme-dot").forEach((b)=>{
+      b.addEventListener("click", ()=>{ applyTheme(b.dataset.theme); setStatus("CHASSIS // "+b.dataset.theme.toUpperCase()); });
+    });
+    // ---- Skin-Upload ----
+    const skinInput=document.getElementById("skinUpload");
+    if(skinInput) skinInput.addEventListener("change", ()=>{
+      const f=skinInput.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=(e)=>{
+        applyTheme("red");
+        let skinEl=deckEl2.querySelector(".deck-skin");
+        if(!skinEl){ skinEl=document.createElement("div"); skinEl.className="deck-skin"; deckEl2.insertBefore(skinEl,deckEl2.firstChild); }
+        skinEl.style.backgroundImage="url('"+e.target.result+"')";
+        deckEl2.classList.add("has-skin");
+        setStatus("SKIN // LOADED");
+      };
+      r.readAsDataURL(f);
+    });
   })();
 
   // ===================== STATION 4: TUNE // PITCH DISCIPLINE =====================
