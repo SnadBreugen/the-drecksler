@@ -697,7 +697,22 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.44</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+</div>
+
+<div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
+  <div id="feedbackPanel" style="display:none; width:300px; background:#111; border:1px solid rgba(189,250,255,.3); padding:16px; margin-bottom:8px;">
+    <div style="font-size:9px; letter-spacing:.2em; color:#bdfaff; margin-bottom:14px;">FEEDBACK // SNAD INDUSTRIES</div>
+    <input id="fbName" type="text" placeholder="NAME (OPTIONAL)" style="width:100%; box-sizing:border-box; background:#0a0a0a; border:1px solid #2a2a2a; color:#bbb; font-family:'Space Mono',monospace; font-size:10px; padding:7px 8px; margin-bottom:7px; outline:none;">
+    <input id="fbEmail" type="email" placeholder="EMAIL FOR REPLY (OPTIONAL)" style="width:100%; box-sizing:border-box; background:#0a0a0a; border:1px solid #2a2a2a; color:#bbb; font-family:'Space Mono',monospace; font-size:10px; padding:7px 8px; margin-bottom:7px; outline:none;">
+    <textarea id="fbMsg" placeholder="YOUR MESSAGE" rows="4" style="width:100%; box-sizing:border-box; background:#0a0a0a; border:1px solid #2a2a2a; color:#bbb; font-family:'Space Mono',monospace; font-size:10px; padding:7px 8px; margin-bottom:10px; outline:none; resize:none;"></textarea>
+    <div style="display:flex; gap:8px;">
+      <button id="fbSend" style="flex:1; background:#bdfaff; color:#000; border:none; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.12em; padding:8px; cursor:pointer;">SEND</button>
+      <button id="fbCancel" style="background:transparent; border:1px solid #333; color:#555; font-family:'Space Mono',monospace; font-size:10px; padding:8px 12px; cursor:pointer;">X</button>
+    </div>
+    <div id="fbStatus" style="font-size:9px; color:#ff6a00; margin-top:8px; min-height:13px; letter-spacing:.1em;"></div>
+  </div>
+  <button id="feedbackBtn" style="display:block; margin-left:auto; background:#111; border:1px solid rgba(189,250,255,.3); color:#bdfaff; font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.18em; padding:8px 14px; cursor:pointer;">// FEEDBACK</button>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1250,7 +1265,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.44";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.46";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -5601,6 +5616,22 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
   }
   atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
+
+  (()=>{
+    const panel=document.getElementById("feedbackPanel"), fbStatus=document.getElementById("fbStatus");
+    document.getElementById("feedbackBtn").addEventListener("click", ()=>{ panel.style.display=panel.style.display==="none"?"block":"none"; fbStatus.textContent=""; });
+    document.getElementById("fbCancel").addEventListener("click", ()=>{ panel.style.display="none"; });
+    document.getElementById("fbSend").addEventListener("click", async ()=>{
+      const msg=document.getElementById("fbMsg").value.trim();
+      if (!msg){ fbStatus.textContent="// MESSAGE REQUIRED"; return; }
+      fbStatus.textContent="// TRANSMITTING...";
+      try {
+        const res=await fetch("https://formspree.io/f/mkoaqeez",{ method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify({ name:document.getElementById("fbName").value.trim()||"ANONYMOUS", email:document.getElementById("fbEmail").value.trim()||"", message:msg, rev:REV }) });
+        if (res.ok){ fbStatus.textContent="// SIGNAL RECEIVED"; document.getElementById("fbMsg").value=""; document.getElementById("fbName").value=""; document.getElementById("fbEmail").value=""; setTimeout(()=>{ panel.style.display="none"; fbStatus.textContent=""; },2000); }
+        else fbStatus.textContent="// TRANSMISSION FAILED";
+      } catch(e){ fbStatus.textContent="// CONNECTION ERROR"; }
+    });
+  })();
 
   document.addEventListener("pointerdown", function hintOnce(){
     if (!sourceHintGone){ sourceHintGone=true; if (defaultMaterial && deckEl.classList.contains("st-editor")) drawEditWave(); }
