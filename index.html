@@ -123,7 +123,7 @@
   .fh-txt { color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.35); }
   .bgwave-layer { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
     filter:blur(2px) saturate(1.1); opacity:0; transition:opacity 0.6s ease; }
-  .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, var(--chassis-grad-a) 0%, var(--chassis-grad-b) 100%); border:1px solid var(--chassis-border); border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
+  .deck { box-sizing:content-box; width:1120px; flex:none; position:relative; z-index:1; overflow:hidden; padding:22px 28px 22px 22px; background:linear-gradient(168deg, var(--chassis-grad-a) 0%, var(--chassis-grad-b) 100%); border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 3px rgba(0,0,0,.12), inset 1px 0 3px rgba(0,0,0,.10), inset -1px 0 3px rgba(0,0,0,.10); }
   .deck-head { display:flex; align-items:center; gap:22px; margin-bottom:14px; }
   .dh-brand { flex:none; }
   .deck-head .status { flex:none; margin-left:auto; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:7px 14px; box-shadow:inset 0 0 12px rgba(0,0,0,.55); }
@@ -543,7 +543,7 @@
     <section class="stage island-editor" data-tag="EDITOR">
       <div class="cap-head">
         <div class="transport">
-          <button class="danger tbtn" id="recBtn" title="ARM REC: 1 bar count-in, 2 bars recording"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
+          <button class="danger tbtn" id="recBtn" title="ARM REC: 1 bar count-in, then records until you press REC again (ESC discards)"><svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg></button>
           <div class="metro-grp">
             <button id="metroBtn" title="Metronome on/off: use headphones while recording, the mic picks up the click"><svg viewBox="0 0 22 24" width="24" height="26" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M 9.5 2 L 12.5 2 L 18 19 L 4 19 Z M 10.4 4.5 L 11.6 4.5 L 15.3 16.5 L 6.7 16.5 Z"/><rect x="5.5" y="19" width="2.2" height="2.2"/><rect x="14.3" y="19" width="2.2" height="2.2"/><line x1="10" y1="16" x2="17" y2="1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M -1.7 1.7 L 1.7 1.7 L 1.05 -1.7 L -1.05 -1.7 Z" transform="translate(15 5.8) rotate(25)"/></svg></button>
             <button id="metroNote" title="Root note: click to pick">A4</button>
@@ -554,7 +554,7 @@
           <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
-        <div class="meter"><i id="inMeterFill"></i></div>
+        <div class="meter" id="inMeter" style="visibility:hidden;"><i id="inMeterFill"></i></div>
       </div>
       <div class="edit-wrap">
         <canvas class="wave" id="editCanvas"></canvas>
@@ -755,14 +755,14 @@
     </section>
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
-      <button id="sampleBack" class="back-btn" disabled title="Step back to the previous version of the sample: undoes the last commit">SAMPLE ZURÜCK</button>
+      <button id="sampleBack" class="back-btn" disabled title="Step back to the previous committed version of the sample (undoes the last APPLY from any station)">UNDO COMMIT</button>
       <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for transmit and for library carriers">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Render the full chopped arrangement incl. finisher and download it as a WAV file">EXPORT // WAV</button>
       <button id="atBtn" disabled title="Render the result and send it straight into your Audiotool sample library">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.63</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.64</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -1330,7 +1330,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.63";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.64";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -1584,7 +1584,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     // UI aktualisieren: Schritt 2 erweitert dies um Editor-/Chopper-State
     drawWave(); drawEditWave(); drawGrid();
     if (typeof tc!=="undefined") tc.textContent=fmtTime(buffer.duration);
-    setStatus("SAMPLE ZURÜCK // RESTORED");
+    setStatus("UNDO COMMIT // RESTORED");
     syncSampleBack();
   }
   function syncSampleBack(){
@@ -2131,9 +2131,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       vFxLp.textContent= lp>=0.999 ? "OFF" : fmtHz(lpFreq(lp));
       vFxLpQ.textContent=Math.round((ch.lpq||0)*100)+"%";
     } else {
-      fxpTitle.textContent="CHOP FX // \u2014";
+      fxpTitle.textContent="CHOP FX // -";
       syncStutBtns(-1); syncStutMode("retrig");
-      [vFxPitch,vFxStut,vFxTube,vFxCrush,vFxHp,vFxHpQ,vFxLp,vFxLpQ].forEach((v)=>(v.textContent="\u2014"));
+      [vFxPitch,vFxStut,vFxTube,vFxCrush,vFxHp,vFxHpQ,vFxLp,vFxLpQ].forEach((v)=>(v.textContent=","));
     }
   }
   function setSelection(steps, anchor){
@@ -2471,7 +2471,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); if (P.chop.mode==="mark") markRedo(); else redo(); return; }
     if (e.key==="Enter" && P.chop.mode==="mark" && markPreview){ e.preventDefault(); fixPending(); return; }
-    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (deckEl.classList.contains("st-tune")){ if (tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent="\u2014"; } else tunePlayPreview(); return; } if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
+    if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (deckEl.classList.contains("st-tune")){ if (tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent=","; } else tunePlayPreview(); return; } if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
     if (selectedStep==null) return;
     const ch=arrangement[selectedStep]; if (!ch) return;
     if (e.key==="Delete"||e.key==="Backspace"){
@@ -2504,7 +2504,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     e.preventDefault();
     const step=stepFromX(e.clientX);
     const ch=(step!=null)?arrangement[step]:null;
-    if (!ch){ wheelAcc=0; wheelStep=null; setStatus("WHEEL OK // EMPTY STEP \u2014 POINT AT A CHOP"); return; }
+    if (!ch){ wheelAcc=0; wheelStep=null; setStatus("WHEEL OK // EMPTY STEP : POINT AT A CHOP"); return; }
     if (step!==wheelStep){ wheelAcc=0; wheelStep=step; }
     const dy = e.deltaMode===1 ? e.deltaY*33 : (e.deltaMode===2 ? e.deltaY*120 : e.deltaY);
     let steps=0;
@@ -2580,7 +2580,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function hidePop(){ popEl.classList.add("hidden"); }
   function syncChopBtns(){ bpmBtn.textContent=Math.round(P.chop.bpm)+" BPM"; densBtn.textContent="DENS "+Math.round(P.chop.density*100)+"%"; harmBtn.textContent=P.chop.scatterHarm?"HARM":"DISH"; harmBtn.classList.toggle("active", P.chop.scatterHarm); }
-  harmBtn.addEventListener("click", ()=>{ P.chop.scatterHarm=!P.chop.scatterHarm; syncChopBtns(); setStatus(P.chop.scatterHarm ? "SCATTER PITCH // HARMONIC \u2014 OCTAVES ONLY" : "SCATTER PITCH // DISHARMONIC \u2014 FULL SET"); });
+  harmBtn.addEventListener("click", ()=>{ P.chop.scatterHarm=!P.chop.scatterHarm; syncChopBtns(); setStatus(P.chop.scatterHarm ? "SCATTER PITCH // HARMONIC : OCTAVES ONLY" : "SCATTER PITCH // DISHARMONIC : FULL SET"); });
   function startKnob(btn, cfg, e){
     if (knobDrag) return;
     knobDrag={ btn, cfg, lastY:e.clientY, val:cfg.get() };
@@ -2674,7 +2674,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   metroBtn.addEventListener("click", ()=>{ P.metro=!P.metro; metroBtn.classList.toggle("active", P.metro); syncMetroNote(); });
   const metroNote=$("#metroNote"), notePop=$("#notePop");
-  function syncMetroNote(){ metroNote.textContent=P.metro?noteName(P.metroRoot):"\u2014"; metroNote.classList.toggle("lit", P.metro); }
+  function syncMetroNote(){ metroNote.textContent=P.metro?noteName(P.metroRoot):","; metroNote.classList.toggle("lit", P.metro); }
   function syncNotePop(){
     const semi=((P.metroRoot%12)+12)%12, oct=Math.floor(P.metroRoot/12)-1;
     notePop.querySelectorAll("[data-n]").forEach((b)=>b.classList.toggle("active", +b.dataset.n===semi));
@@ -2754,8 +2754,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (rel<ci){ setStatus("COUNT-IN // "+Math.max(1, Math.ceil(recCountInBeats-rel/recBeatDur))); }
     else {
       const rr=rel-ci, bar=Math.floor(rr/(4*recBeatDur))+1;
-      setStatus("RECORDING // BAR "+bar+" \u2014 REC = KEEP, ESC = DISCARD"); tc.textContent=fmtTime(Math.max(0,rr));
-      if (analyser) updateMeter(analyser, inMeterFill);
+      setStatus("RECORDING // BAR "+bar+" : REC = KEEP, ESC = DISCARD"); tc.textContent=fmtTime(Math.max(0,rr));
+      if (analyser){ $("#inMeter").style.visibility="visible"; updateMeter(analyser, inMeterFill); }
     }
     rafId=requestAnimationFrame(recLoop);
   }
@@ -2768,7 +2768,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
     recorder=null; analyser=null;
     recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC: 1 bar count-in, record until you press REC again (ESC discards)"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
-    cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%";
+    cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%"; $("#inMeter").style.visibility="hidden";
   }
   async function handleStop(){
     const wasAborted=recAborted; const blob=new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
@@ -3354,7 +3354,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     updateFxPanel(); syncModeBtns(); drawWave(); drawGrid();
     if (m==="mark") resumeMarkMidLoop();                       // kein Loch bis zum Loop-Anfang
     if (_fadeOld) fadeOutActive(_fadeOld);                      // alten Modus sanft wegblenden -> kein Doppel-Signal
-    setStatus(m==="mark" ? "FREE MODE // ONE CHOP \u2014 CLAIM THE WAVE TO CUT IT" : "GRID MODE // 16 SLOTS");
+    setStatus(m==="mark" ? "FREE MODE // ONE CHOP : CLAIM THE WAVE TO CUT IT" : "GRID MODE // 16 SLOTS");
   }
   modeGridBtn.addEventListener("click", ()=>setChopMode("grid"));
   modeMarkBtn.addEventListener("click", ()=>setChopMode("mark"));
@@ -3440,7 +3440,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function pendStatus(){
     if (!markPreview) return;
     const ssd=stepDur(), lenS=markPreview.b-markPreview.a;
-    setStatus("CLAIM // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS \u2014 SET = FIX");
+    setStatus("CLAIM // "+(Math.round(lenS/ssd*100)/100)+" STEPS \u00B7 "+Math.round(lenS*1000)+" MS : SET = FIX");
   }
   function resolveDrop(i){
     // Abgelegtes Stueck beansprucht [A,B): ueberdeckte Stuecke fliegen, angeschnittene werden gekuerzt,
@@ -3521,7 +3521,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   canvas.addEventListener("pointerdown",(e)=>{
     if (P.chop.mode!=="mark"){
-      if (buffer) setStatus("WORK AREA LIVES IN FREE MODE \u2014 TAP FREE TO CARVE");
+      if (buffer) setStatus("WORK AREA LIVES IN FREE MODE : TAP FREE TO CARVE");
       return;
     }
     if (!buffer) return;
@@ -3578,7 +3578,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       markSel=-1; markEditIdx=-1;
       markPreview={ a:reg.a, b:reg.b };
       syncSetBtn(); updateFxPanel(); drawWave(); drawGrid();
-      setStatus("CLAIM // "+Math.round((reg.b-reg.a)*1000)+" MS AROUND THE HIT \u2014 EDGES ADJUST \u00B7 SET = FIX");
+      setStatus("CLAIM // "+Math.round((reg.b-reg.a)*1000)+" MS AROUND THE HIT : EDGES ADJUST \u00B7 SET = FIX");
       return;
     }
     pendStatus(); syncSetBtn(); drawWave();
@@ -4554,7 +4554,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for (let i2=0;i2<tuneF0.length;i2++) if (tuneF0[i2]>0) ms.push(f2m(tuneF0[i2]));
     if (!ms.length){
       g.fillStyle="#776"; g.font="18px 'VT323',monospace";
-      g.fillText("NO PITCH FOUND \u2014 THE UNIT NEEDS A MELODY", 22, hh/2);
+      g.fillText("NO PITCH FOUND : THE UNIT NEEDS A MELODY", 22, hh/2);
       return;
     }
     ms.sort((a,b)=>a-b);
@@ -4659,7 +4659,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
   function tunePlayPreview(){
     if (!buffer){ tuneInfo.textContent="NO MATERIAL // FEED THE UNIT"; return; }
-    if (tuneBusy){ tuneInfo.textContent="STILL TRACKING \u2014 ONE MOMENT"; return; }
+    if (tuneBusy){ tuneInfo.textContent="STILL TRACKING : ONE MOMENT"; return; }
     if (!tuneF0 && tuneMode!=="vocoder" && tuneMode!=="raw"){ tuneInfo.textContent="NO TRACK // RE-ENTER THE STATION"; return; }
     if (isPlaying()) pausePlayback();                           // KEIN Doppeldecker: Vorschau uebernimmt den Transport
     const ac0=ctxGet(); if (ac0.state==="suspended") ac0.resume();   // Autoplay-Sperre: Geraet aufwecken
@@ -5144,7 +5144,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       if (sl){
         editSel={ a:sl.t0, b:Math.min(buffer.duration, sl.t0+sl.dur) };
         editDrag=null; drawEditWave();
-        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S"+(e.altKey?"":" \u2014 ALT+CLICK = HEAR"));
+        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S"+(e.altKey?"":" : ALT+CLICK = HEAR"));
         if (e.altKey) auditionSlice(sl);
         return;
       }
@@ -5766,18 +5766,20 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       [["p","$ "],["k","tap"],["t"," a tile = render + hear it"]],
       [["p","$ "],["k","bars"],["t",": the notes glowing inside the wave"]],
       [["p","$ "],["v","APPLY"],["t"," burns it in \u00B7 ctrl+z undoes"]],
-      [["c","# vocoder: FOLLOW tracks your melody \u00B7 SUB/LOW/MID = register"]],
+      [["c","# vocoder: FOLLOW tracks your melody \u00B7 LOW/MID = register"]],
+      [["c","# carrier: CHORD MONO NOISE, or load a track from audiotool"]],
     ],
     editor:[
       [["p","$ "],["k","SRC BPM"],["t",": drag to fix a wrong detection \u00B7 "],["v","\u00D72 HALF-TIME"],["t"," for half-speed, heavy material"]],
       [["p","$ "],["k","BARS"],["t",": grid on \u00B7 selections = whole bars \u00B7 "],["v","TRIM"],["t"," = loop cut"]],
       [["p","> "],["k","EDITOR"],["t"," // prep the material"]],
-      [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t"," \u2014 count-in, "],["v","2 bars"],["t"," auto"]],
-      [["p","$ "],["k","upload"],["t",": drop or "],["v","IMPORT WAV"],["t"," \u2014 intake asks BPM + "],["v","LOOP|ONESHOT"]],
+      [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t",", count-in, record till you hit REC again"]],
+      [["p","$ "],["k","upload"],["t",": drop or "],["v","IMPORT WAV"],["t",", intake asks BPM + "],["v","LOOP|ONESHOT"]],
       [["p","$ "],["k","import"],["t",": "],["v","AUDIOTOOL TIMELINE"],["t"," via uplink"]],
-      [["c","# click the wave \u2014 hear that slice"]],
-      [["c","# top strip: drag \u2014 slip the content"]],
-      [["p","$ "],["k","shape"],["t",": drag the "],["v","yellow"],["t"," EQ points"]],
+      [["c","# click the wave, hear that slice"]],
+      [["c","# top strip: drag, slip the content"]],
+      [["p","$ "],["k","LOOP"],["t",": pick bars, click the wave \u00B7 "],["v","SET"],["t"," makes it the material"]],
+      [["p","$ "],["k","shape"],["t",": drag the "],["v","ice-blue"],["t"," EQ points"]],
       [["c","# red spectrum = what is playing"]],
       [["p","$ "],["k","APPLY"],["t"," burns the chain into the material"]],
       [["c","// the chopper will sound exactly like this"]],
@@ -5806,7 +5808,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     ],
     fin:[
       [["p","> "],["k","FINALIZER"],["t"," // the sum"]],
-      [["p","$ "],["k","preset"],["t",": "],["v","RAW POLISH THICK WIDE"]],
+      [["p","$ "],["k","preset"],["t",": "],["v","RAW POLISH THICK WIDE FAT CRUSH LOFI PHONE VOID CHORUS"]],
       [["c","# colors the whole loop, mono-safe"]],
       [["p","$ "],["k","result wave"],["t"," = exactly what exports"]],
       [["p","$ "],["k","EXPORT"],["t"," // "],["v","WAV"],["t"," or "],["v","TRANSMIT"]],
@@ -5859,13 +5861,13 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }, 12);
   }
   // Flaechen ohne Tooltip bekommen eigene Manual-Texte (aktives Manual statt ?-Modal)
-  editCanvas.dataset.desc="EDITOR WAVE \u2014 drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
-  grid.dataset.desc="CHOPS \u2014 click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
-  eqCanvas.dataset.desc="EQUALIZER \u2014 drag the yellow points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 yellow curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
-  $("#finCanvas").dataset.desc="RESULT WAVE \u2014 the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
-  $("#wave").dataset.desc="CHOPPER VIEW. FREE mode: drag = dashed CLAIM (MAGNET snaps to 8ths, HAND moves sample-fine \u2014 SHIFT flips the active mode) \u2014 it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click the wave: a work area forms around the hit (a quarter if unclear). Click a piece in the TIMELINE below to edit it. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers \u2014 hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
-  document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER \u2014 input while recording, output while playing"; });
-  document.querySelector(".status").dataset.desc="STATUS DISPLAY \u2014 the machine reports here. it does not apologize.";
+  editCanvas.dataset.desc="EDITOR WAVE : drag = select \u00B7 click = select the slice \u00B7 ALT+click = hear it \u00B7 mouse wheel = zoom at cursor \u00B7 SHIFT+drag = pan when zoomed";
+  grid.dataset.desc="CHOPS : click = hear \u00B7 SHIFT/CTRL+click = multi-select \u00B7 drag = move, CTRL+drag = copy \u00B7 drag \u2195 = volume, SHIFT+\u2195 = pitch \u00B7 block edges = trim start/length \u00B7 wheel = pitch \u00B112 \u00B7 right-click = reverse \u00B7 double-click = delete/restore \u00B7 DEL clears";
+  eqCanvas.dataset.desc="EQUALIZER : drag the ice-blue points (\u00B112 dB, 0.5 dB steps), double-click = zero \u00B7 ice-blue curve = your plan, red spectrum = what the material does \u00B7 APPLY burns the whole chain in";
+  $("#finCanvas").dataset.desc="RESULT WAVE : the rendered sum of the arrangement incl. finisher, exactly what EXPORT delivers";
+  $("#wave").dataset.desc="CHOPPER VIEW. FREE mode: drag = dashed CLAIM (MAGNET snaps to 8ths, HAND moves sample-fine : SHIFT flips the active mode) : it STAYS: pull its edges with the \u2194 cursor for FREE fine-tuning beyond the grid (SHIFT = snap), grab inside to move it, then SET / Enter / double-click fixes it as a piece. Click the wave: a work area forms around the hit (a quarter if unclear). Click a piece in the TIMELINE below to edit it. Dragging anywhere else always draws a FRESH claim. ESC clears it. Dropping a moved piece REPLACES what it covers : hold ALT on release to OVERLAY instead. ALT+click a piece below = hear it, double-click/DEL = delete.";
+  document.querySelectorAll(".meter").forEach((m)=>{ m.dataset.desc="LEVEL METER : input while recording, output while playing"; });
+  document.querySelector(".status").dataset.desc="STATUS DISPLAY : the machine reports here. it does not apologize.";
   if (window.matchMedia && window.matchMedia("(min-width:1890px)").matches){
     document.querySelectorAll("[title]").forEach((el)=>{
       if (el.closest(".feat-panel")) return;
