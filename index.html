@@ -679,7 +679,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.34</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.36</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1232,7 +1232,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.34";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
+  const REV="4.36";                          // Bei jeder Uebergabe hochzaehlen — sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -2559,7 +2559,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (!buffer) return;
     if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
     const url=URL.createObjectURL(encodeWav(buffer));
-    const a=document.createElement("a"); a.href=url; a.download="snad-src-"+Math.round(bufferFitBpm)+"bpm-"+Date.now()+".wav"; a.click(); URL.revokeObjectURL(url);
+    const a=document.createElement("a"); a.href=url; a.download="DRECKSLER_SRC_"+Math.round(bufferFitBpm)+"BPM_"+new Date().toISOString().slice(0,10)+".wav"; a.click(); URL.revokeObjectURL(url);
     setStatus("SRC EXPORT // "+buffer.duration.toFixed(1)+"S RAW");
   });
   bindKnob(densBtn,{ min:0.1, max:0.95, step:0.01, get:()=>P.chop.density, set:(v)=>{ P.chop.density=v; syncChopBtns(); }, fmt:(v)=>Math.round(v*100)+"%" });
@@ -2831,6 +2831,27 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     atUrlPop.classList.add("hidden");
     atOpenProject({ url }, _carrierPickMode); _carrierPickMode=false;
   }
+  const atSleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+  function atRetryable(e){
+    // Aufwaerm-Haenger direkt nach dem Verbinden meldet sich als not_found / unavailable /
+    // Netzwerk-Aussetzer. Genau die wiederholen; echte Sachfehler (kein wav-URL etc.) nicht.
+    const s=String((e&&(e.message||e.rawMessage))||e||"").toLowerCase();
+    return s.includes("not_found")||s.includes("not found")||s.includes("unavailable")
+        || s.includes("deadline")||s.includes("unauthenticated")||s.includes("network")||s.includes("failed to fetch");
+  }
+  async function atRetry(fn, tries=3){
+    let last=null;
+    for (let i=0;i<tries;i++){
+      try {
+        const r=await fn();
+        if (r instanceof Error){ last=r; if (i+1<tries && atRetryable(r)){ await atSleep(280*(i+1)); continue; } return r; }
+        return r;
+      } catch(e){
+        last=e; if (i+1<tries && atRetryable(e)){ await atSleep(280*(i+1)); continue; } throw e;
+      }
+    }
+    if (last instanceof Error) return last; throw last;
+  }
   async function atOpenProject(proj, forCarrier_){
     const at=atSession, c=at.client||at;
     let nexus=null;
@@ -2859,15 +2880,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       console.log("[UPLINK] sample names:", [...seen]);
       if (!seen.size){ setStatus("NO SAMPLES IN TIMELINE"); return; }
       setStatus("READING SAMPLE INFO");
-      const items=[]; const diag=[];
+      const items=[];
       for (const nm of seen){
-        let meta=null, err="";
-        try { const m=await c.samples.get(nm); if (m instanceof Error){ err=String(m.code||"")+" "+String(m.message||m); } else meta=m; }
-        catch(e2){ err=String((e2&&e2.message)||e2); }
-        diag.push("NAME: "+nm+"\n  get -> "+(meta?("OK // canonical: "+meta.name):("FAIL // "+err)));
+        let meta=null;
+        try { const m=await atRetry(()=>c.samples.get(nm)); if (!(m instanceof Error)) meta=m; } catch(err){}
         items.push({ label:String((meta&&meta.displayName)||nm).toUpperCase().slice(0,46), value:{ name:(meta&&meta.name)||nm, bpm:(meta&&Number(meta.bpm))||0, displayName:(meta&&meta.displayName)||"" } });
       }
-      try { alert("[UPLINK] DIAGNOSE — bitte abfotografieren / abtippen:\n\n"+diag.join("\n\n")); } catch(_){}
       showListPop(forCarrier_?"SELECT CARRIER":"SELECT SAMPLE", items, forCarrier_?(sample)=>atDownloadCarrier(c,sample):(sample)=>atDownloadSample(c, sample, projBpm));
     } catch(e){ console.error("[UPLINK]", e); setStatus("IMPORT FAILED // SEE CONSOLE (F12)"); }
     finally { try { if (nexus && nexus.stop) nexus.stop(); } catch(err){} }
@@ -2876,7 +2894,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     try {
       const nm=String(sample.displayName||sample.name||"AUDIOTOOL SAMPLE").toUpperCase();
       setStatus("DOWNLOADING // "+nm);
-      const blob=await c.samples.download(sample.name||sample, { format:"wav" });
+      const blob=await atRetry(()=>c.samples.download(sample.name||sample, { format:"wav" }));
       if (blob instanceof Error) throw blob;
       let buf=await ctxGet().decodeAudioData(await blob.arrayBuffer());
       // EINE Uhr: Material wird aufs Projekt-Grid gestretcht (Stretch-Engine, Pitch bleibt).
@@ -2907,7 +2925,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     try {
       const nm=String(sample.displayName||sample.name||"CARRIER").toUpperCase().slice(0,28);
       setStatus("LOADING CARRIER // "+nm);
-      const blob=await c.samples.download(sample.name||sample, { format:"wav" });
+      const blob=await atRetry(()=>c.samples.download(sample.name||sample, { format:"wav" }));
       if (blob instanceof Error) throw blob;
       carrierBuffer=await ctxGet().decodeAudioData(await blob.arrayBuffer());
       syncVocUi(); setStatus("CARRIER LOADED // "+nm);
@@ -5378,7 +5396,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (!buffer) return; setStatus("RENDERING // EXPORT");
     const rendered=await renderProcessed();
     const url=URL.createObjectURL(encodeWav(rendered));
-    const a=document.createElement("a"); a.href=url; a.download="snad-voiceforge-"+Date.now()+".wav"; a.click(); URL.revokeObjectURL(url);
+    const a=document.createElement("a"); a.href=url; a.download="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10)+".wav"; a.click(); URL.revokeObjectURL(url);
     setStatus("EXPORT COMPLETE // "+rendered.duration.toFixed(1)+"S");
   });
   // ---------- Transmit-Popup ----------
