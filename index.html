@@ -373,6 +373,7 @@
   .loop-grp .lb { padding:7px 9px; min-width:26px; font-size:11px; }
   #loopTool.active { color:#bdfaff; border-color:rgba(189,250,255,.6); box-shadow:0 0 10px rgba(189,250,255,.18), inset 0 0 8px rgba(189,250,255,.06); }
   .loop-grp .lb.active { color:#bdfaff; border-color:rgba(189,250,255,.55); box-shadow:inset 0 0 7px rgba(189,250,255,.1); }
+  .dim { opacity:.3; pointer-events:none; }
   #loopSet { margin-left:5px; }
   #loopSet:not(:disabled) { color:#bdfaff; border-color:rgba(189,250,255,.5); }
   .win-lbl { font-size:10px; letter-spacing:.12em; color:#ff6a00; text-shadow:0 0 6px rgba(255,106,0,.3); min-width:70px; text-align:center; }
@@ -696,7 +697,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.43</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.44</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div class="pop hidden" id="popSlider">
@@ -1249,7 +1250,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.43";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.44";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -4567,9 +4568,16 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       tuneInfo.textContent="PREVIEW // LISTEN";
     }, 30);
   }
+  function syncScaleChips(){
+    // Skala-Chips sind bei HARD/SOFT/ROBOT immer aktiv (Skala-Funktion)
+    // nur bei VOCODER+nicht-CHORD-Carrier haben sie keine Funktion: dann ausgegraut
+    const dim=tuneMode==="vocoder" && vocCarrierType!=="chord";
+    document.querySelectorAll(".tune-chip[data-sc]").forEach((b)=>{ b.disabled=dim; b.classList.toggle("dim",dim); });
+  }
   function syncTuneUi(){
     document.querySelectorAll(".tune-chip").forEach((b)=>b.classList.toggle("active", b.dataset.sc===tuneScaleVal));
     [["tileHard","hard"],["tileSoft","soft"],["tileRobot","robot"],["tileVoc","vocoder"]].forEach(([id,m])=>$("#"+id).classList.toggle("active", tuneMode===m));
+    syncScaleChips();
   }
   document.querySelectorAll(".tune-chip").forEach((b)=>{
     b.addEventListener("click", ()=>{ tuneScaleVal=b.dataset.sc; syncTuneUi(); drawTune(); tuneAutoReplay(); });
@@ -4647,6 +4655,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const _cbtn=document.getElementById("carrierBtn");
     if(_cbtn){ const _lbl={chord:"CHORD",mono:"MONO",noise:"NOISE",track:carrierBuffer?"TRACK ✓":"TRACK ↑"}[vocCarrierType]||"CHORD"; _cbtn.textContent=_lbl+" ▾"; }
     const _trkOpt=document.querySelector("#carrierPopup [data-vc='track']"); if(_trkOpt) _trkOpt.firstChild.textContent=carrierBuffer?"TRACK ✓":"TRACK ↑";
+    syncScaleChips();
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
     vocFollow=(b.dataset.vm==="follow"); syncVocUi();
