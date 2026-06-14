@@ -604,8 +604,6 @@
         </span>
         <span class="edit-sep"></span>
         <button id="edBarsBtn" disabled title="Bar grid: selections snap to whole bars from the downbeat anchor (orange triangle on top: drag it if the ONE sits elsewhere). TRIM then cuts a bar-exact loop">BARS</button>
-        <span class="edit-sep"></span>
-        <button id="srcExport" disabled title="Export the raw editor material as WAV: not the chopper sum">EXPORT SRC // WAV</button>
       </div>
       <div class="edit-panels">
         <div class="edit-panel">
@@ -758,12 +756,12 @@
     <footer class="stage deck-foot" data-tag="OUTPUT">
       <button id="sampleBack" class="back-btn" disabled title="Step back to the previous committed version of the sample (undoes the last APPLY from any station)">UNDO COMMIT</button>
       <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for transmit and for library carriers">UPLINK</button>
-      <button class="primary" id="wavBtn" disabled title="Render the full chopped arrangement incl. finisher and download it as a WAV file">EXPORT // WAV</button>
+      <button class="primary" id="wavBtn" disabled title="Export as WAV: pick LOOP (bar-exact, the full chopper + finisher sum, seamless) or SAMPLE (tight to the material, exactly as long as you hear, for one-shots and cut pieces)">EXPORT // WAV</button>
       <button id="atBtn" disabled title="Render the result and send it straight into your Audiotool sample library">TRANSMIT TO AUDIOTOOL</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.69</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.70</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -838,6 +836,17 @@
   <div class="tx-row">
     <button id="txCancel" title="Close without sending">CANCEL</button>
     <button id="txSend" class="primary" title="Render and upload to Audiotool">TRANSMIT</button>
+  </div>
+</div>
+
+<div class="note-pop tx-pop hidden" id="expPop">
+  <p class="tx-title">EXPORT // WAV</p>
+  <label class="tx-l">FORMAT</label>
+  <div class="tx-kind">
+    <button id="expLoop" title="LOOP: bar-exact, the full chopper + finisher sum, padded to whole bars so it runs seamless in a track">LOOP</button><button id="expSample" title="SAMPLE: tight to the material, exactly as long as what you see and hear, no bar grid and no trailing silence: for one-shots and cut pieces">SAMPLE</button>
+  </div>
+  <div class="tx-row">
+    <button id="expCancel" title="Close">CANCEL</button>
   </div>
 </div>
 
@@ -2638,11 +2647,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     setStatus("SRC BPM "+v+" // MATERIAL RE-LABELED");
   }
   let srcDragVal=120;
-  const srcBpmBtn=$("#srcBpmBtn"), srcExport=$("#srcExport");
+  const srcBpmBtn=$("#srcBpmBtn");
   function syncSrcBtn(){
     srcBpmBtn.textContent="SRC // "+Math.round(bufferFitBpm)+" BPM";
     const on=!!buffer;
-    srcBpmBtn.disabled=!on; srcExport.disabled=!on;
+    srcBpmBtn.disabled=!on;
     if (typeof edBarsBtn!=="undefined") $("#edBarsBtn").disabled=!on;
     document.querySelectorAll(".srcfix").forEach((b)=>{ b.disabled=!on; });
   }
@@ -2653,13 +2662,6 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     end:()=>{ relabelSrcBpm(srcDragVal); } });
   document.querySelectorAll(".srcfix").forEach((b)=>{
     b.addEventListener("click", ()=>{ if (buffer) relabelSrcBpm(bufferFitBpm*(+b.dataset.f)); });
-  });
-  srcExport.addEventListener("click", ()=>{
-    if (!buffer) return;
-    if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
-    const url=URL.createObjectURL(encodeWav(buffer));
-    const a=document.createElement("a"); a.href=url; a.download="DRECKSLER_SRC_"+Math.round(bufferFitBpm)+"BPM_"+new Date().toISOString().slice(0,10)+".wav"; a.click(); URL.revokeObjectURL(url);
-    setStatus("SRC EXPORT // "+buffer.duration.toFixed(1)+"S RAW");
   });
   bindKnob(densBtn,{ min:0.1, max:0.95, step:0.01, get:()=>P.chop.density, set:(v)=>{ P.chop.density=v; syncChopBtns(); }, fmt:(v)=>Math.round(v*100)+"%" });
   syncChopBtns();
@@ -5617,14 +5619,48 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   window.addEventListener("resize", ()=>{ if (deckEl.classList.contains("st-editor")){ drawEditWave(); drawEqGraph(); } });
 
-  wavBtn.addEventListener("click", async ()=>{
-    if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
-    if (!buffer) return; setStatus("RENDERING // EXPORT");
-    const rendered=await renderProcessed();
+  // EXPORT // WAV: Auswahl LOOP (taktgenaue Summe) oder SAMPLE (materialeng)
+  const expPop=$("#expPop"), expLoop=$("#expLoop"), expSample=$("#expSample"), expCancel=$("#expCancel");
+  function openExpPop(){
+    expPop.classList.remove("hidden");
+    const r=wavBtn.getBoundingClientRect(), pw=expPop.offsetWidth, ph=expPop.offsetHeight;
+    expPop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
+    expPop.style.top=Math.max(8, r.top-ph-10)+"px";
+  }
+  function closeExpPop(){ expPop.classList.add("hidden"); }
+  // Materialenger Render: das aktuelle Material in echter Laenge durch den gewaehlten Finalizer
+  async function renderSampleTight(){
+    const sr=buffer.sampleRate, fin=P.finisher;
+    const _fp=(FINISHERS[fin]||FINISHERS.RAW); const outCh=(_fp.width>0||_fp.crackle>0||_fp.chorus)?2:1;
+    const off=new OfflineAudioContext(outCh, buffer.length, sr); const n=buildChain(off, fin);
+    const src=off.createBufferSource(); src.buffer=buffer; src.connect(n.input); src.start();
+    const rendered=await off.startRendering(); normalizeBuffer(rendered); return rendered;
+  }
+  function downloadWav(rendered, name){
     const url=URL.createObjectURL(encodeWav(rendered));
-    const a=document.createElement("a"); a.href=url; a.download="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10)+".wav"; a.click(); URL.revokeObjectURL(url);
-    setStatus("EXPORT COMPLETE // "+rendered.duration.toFixed(1)+"S");
+    const a=document.createElement("a"); a.href=url; a.download=name+".wav"; a.click(); URL.revokeObjectURL(url);
+  }
+  const today=()=>new Date().toISOString().slice(0,10);
+  wavBtn.addEventListener("click", ()=>{
+    if (!buffer) return;
+    if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
+    if (expPop.classList.contains("hidden")) openExpPop(); else closeExpPop();
   });
+  expLoop.addEventListener("click", async ()=>{
+    closeExpPop(); setStatus("RENDERING // LOOP");
+    const rendered=await renderProcessed();
+    downloadWav(rendered, "DRECKSLER_LOOP_"+Math.round(P.chop.bpm)+"BPM_"+today());
+    setStatus("EXPORT COMPLETE // LOOP // "+rendered.duration.toFixed(1)+"S");
+  });
+  expSample.addEventListener("click", async ()=>{
+    closeExpPop(); setStatus("RENDERING // SAMPLE");
+    const rendered=await renderSampleTight();
+    downloadWav(rendered, "DRECKSLER_SAMPLE_"+today());
+    setStatus("EXPORT COMPLETE // SAMPLE // "+rendered.duration.toFixed(1)+"S");
+  });
+  expCancel.addEventListener("click", closeExpPop);
+  document.addEventListener("pointerdown",(e)=>{ if (!expPop.classList.contains("hidden") && !expPop.contains(e.target) && e.target!==wavBtn && !wavBtn.contains(e.target)) closeExpPop(); });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeExpPop(); });
   // ---------- Transmit-Popup ----------
   const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags"), txBpm=$("#txBpm"), txBpmL=$("#txBpmL");
   const txLoop=$("#txLoop"), txShot=$("#txShot"), txSend=$("#txSend"), txCancel=$("#txCancel");
