@@ -275,7 +275,11 @@
   .pop { position:fixed; z-index:60; padding:8px 14px 9px; background:linear-gradient(180deg, var(--panel) 0%, var(--bg2) 100%); border:1px solid rgba(255,106,0,.7); border-radius:var(--radius); box-shadow:0 0 26px rgba(0,0,0,.6), 0 0 22px rgba(255,106,0,.45); pointer-events:none; }
   .pop-val { font-family:"VT323",monospace; font-size:24px; color:var(--info); letter-spacing:.04em; line-height:1; text-shadow:0 0 12px rgba(255,106,0,.7); }
   .src-pop { display:flex; flex-direction:column; gap:6px; padding:10px; min-width:210px; }
-  .list-pop { width:330px; display:flex; flex-direction:column; gap:6px; padding:14px; }
+  .list-pop { width:420px; display:flex; flex-direction:column; gap:6px; padding:14px; }
+  .list-pop-search { background:rgba(0,0,0,.45); border:1px solid var(--line); border-radius:var(--radius); color:rgba(255,255,255,.92); font-family:"VT323",monospace; font-weight:400; font-size:17px; letter-spacing:.04em; padding:6px 9px; outline:none; }
+  .list-pop-search:focus { border-color:rgba(255,106,0,.55); box-shadow:0 0 10px rgba(255,106,0,.18); }
+  .list-pop-search::placeholder { color:rgba(255,255,255,.32); letter-spacing:.18em; text-transform:uppercase; }
+  .list-pop-empty { font-family:"VT323",monospace; font-size:16px; letter-spacing:.06em; color:rgba(255,255,255,.4); padding:6px 2px; }
   .list-pop-body { display:flex; flex-direction:column; gap:5px; max-height:300px; overflow-y:auto; }
   .list-pop-body button { text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tx-pop { width:330px; display:flex; flex-direction:column; gap:6px; padding:14px; }
@@ -761,7 +765,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.70</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.71</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackWrap" style="position:fixed; bottom:24px; right:24px; z-index:9999; font-family:'Space Mono',monospace;">
@@ -812,6 +816,7 @@
 
 <div class="note-pop list-pop hidden" id="listPop">
   <p class="tx-title" id="listPopTitle">SELECT</p>
+  <input type="text" class="list-pop-search hidden" id="listPopSearch" placeholder="Filter..." autocomplete="off" spellcheck="false">
   <div class="list-pop-body" id="listPopBody"></div>
 </div>
 
@@ -1340,7 +1345,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.69";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.71";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -2787,7 +2792,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
 
   // ---------- Import ----------
-  const srcPop=$("#srcPop"), listPop=$("#listPop"), listPopTitle=$("#listPopTitle"), listPopBody=$("#listPopBody");
+  const srcPop=$("#srcPop"), listPop=$("#listPop"), listPopTitle=$("#listPopTitle"), listPopBody=$("#listPopBody"), listPopSearch=$("#listPopSearch");
   const atUrlPop=$("#atUrlPop"), atUrlInput=$("#atUrlInput");
   function placePop(pop, anchor){
     pop.classList.remove("hidden");
@@ -2804,17 +2809,33 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   $("#atUrlOpen").addEventListener("click", atOpenFromInput);
   $("#atUrlCancel").addEventListener("click", ()=>atUrlPop.classList.add("hidden"));
   atUrlInput.addEventListener("keydown",(e)=>{ if (e.key==="Enter") atOpenFromInput(); });
-  function showListPop(title, items, onPick){
-    listPopTitle.textContent=title;
+  let listPopItems=[], listPopOnPick=null, listPopBaseTitle="";
+  function renderListPop(filter){
+    const q=(filter||"").trim().toLowerCase();
+    const shown=q ? listPopItems.filter((it)=>it.label.toLowerCase().includes(q)) : listPopItems;
     listPopBody.innerHTML="";
-    items.forEach((it)=>{
-      const b=document.createElement("button");
-      b.textContent=it.label; b.title=it.label;
-      b.addEventListener("click", ()=>{ listPop.classList.add("hidden"); onPick(it.value); });
-      listPopBody.appendChild(b);
-    });
-    placePop(listPop, importBtn);
+    if (!shown.length){
+      const e=document.createElement("div"); e.className="list-pop-empty"; e.textContent="NO MATCH";
+      listPopBody.appendChild(e);
+    } else {
+      shown.forEach((it)=>{
+        const b=document.createElement("button");
+        b.textContent=it.label; b.title=it.label;
+        b.addEventListener("click", ()=>{ listPop.classList.add("hidden"); if (listPopOnPick) listPopOnPick(it.value); });
+        listPopBody.appendChild(b);
+      });
+    }
+    listPopTitle.textContent=listPopBaseTitle+" // "+(q?shown.length+"/"+listPopItems.length:String(listPopItems.length));
   }
+  function showListPop(title, items, onPick){
+    listPopItems=items.slice(); listPopOnPick=onPick; listPopBaseTitle=title;
+    listPopSearch.value="";
+    listPopSearch.classList.toggle("hidden", items.length<8);
+    renderListPop("");
+    placePop(listPop, importBtn);
+    if (items.length>=8) setTimeout(()=>{ try{ listPopSearch.focus(); }catch{} }, 0);
+  }
+  listPopSearch.addEventListener("input", ()=>renderListPop(listPopSearch.value));
   document.addEventListener("keydown",(e)=>{ if (e.key==="Escape"){ srcPop.classList.add("hidden"); listPop.classList.add("hidden"); atUrlPop.classList.add("hidden"); } });
   document.addEventListener("pointerdown",(e)=>{
     if (!srcPop.classList.contains("hidden") && !srcPop.contains(e.target) && e.target!==importBtn && !importBtn.contains(e.target)) srcPop.classList.add("hidden");
