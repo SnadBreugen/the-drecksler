@@ -196,6 +196,9 @@
   .etool { display:flex; flex-direction:column; gap:2px; flex:none; }
   .etool i { font-style:normal; font-size:10px; letter-spacing:.16em; color:rgba(189,250,255,.8); }
   .etool input[type=range] { width:72px; }
+  .ingain-grp { align-self:flex-end; }
+  .ingain-grp b { color:var(--info); font-weight:400; font-family:"VT323",monospace; font-size:14px; letter-spacing:.02em; text-shadow:0 0 7px rgba(255,106,0,.5); }
+  .ingain-grp input[type=range] { width:96px; accent-color:var(--info); }
   .edit-selinfo { margin-left:auto; flex:none; white-space:nowrap; font-family:"VT323",monospace; font-size:15px; color:#6bff8c; text-shadow:0 0 5px rgba(107,255,140,.3); letter-spacing:.06em; }
   .island-fin { grid-column:1 / -1; grid-row:1 / 3; margin-bottom:0; display:flex; flex-direction:column; min-height:430px; }
   .fin-inner { width:100%; }
@@ -607,6 +610,10 @@
           <button class="tbtn" id="edLoopBtn" disabled title="Loop the preview (selection or whole material)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2.4a5.6 5.6 0 1 1-5.6-5.6V10l5-4-5-4v2z" fill="currentColor"/></svg></button>
           <button id="importBtn" title="Load an audio file (WAV/MP3)">&#10515; IMPORT WAV</button>
         </div>
+        <span class="etool ingain-grp" id="inGainGrp" title="Input gain: a fixed boost on the mic before recording. Replaces the browser auto-gain, so the level stays put instead of jumping. Watch the meter and ease off if it hits the top.">
+          <i>IN GAIN <b id="inGainVal">+12 dB</b></i>
+          <input type="range" id="inGain" min="-6" max="36" step="1" value="12">
+        </span>
         <div class="meter" id="inMeter" style="visibility:hidden;"><i id="inMeterFill"></i></div>
       </div>
       <div class="edit-wrap">
@@ -813,7 +820,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 4.75</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 4.80</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
 </div>
 
 <div id="feedbackPanel" style="display:none; position:fixed; bottom:70px; right:24px; z-index:9999; width:300px; box-sizing:border-box; background:#111; border:1px solid rgba(189,250,255,.3); padding:16px; font-family:'Space Mono',monospace;">
@@ -1393,7 +1400,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="4.71";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="4.80";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -1501,6 +1508,17 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const hpFreq=(v)=>20*Math.pow(400, v);    // 20 Hz .. 8 kHz, logarithmisch
   const lpFreq=(v)=>80*Math.pow(225, v);    // 80 Hz .. 18 kHz, logarithmisch
   const setStatus=(t)=>(statusText.textContent=t);
+
+  // Input gain for recording: a fixed user boost that replaces the browser auto-gain (REV 4.80)
+  const inGainSlider=$("#inGain"), inGainVal=$("#inGainVal");
+  let recInGain=1, recInGainNode=null;
+  function setInGain(db){
+    recInGain=Math.pow(10, db/20);
+    inGainVal.textContent=(db>0?"+":"")+db+" dB";
+    if (recInGainNode) recInGainNode.gain.value=recInGain;   // live update while recording
+  }
+  inGainSlider.addEventListener("input", ()=>setInGain(parseFloat(inGainSlider.value)));
+  setInGain(parseFloat(inGainSlider.value));
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     banner.classList.add("show");
@@ -2019,6 +2037,27 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       osc.start(time); osc.stop(time+0.08);
     }
   }
+
+  // Look-ahead click scheduler: refills as long as recording runs, so the metronome
+  // no longer runs out after the fixed bar count (REV 4.80). Count-in always clicks;
+  // guide clicks during the take only while the metronome is on (read live each beat).
+  let metroNextBeat=0, metroSchedTimer=0;
+  const METRO_LOOKAHEAD=0.3, METRO_TICK=70;
+  function metroSchedTick(ac){
+    if (recState!=="countin" && recState!=="recording"){ metroSchedTimer=0; return; }
+    const horizon=ac.currentTime+METRO_LOOKAHEAD;
+    while (recT0+metroNextBeat*recBeatDur < horizon){
+      const i=metroNextBeat, t=recT0+i*recBeatDur;
+      if (t >= ac.currentTime-0.01){
+        const isCountIn=i<recCountInBeats;
+        if (isCountIn || P.metro) scheduleClick(ac, t, i%4===0);
+      }
+      metroNextBeat++;
+    }
+    metroSchedTimer=setTimeout(()=>metroSchedTick(ac), METRO_TICK);
+  }
+  function startMetroSched(ac){ metroNextBeat=0; clearTimeout(metroSchedTimer); metroSchedTick(ac); }
+  function stopMetroSched(){ clearTimeout(metroSchedTimer); metroSchedTimer=0; }
 
   // ---------- Grid / arrangement ----------
   function rebuildGrid(scatter){
@@ -2779,7 +2818,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (recState==="recording"){ try{recorder.stop();}catch{} return; }   // REC stoppt & uebernimmt den Take
     if (recState==="countin"){ abortRecording(); return; }                // im Count-in: abbrechen
     let stream;
-    try { stream=await navigator.mediaDevices.getUserMedia({ audio:true }); }
+    try { stream=await navigator.mediaDevices.getUserMedia({ audio:{ autoGainControl:false, noiseSuppression:false, echoCancellation:false } }); }
     catch(e){ banner.classList.add("show"); banner.textContent="MIC DENIED OR ABSENT: "+e.message.toUpperCase(); return; }
     const ac=ctxGet(); if (ac.state==="suspended") await ac.resume();
     startRecordSequence(ac, stream);
@@ -2790,18 +2829,23 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const recBeats=BARS*4; recLenCaptured=recBeats*recBeatDur;
     const lead=0.18; recT0=ac.currentTime+lead;
     const recStartT=recT0+recCountInBeats*recBeatDur;
-    // Count-in klickt immer (Einsatz!), Guide-Klicks waehrend der Aufnahme nur bei aktivem Metronom.
-    const clickUntil=P.metro ? recCountInBeats+recBeats : recCountInBeats;
-    for (let i=0;i<clickUntil;i++) scheduleClick(ac, recT0+i*recBeatDur, i%4===0);
-    const src=ac.createMediaStreamSource(stream); analyser=ac.createAnalyser(); analyser.fftSize=1024; src.connect(analyser);
-    chunks=[]; recorder=new MediaRecorder(stream);
+    const src=ac.createMediaStreamSource(stream);
+    const inGainNode=ac.createGain(); inGainNode.gain.value=recInGain; recInGainNode=inGainNode;
+    const recDest=ac.createMediaStreamDestination();
+    src.connect(inGainNode); inGainNode.connect(recDest);
+    analyser=ac.createAnalyser(); analyser.fftSize=1024; inGainNode.connect(analyser);   // meter shows the post-gain level that lands in the take
+    chunks=[]; recorder=new MediaRecorder(recDest.stream);
     recorder.ondataavailable=(e)=>e.data.size&&chunks.push(e.data);
     recorder.onstop=handleStop;
     recAborted=false; recState="countin";
+    // Count-in always clicks; guide clicks run as long as the take, if metro is on.
+    // Started after recState is set, otherwise the first tick bails on the idle-state guard.
+    startMetroSched(ac);
     const startDelay=Math.max(0,(recStartT-ac.currentTime)*1000);
     recTimers.push(setTimeout(()=>{ if (recState==="countin"){ try{recorder.start();}catch{} recState="recording"; } }, startDelay));
     // KEIN Auto-Stopp mehr: aufgenommen wird, bis REC erneut gedrueckt wird (ESC verwirft)
     recBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" fill="currentColor"/></svg>'; recBtn.title="REC again = keep the take \u00B7 ESC = discard"; recBtn.classList.add("armed"); recDot.classList.add("live"); hint.style.display="none";
+    edStopBtn.disabled=false; edStopBtn.title="STOP & KEEP THE TAKE";   // stop also ends the recording (REV 4.80)
     recLoop();
   }
   function recLoop(){
@@ -2820,10 +2864,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (recorder && recorder.state==="recording"){ try{recorder.stop();}catch{} } else { cleanupRecording(); }
   }
   function cleanupRecording(){
-    recState="idle"; recTimers.forEach(clearTimeout); recTimers=[];
+    recState="idle"; recTimers.forEach(clearTimeout); recTimers=[]; stopMetroSched();
     if (mediaStream){ mediaStream.getTracks().forEach((t)=>t.stop()); mediaStream=null; }
-    recorder=null; analyser=null;
+    recorder=null; analyser=null; recInGainNode=null;
     recBtn.innerHTML='<svg viewBox="0 0 28 28" width="25" height="25" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="currentColor"/></svg>'; recBtn.title="ARM REC: 1 bar count-in, record until you press REC again (ESC discards)"; recBtn.classList.remove("armed"); recDot.classList.remove("live");
+    edStopBtn.disabled=!buffer; edStopBtn.title="Stop preview";   // restore normal stop behaviour
     cancelAnimationFrame(rafId); _meterLevels.set(inMeterFill,0); inMeterFill.style.width="0%"; $("#inMeter").style.visibility="hidden";
   }
   async function handleStop(){
@@ -3228,7 +3273,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     setPlayIcon(true); bgWaveSetActive(true);
   }
   edPlayBtn.addEventListener("click", ()=>{ if (isPlaying()) pausePlayback(); else startPreview(); });
-  edStopBtn.addEventListener("click", ()=>stopPlayback());
+  edStopBtn.addEventListener("click", ()=>{
+    if (recState==="recording"){ try{recorder.stop();}catch{} return; }   // stop ends the take, same as a second REC
+    if (recState==="countin"){ abortRecording(); return; }                // nothing captured yet: discard
+    stopPlayback();
+  });
   $("#edHome").addEventListener("click", ()=>{
     if (!buffer) return;
     if (editView){ const len=editView.t1-editView.t0; editView={ t0:0, t1:Math.min(buffer.duration, len) }; }
