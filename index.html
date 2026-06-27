@@ -354,6 +354,14 @@
   .ov-host { width:100% !important; height:100% !important; min-height:0 !important; margin:0 !important; flex:1 1 auto !important; }
   #waveOverlay .ov-host canvas { width:100% !important; height:100% !important; background:#000; border:1px solid var(--sig); box-sizing:border-box; }
   #waveOverlay .ov-tools { flex:none; margin-top:12px; }
+  .render-ov { position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.72); }
+  .render-ov.show { display:flex; }
+  .render-card { min-width:300px; padding:26px 36px; border:1px solid var(--info); border-radius:8px; background:linear-gradient(168deg, var(--chassis-grad-a) 0%, var(--chassis-grad-b) 100%); box-shadow:0 0 44px rgba(255,106,0,.32); text-align:center; }
+  .render-title { font-family:"Space Mono",monospace; font-size:13px; letter-spacing:.28em; color:var(--info); text-shadow:0 0 10px rgba(255,106,0,.5); }
+  .render-pct { font-family:"Space Mono",monospace; font-size:42px; color:#fff; margin:10px 0 16px; letter-spacing:.04em; }
+  .render-bar { height:6px; background:rgba(255,255,255,.12); border-radius:3px; overflow:hidden; }
+  .render-bar-fill { height:100%; width:0%; background:var(--info); box-shadow:0 0 10px rgba(255,106,0,.6); transition:width .12s linear; }
+  .render-sub { margin-top:13px; font-size:10px; letter-spacing:.18em; color:rgba(189,250,255,.5); }
   .view-btn { flex:none; color:var(--info); border-color:rgba(255,106,0,.55); }
   .view-btn:hover:not(:disabled) { border-color:var(--info); color:var(--info); box-shadow:0 0 14px rgba(255,106,0,.45); }
   #tuneRandom.is-dim { opacity:.38; color:var(--ink-dim); border-color:rgba(189,250,255,.14); cursor:default; box-shadow:none; }
@@ -393,17 +401,39 @@
   .claim-set:hover { background:rgba(30,24,0,.92); }
   .claim-set:hover { background:rgba(30,24,0,.9); }
   .tune-key { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .vc-slider { -webkit-appearance:none; appearance:none; width:84px; height:3px; background:rgba(255,106,0,.3); border-radius:2px; outline:none; cursor:pointer; }
+  .vc-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:12px; height:12px; border-radius:50%; background:#ff6a00; box-shadow:0 0 6px rgba(255,106,0,.55); cursor:pointer; }
+  .vc-slider::-moz-range-thumb { width:12px; height:12px; border:none; border-radius:50%; background:#ff6a00; box-shadow:0 0 6px rgba(255,106,0,.55); cursor:pointer; }
+  #vcMixPopup { position:absolute; top:calc(100% + 6px); right:0; z-index:200;
+    background:#0e0b09; border:1px solid rgba(255,106,0,.32); border-radius:5px;
+    min-width:210px; padding:13px 15px; box-shadow:0 8px 24px rgba(0,0,0,.85); }
+  #vcMixPopup .vc-mix-row { display:flex; flex-direction:column; gap:7px; }
+  #vcMixPopup .vc-mix-row + .vc-mix-row { margin-top:15px; }
+  #vcMixPopup label { font-size:10px; letter-spacing:.14em; color:var(--info); display:flex; justify-content:space-between; align-items:center; }
+  #vcMixPopup label span { color:#ff9a4d; font-size:11px; }
+  #vcMixPopup .vc-slider { width:100%; }
+  #vcMixPopup .vc-mix-row.is-off { opacity:.4; pointer-events:none; }
+  .vc-warp-btn { width:100%; background:rgba(0,0,0,.5); color:var(--info); border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:7px 8px; font-family:"Space Mono",monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; }
+  .vc-warp-btn:hover { color:#ff9a4d; border-color:var(--info); box-shadow:0 0 8px rgba(255,106,0,.3); }
+  .warp-wrap { display:none; }
+  .warp-wrap.ov-host { display:block !important; }
+  #waveOverlay .ov-host #warpCanvas { width:100% !important; height:100% !important; background:#000; border:1px solid var(--sig); box-sizing:border-box; cursor:crosshair; }
+  #vcMixBtn.is-on { color:#ff9a4d; border-color:rgba(255,106,0,.6); }
   .tune-key .tk-label { font-size:10px; letter-spacing:.16em; color:var(--info); }
   .tune-key select { background:rgba(0,0,0,.5); color:#ff6a00; border:1px solid rgba(255,106,0,.45); border-radius:4px; padding:6px 10px; font-family:"VT323",monospace; font-size:19px; }
   .tune-chip { padding:7px 14px; font-size:10px; letter-spacing:.14em; background:rgba(0,0,0,.45); color:rgba(189,250,255,.7); border:1px solid rgba(189,250,255,.25); border-radius:4px; }
   .tune-chip.active { color:#ff6a00; border-color:rgba(255,106,0,.7); text-shadow:0 0 6px rgba(255,106,0,.45); box-shadow:0 0 9px rgba(255,106,0,.2); }
   #tuneKeySrc { font-size:9px; letter-spacing:.13em; color:rgba(189,250,255,.45); }
-  .tune-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  .tune-tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
   .tune-tile { --pc:#8e979c; text-align:left; padding:16px 18px; border:1px solid transparent; border-radius:6px; cursor:pointer;
     background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 82%, #fff) 0%, color-mix(in srgb, var(--pc) 88%, #000) 100%);
     box-shadow:0 2px 0 rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);
     transition:transform .06s, box-shadow .12s, filter .12s, background .12s; }
-  #tileHard{--pc:#ff5bd0;} #tileSoft{--pc:#b48ce0;} #tileRobot{--pc:#6f9bb5;} #tileVoc{--pc:#45d4c0;}
+  #tileHard{--pc:#ff5bd0;} #tileSoft{--pc:#b48ce0;} #tileRobot{--pc:#6f9bb5;} #tileVoc{--pc:#45d4c0;} #tileAuto{--pc:#9ad88a;}
+  .tune-auto-grp { display:inline-flex; gap:8px; align-items:center; }
+  .tune-auto-grp.is-hidden { display:none; }
+  .tune-auto-grp label { font-size:9px; letter-spacing:.1em; color:var(--info); white-space:nowrap; }
+  .tune-auto-grp .auto-sl { width:76px; }
   .tune-tile b { display:block; font-family:"VT323",monospace; font-size:28px; letter-spacing:.14em; color:#0a0504; text-shadow:none; font-weight:normal; }
   .tune-tile span { font-size:9px; letter-spacing:.14em; color:rgba(10,5,4,.62); text-transform:uppercase; }
   .tune-tile:hover { transform:translateY(-1px); filter:brightness(1.08); border-color:transparent !important; }
@@ -554,6 +584,11 @@
   #wipBox .wip-intro{ color:rgba(189,250,255,.6); font-style:italic; margin-bottom:2px; }
   #wipBox .wip-list ul{ list-style:none; padding:0; margin:0; }
   #wipBox .wip-list li{ color:rgba(189,250,255,.72); }
+  #wipBox .wip-status{ list-style:none; padding:0; margin:4px 0 0; font-size:11px; line-height:1.5; }
+  #wipBox .wip-status li{ color:rgba(189,250,255,.7); margin-bottom:4px; }
+  #wipBox .wip-status .st-fix{ color:#9ad88a; font-weight:700; letter-spacing:.06em; margin-right:5px; }
+  #wipBox .wip-status .st-lim{ color:#ffc15a; font-weight:700; letter-spacing:.06em; margin-right:5px; }
+  #wipBox .wip-status .st-new{ color:#45d4c0; font-weight:700; letter-spacing:.06em; margin-right:5px; }
   #wipBox .wip-list li::before{ content:"- "; color:rgba(255,106,0,.7); }
   /* Alter schwebender Feedback-Knopf: auf breiten Schirmen ersetzt der WIP-Kasten ihn */
   @media (min-width:1890px){ #feedbackWrap{ display:none; } }
@@ -579,15 +614,25 @@
     <button id="wipFeedbackBtn" class="wip-fb-btn">// SEND FEEDBACK</button>
     <div class="wip-list">
       <div class="wip-credit">CREDIT // NASWALT</div>
-      <div class="wip-intro">already on the list, thanks to his feedback:</div>
-      <ul>
-        <li>recording volume jumps around</li>
-        <li>de-esser + tone controls reversed</li>
-        <li>metronome dies after a few beats</li>
-        <li>tune misreads octave on nasal voices</li>
-        <li>everything feels too small (esp. the tune editor)</li>
-        <li>tune editor moves in octaves, needs full key</li>
-        <li>soft mode retune speed too fast</li>
+      <div class="wip-intro">his reports, where they stand:</div>
+      <ul class="wip-status">
+        <li><span class="st-fix">FIXED</span> recording volume jumps around</li>
+        <li><span class="st-fix">REBUILT</span> de-esser phasing / chorus &middot; please retest</li>
+        <li><span class="st-fix">FIXED</span> metronome dies after a few beats</li>
+        <li><span class="st-lim">KNOWN LIMIT</span> octave misread on nasal voices &middot; pitch tracker, still on it</li>
+        <li><span class="st-fix">FIXED</span> too small &middot; maximize / detail view</li>
+        <li><span class="st-fix">FIXED</span> tune editor in octaves &middot; full scale dragging now</li>
+        <li><span class="st-new">NEW</span> soft retune too fast &middot; new AUTO mode with real glide</li>
+      </ul>
+      <div class="wip-credit" style="margin-top:14px">// ALSO SHIPPED SINCE</div>
+      <ul class="wip-status">
+        <li>vocoder apply now carries into editor, chopper, finalizer + export</li>
+        <li>AUTO: natural retune glide, SPEED + AMOUNT</li>
+        <li>WARP: line the carrier up to your syllables</li>
+        <li>vocoder MIX 1 / MIX 2 + circular carrier OFFSET</li>
+        <li>render progress popup on apply</li>
+        <li>undo / redo everywhere (Ctrl+Z / Ctrl+Shift+Z)</li>
+        <li>ROBOT step grid, tune zoom, detail-view polish</li>
       </ul>
     </div>
   </div>
@@ -669,6 +714,7 @@
           </div></span>
         <button id="edNorm" disabled title="Normalize peak to -0.3 dB (selection or whole file)">NORMALIZE</button>
         <button id="edUndo" disabled title="Undo edits step by step (up to 10, Ctrl+Z)">UNDO</button>
+        <button id="edRedo" disabled title="Redo edits (Ctrl+Shift+Z)">REDO</button>
         <span class="edit-sep"></span>
         <button id="edZoomOut" disabled title="Zoom out (mouse wheel also zooms)">ZOOM &minus;</button>
         <button id="edZoomIn" disabled title="Zoom in. With an active selection: the selection fills the view. Mouse wheel zooms at cursor, Shift+drag pans">ZOOM +</button>
@@ -738,6 +784,7 @@
           <span id="tuneInfo">-</span>
         </div>
         <div class="tune-wrap"><canvas id="tuneCanvas" data-desc="TUNE VIEW: the material waveform with the snapped notes glowing inside it as bars: orange bar = the note after the snap, faint cyan = the sung pitch. Display only: the tiles do the work"></canvas></div>
+        <div class="warp-wrap"><canvas id="warpCanvas"></canvas></div>
         <p class="edit-panel-title">PITCH DISCIPLINE // SING &rarr; SNAP</p>
         <div class="tune-key">
           <span class="tk-label">KEY</span>
@@ -763,10 +810,31 @@
             </div>
           </div>
           <input type="file" id="carrierFileInput" accept="audio/*" style="display:none">
+          <div style="position:relative;display:inline-block;margin-left:auto">
+            <button id="vcMixBtn" class="tune-chip" style="min-width:96px;text-align:left">MIX ▾</button>
+            <div id="vcMixPopup" style="display:none">
+              <div class="vc-mix-row">
+                <label>MIX 1 <span id="vcClarVal">0</span></label>
+                <input type="range" id="vcClarity" class="vc-slider" min="0" max="100" value="0" title="Blend the upper band of the original voice over the synth (high-pass, lets the words and consonants cut through). 0 = pure machine.">
+              </div>
+              <div class="vc-mix-row">
+                <label>MIX 2 <span id="vcDryVal">0</span></label>
+                <input type="range" id="vcDry" class="vc-slider" min="0" max="100" value="0" title="Blend the original voice in with the lows removed (gentler high-pass, brings body and presence). 0 = full wet (pure vocoder).">
+              </div>
+              <div class="vc-mix-row" id="vcOffRow">
+                <label>OFFSET <span id="vcOffVal">0 ms</span></label>
+                <input type="range" id="vcOffset" class="vc-slider" min="-500" max="500" value="0" title="Slide the carrier file forward or back against your voice, to line its note changes up with your syllables. File carriers (TRACK) only. 0 = no shift.">
+              </div>
+              <div class="vc-mix-row" id="vcWarpRow">
+                <button id="vcWarpBtn" class="vc-warp-btn" title="Open the carrier alignment editor: drop anchors and drag them to line the carrier's note changes up with your syllables. File carriers (TRACK) only.">WARP // CARRIER ALIGN &#9656;</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="tune-tiles">
           <button class="tune-tile" id="tileHard" title="Every note is pulled dead-flat to the grid and transitions jump audibly between pitches: the hard, robotic correction. Tap = render + hear"><b>HARD</b><span>hard snap &middot; instant lock</span></button>
           <button class="tune-tile" id="tileSoft" title="Full correction with musical smoothing: notes lock, phrasing survives. Tap = render + hear"><b>SOFT</b><span>full pull &middot; musical</span></button>
+          <button class="tune-tile" id="tileAuto" title="Natural pitch correction with a real retune glide: the pitch slides onto each note instead of snapping. SPEED sets the glide, AMOUNT how hard it pulls. Tap = render + hear"><b>AUTO</b><span>slow glide &middot; natural</span></button>
           <button class="tune-tile" id="tileRobot" title="Everything forced onto the ROOT note: monotone machine voice. Tap = render + hear"><b>ROBOT</b><span>one note &middot; machine</span></button>
           <button class="tune-tile" id="tileVoc" title="The voice shapes a synth chord carrier: the machine speaks. ROOT + chips set the chord. Tap = render + hear"><b>VOCODER</b><span>carrier chord &middot; machine</span></button>
         </div>
@@ -776,10 +844,16 @@
             <button class="tgrid" data-grid="8">1/8</button>
             <button class="tgrid" data-grid="16">1/16</button>
           </span>
+          <span id="tuneAutoGrp" class="tune-auto-grp is-hidden" title="AUTO only: SPEED = how fast the pitch glides onto the note (low = slow natural slides). AMOUNT = how hard it pulls to the note (lower keeps more vibrato).">
+            <label>SPEED <span id="tuneSpeedVal">55%</span></label>
+            <input type="range" id="tuneSpeed" class="vc-slider auto-sl" min="0" max="100" value="55">
+            <label>AMOUNT <span id="tuneAmtVal">55%</span></label>
+            <input type="range" id="tuneAmt" class="vc-slider auto-sl" min="0" max="100" value="55">
+          </span>
           <button id="tuneRandom" title="HARD only: reroll the chord fantasy, a fresh in-key progression that fits the singing">&#9860; RANDOMIZE</button>
           <button id="tuneApply" class="primary" title="Render the snap into the material (Ctrl+Z undoes)">APPLY</button>
         </div>
-        <p class="edit-panel-hint">TAP A TILE = RENDER + HEAR &middot; WHEEL = ZOOM, SHIFT-DRAG = PAN &middot; ROBOT: GRID LOCKS STEPS, DRAG A BAR = SET A NOTE IN KEY &middot; APPLY IS DESTRUCTIVE &middot; CTRL+Z UNDOES</p>
+        <p class="edit-panel-hint">TAP A TILE = RENDER + HEAR &middot; WHEEL = ZOOM, SHIFT-DRAG = PAN &middot; ROBOT: DRAG A BAR = NOTE, DRAG AN EDGE = LENGTH &middot; APPLY IS DESTRUCTIVE &middot; CTRL+Z UNDOES</p>
       </div>
     </section>
 
@@ -852,7 +926,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.03</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.29</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -861,6 +935,15 @@
     </div>
     <div class="ov-body" id="ovBody"></div>
     <div class="ov-tools" id="ovTools"></div>
+  </div>
+
+  <div id="renderOverlay" class="render-ov">
+    <div class="render-card">
+      <div class="render-title" id="renderTitle">RENDERING</div>
+      <div class="render-pct" id="renderPct">0%</div>
+      <div class="render-bar"><div class="render-bar-fill" id="renderBarFill"></div></div>
+      <div class="render-sub" id="renderSub">BURNING INTO THE MATERIAL</div>
+    </div>
   </div>
 </div>
 
@@ -1441,7 +1524,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="5.03";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.29";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -2607,13 +2690,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     if (e.target && (e.target.tagName==="INPUT"&&e.target.type==="text"||e.target.tagName==="TEXTAREA")) return; // Texteingabe: Tastatur gehoert dem Feld
     const mod=e.ctrlKey||e.metaKey;
     const inEditor=deckEl.classList.contains("st-editor");
+    const inTune=deckEl.classList.contains("st-tune");
+    if ((inEditor||inTune) && mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (e.shiftKey) editRedo(); else editUndo(); return; }   // Material-Undo/Redo: Editor + Tune (alle Edits inkl. APPLY)
+    if ((inEditor||inTune) && mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); editRedo(); return; }
     if (inEditor){                                        // klassische Editor-Shortcuts
-      if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); edUndo.click(); return; }
       if (mod && (e.key==="a"||e.key==="A")){ e.preventDefault(); if (buffer){ editSel={ a:0, b:buffer.duration }; drawEditWave(); } return; }
       if ((e.key==="Delete"||e.key==="Backspace") && editSel){ e.preventDefault(); edCut.click(); return; }
       if (e.key==="Escape" && editSel){ editSel=null; drawEditWave(); return; }
     }
-    if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }
+    if (mod && (e.key==="z"||e.key==="Z")){ e.preventDefault(); if (P.chop.mode==="mark"){ if (e.shiftKey) markRedo(); else markUndo(); } else if (e.shiftKey) redo(); else undo(); return; }   // Chopper/Finalizer: Anordnung
     if (mod && (e.key==="y"||e.key==="Y")){ e.preventDefault(); if (P.chop.mode==="mark") markRedo(); else redo(); return; }
     if (e.key==="Enter" && P.chop.mode==="mark" && markPreview){ e.preventDefault(); fixPending(); return; }
     if (e.code==="Space"){ e.preventDefault(); if (recorder) return; if (deckEl.classList.contains("st-tune")){ if (tunePrevSrc){ tuneLeave(); drawTune(); tuneInfo.textContent=","; } else tunePlayPreview(); return; } if (isPlaying()) pausePlayback(); else if (deckEl.classList.contains("st-editor")) startPreview(); else startMonitor(); return; }
@@ -3341,10 +3426,12 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   function buildPreviewFx(ac){
     const mk=(type,freq,Q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=freq; b.Q.value=Q; b.gain.value=0; return b; };
     const low=mk("highpass",10,0.71), mud=mk("peaking",250,1.0), pres=mk("peaking",3500,0.9), air=mk("highshelf",12000,0.71);
-    const hi=mk("highpass",5500,0.5);                  // De-Esser: nur der Hochband-Zweig wird abgezweigt
-    const inv=ac.createGain(); inv.gain.value=-1;
+    // De-Esser: serieller Ducking-Aufbau. Höhen vor den Kompressor anheben, danach exakt gegengleich absenken.
+    // In Reihe, keine Parallelmischung, also kein wandernder Kamm. Die inversen Shelves heben sich in Ruhe exakt auf.
+    const dePre=mk("highshelf",4500,0.707);    // +EMPH wenn aktiv (live gesetzt)
+    const deDe =mk("highshelf",4500,0.707);    // -EMPH gegengleich
     const comp=ac.createDynamicsCompressor();
-    comp.threshold.value=0; comp.ratio.value=1; comp.attack.value=0.002; comp.release.value=0.06; comp.knee.value=6;
+    comp.threshold.value=0; comp.ratio.value=1; comp.attack.value=0.001; comp.release.value=0.05; comp.knee.value=3;
     const sum=ac.createGain();
     const specAn=ac.createAnalyser(); specAn.fftSize=8192; specAn.smoothingTimeConstant=0.82;   // feine Bins (~5 Hz): links spitz statt Treppe
     sum.connect(specAn);                                   // Live-Spektrum fuers EQ-Display
@@ -3357,15 +3444,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const b=mk(type, EQ8F[i], 1.41);                    // Oktavbandbreite; Enden als Shelves
       tail.connect(b); tail=b; eq8.push(b);
     }
-    // De-Esser = volles Signal + Wirk-Anteil*(komprimierte - rohe Höhen). Bei De-Ess 0: Wirk 0 -> exakt das Original, kein Kompressor im Weg
-    const dryFull=ac.createGain(); dryFull.gain.value=1;
-    tail.connect(dryFull); dryFull.connect(sum);
-    const deDiff=ac.createGain();                          // comp(hi) - hi
-    tail.connect(hi); hi.connect(comp); comp.connect(deDiff);
-    hi.connect(inv); inv.connect(deDiff);                  // inv.gain = -1
-    const deWet=ac.createGain(); deWet.gain.value=0;       // bei neutral 0
-    deDiff.connect(deWet); deWet.connect(sum);
-    return { input:low, output:sum, low, mud, pres, air, comp, deWet, eq8, specAn };
+    // In Reihe: tail -> Höhen anheben -> Kompressor -> gegengleich absenken -> Summe. Bei De-Ess 0 sind beide Shelves 0 und der Kompressor durchlaessig.
+    tail.connect(dePre); dePre.connect(comp); comp.connect(deDe); deDe.connect(sum);
+    return { input:low, output:sum, low, mud, pres, air, comp, dePre, deDe, eq8, specAn };
   }
   function updatePreviewFx(){
     if (!previewFx) return;
@@ -3376,10 +3457,11 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     fx.mud.gain.setTargetAtTime(-12*mudV, t, T);
     fx.pres.gain.setTargetAtTime((presV-0.5)*12, t, T);
     fx.air.gain.setTargetAtTime(9*airV, t, T);
-    const a=(Number($("#edDeEss").value)||0)/100;
-    fx.comp.threshold.setTargetAtTime(a>0.01 ? -15-30*a : 0, t, T);
-    fx.comp.ratio.setTargetAtTime(a>0.01 ? 6 : 1, t, T);
-    if (fx.deWet) fx.deWet.gain.setTargetAtTime(a>0.01 ? 1 : 0, t, T);   // De-Esser-Pfad nur wirksam wenn aktiv
+    const a=(Number($("#edDeEss").value)||0)/100, EMPH=18;
+    if (fx.dePre) fx.dePre.gain.setTargetAtTime(a>0.01 ? EMPH : 0, t, T);
+    if (fx.deDe)  fx.deDe.gain.setTargetAtTime(a>0.01 ? -EMPH : 0, t, T);   // gegengleich -> in Ruhe flach
+    fx.comp.threshold.setTargetAtTime(a>0.01 ? -3-9*a : 0, t, T);
+    fx.comp.ratio.setTargetAtTime(a>0.01 ? 6 : 1, t, T);                    // De-Ess aus -> Kompressor durchlaessig
     if (fx.eq8) for (let i=0;i<fx.eq8.length;i++) fx.eq8[i].gain.setTargetAtTime(eq8Db(i), t, T);
   }
   function straightPlayheadT(){
@@ -4428,7 +4510,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     return marks;
   }
-  async function psolaRender(chs, sr, f0s, hop, segs, strength, maxPull, rampS, onProgress){
+  async function psolaRender(chs, sr, f0s, hop, segs, strength, maxPull, rampS, onProgress, glide){
     // TD-PSOLA: Zwei-Perioden-Hann-Koerner an den Pitch-Marken, neu gesetzt im Ziel-Abstand.
     // Tonhoehe = Abstand der Koerner -> brettflache Plateaus moeglich, Formanten bleiben stehen.
     const n=chs[0].length;
@@ -4443,12 +4525,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const segIdxAt=(p)=>{ for (let s2=0;s2<segs.length;s2++){ if (p>=segs[s2].a && p<segs[s2].b) return s2; } return -1; };
     const flatOf=(sg)=>sg.med + Math.max(-lim, Math.min(lim, sg.note-sg.med));
     const ramp=Math.max(8, Math.round((rampS==null?0.012:rampS)*sr));   // HARD: 2.5ms = der Snap. SOFT: 12ms = kein Ruck.
+    let glideMidi=null;                                          // AUTO: gerasteter Notenton zeitlich geglaettet -> echter Retune-Glide
+    if (glide && glide>0){
+      glideMidi=new Float32Array(f0s.length);
+      const dt=hop/sr, alpha=1-Math.exp(-dt/Math.max(0.005,glide));
+      let prev=null;
+      for (let k=0;k<f0s.length;k++){
+        const p=k*hop, si=segIdxAt(p);
+        if (si<0 || !f0s[k] || f0s[k]<=0){ glideMidi[k]=0; prev=null; continue; }   // stimmlos: Glide neu starten (Phrasen-Ansatz)
+        if (prev==null) prev=f2m(f0s[k]);                         // Start an der gesungenen Tonhoehe
+        prev = prev + (flatOf(segs[si]) - prev)*alpha;            // jagt der Note mit der Zeitkonstante hinterher
+        glideMidi[k]=prev;
+      }
+    }
     const tgtF=(p)=>{                                            // Ziel-Frequenz am Punkt p (null = naturbelassen)
       const si=segIdxAt(p); if (si<0) return null;
       const sg=segs[si];
       const k=Math.min(f0s.length-1, Math.max(0, Math.floor(p/hop)));
       if (!f0s[k] || f0s[k]<=0) return null;
       const m=f2m(f0s[k]);
+      if (glideMidi){ return m2f(glideMidi[k]*st + m*(1-st)); }   // AUTO: geglittete Note zur AMOUNT-Staerke
       let flat=flatOf(sg);
       if (si>0 && segs[si-1].b===sg.a && p-sg.a<ramp){           // Notengrenze: 12ms-Rampe statt Sprung (kein Ruck)
         const t2=(p-sg.a)/ramp;
@@ -4589,7 +4685,45 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     for(let i=0;i<len;i++){ const pos=(i*ratio)%cLen,idx=Math.floor(pos),fr=pos-idx; out[i]=(src[idx]||0)+((src[(idx+1)%cLen]||0)-(src[idx]||0))*fr; }
     return out;
   }
-  function vocoderRender(chs, sr, car){
+  function carrierShift(car, off){
+    // verschiebt den geloopt anliegenden Carrier um off Samples gegen die Stimme, umlaufend: + = spaeter, keine Stille, Spur bleibt voll
+    if (!off) return car;
+    const n=car.length; if(n<2) return car; const out=new Float32Array(n);
+    for (let i=0;i<n;i++){ out[i]=car[((i-off)%n+n)%n]; }
+    return out;
+  }
+  function warpNodes(anchors, n){
+    // Anker {out,src} (Samples) + implizite Endpunkte (0,0) und (n,n), nach out sortiert, streng steigend
+    const pts=[{out:0,src:0}];
+    const a=anchors.slice().sort((x,y)=>x.out-y.out);
+    for (const p of a){ const o=Math.max(1,Math.min(n-1,p.out)); if(o>pts[pts.length-1].out) pts.push({out:o, src:Math.max(0,p.src)}); }
+    pts.push({out:n, src:n});
+    return pts;
+  }
+  function warpMapEval(pts, o){                                  // Output-Sample -> Carrier-Quelle-Sample, stueckweise linear
+    if (o<=0) return pts[0].src;
+    for (let i=1;i<pts.length;i++){ if(o<=pts[i].out){ const a=pts[i-1],b=pts[i]; const t=(o-a.out)/Math.max(1,(b.out-a.out)); return a.src+(b.src-a.src)*t; } }
+    return pts[pts.length-1].src;
+  }
+  function carrierWarp(carNat, anchors, n){
+    // liest den natuerlichen Carrier nach der Anker-Karte, OLA-Koerner halten die Tonhoehe
+    if (!anchors || !anchors.length) return carNat;
+    const pts=warpNodes(anchors, n), L=2048, Hs=L>>2, half=L>>1, cl=carNat.length;
+    const out=new Float32Array(n), nrm=new Float32Array(n), win=new Float32Array(L);
+    for (let i=0;i<L;i++) win[i]=0.5-0.5*Math.cos(2*Math.PI*i/(L-1));
+    for (let so=0; so<n; so+=Hs){
+      const sc=warpMapEval(pts, so);
+      for (let k=0;k<L;k++){
+        const oi=so-half+k; if(oi<0||oi>=n) continue;
+        const si=sc-half+k, sif=Math.floor(si);
+        let v=0; if(sif>=0&&sif<cl-1){ const fr=si-sif; v=carNat[sif]+(carNat[sif+1]-carNat[sif])*fr; } else if(sif>=0&&sif<cl){ v=carNat[sif]; }
+        const w=win[k]; out[oi]+=v*w; nrm[oi]+=w;
+      }
+    }
+    for (let i=0;i<n;i++) out[i]= nrm[i]>1e-6 ? out[i]/nrm[i] : 0;
+    return out;
+  }
+  async function vocoderRender(chs, sr, car, onProgress){
     const n=chs[0].length;
     let mono=chs[0];
     if (chs.length>1){ mono=new Float32Array(n); for (let c=0;c<chs.length;c++){ const d=chs[c]; for (let k=0;k<n;k++) mono[k]+=d[k]/chs.length; } }
@@ -4603,6 +4737,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const env=envFollow(mB, sr, 3, 40);                         // 3ms Attack: Konsonanten-Einsaetze
       const tilt=Math.min(7, Math.max(0.6, Math.pow(fc/180, 0.8)));   // Whitening: Mitten/Hoehen formen die Worte
       for (let i=0;i<n;i++) acc[i]+=cB[i]*env[i]*tilt;
+      if (onProgress){ onProgress((b+1)/nb*0.9); await new Promise(res=>setTimeout(res,0)); }   // Haeppchen: UI atmen lassen, Fortschritt melden
     }
     const hpA=1-Math.exp(-2*Math.PI*5000/sr);                    // Zischlaut-Pfad v2: steil (3x) + Gate
     let l1=0,l2=0,l3=0;
@@ -4613,33 +4748,50 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       l3+=hpA*(h2-l3);      hf[i]=h2-l3;
     }
     const eH=envFollow(hf, sr, 2, 25), eA=envFollow(mono, sr, 2, 25);
+    // CLARITY-Tap: breiteres Konsonanten-Band der Stimme (~2.6k, 2-polig) fuer hoerbare Artikulation
+    const cpA=1-Math.exp(-2*Math.PI*2600/sr);
+    let cc1=0,cc2=0; const clrHF=new Float32Array(n);
+    for (let i=0;i<n;i++){ cc1+=cpA*(mono[i]-cc1); const x1=mono[i]-cc1; cc2+=cpA*(x1-cc2); clrHF[i]=x1-cc2; }
+    // WET/DRY: Tiefen der Originalstimme raus (~220Hz), damit der Blend den Synth nicht zumatscht
+    const dpA=1-Math.exp(-2*Math.PI*220/sr);
+    let dd1=0,dd2=0; const dryHP=new Float32Array(n);
+    for (let i=0;i<n;i++){ dd1+=dpA*(mono[i]-dd1); const y1=mono[i]-dd1; dd2+=dpA*(y1-dd2); dryHP[i]=y1-dd2; }
+    const consClar=new Float32Array(n);                          // Konsonanten-Anteil fuer CLARITY
     for (let i=0;i<n;i++){
       const g2=Math.max(0, Math.min(1, (eH[i]/(eA[i]+1e-9)-0.32)/0.25));   // zu bei Vokalen, auf bei S/T/F
-      acc[i]+=hf[i]*g2*0.9;
+      acc[i]+=hf[i]*g2*0.9;                                      // unveraendert: vorhandener Vocoder-Klang
+      consClar[i]=clrHF[i]*(0.45+0.55*g2);                       // CLARITY: fester Grundanteil + Konsonanten-Betonung (Gate wuergt nicht mehr ab)
     }
     let ri=0, ra=0;
     for (let i=0;i<n;i++){ ri+=mono[i]*mono[i]; ra+=acc[i]*acc[i]; }
     const g=Math.sqrt(ri/(ra||1e-12))*0.95;
+    const clar=Math.max(0,Math.min(1,vocClarity)), dry=Math.max(0,Math.min(1,vocDry));
     const out=chs.map(()=>new Float32Array(n));
     for (let i=0;i<n;i++){
-      let v=acc[i]*g;
+      let v=acc[i]*g + consClar[i]*g*clar*3.5;                   // CLARITY: breite Konsonanten oben drauf (0 = unveraendert)
+      if (dry>0) v=v*(1-dry) + dryHP[i]*dry;                     // WET/DRY: Originalstimme ohne Tiefen dazu (0 = voll Vocoder)
       if (v>0.98) v=0.98; else if (v<-0.98) v=-0.98;
       for (let c=0;c<out.length;c++) out[c][i]=v;
     }
+    if (onProgress) onProgress(1);
     return out;
   }
   // [VOCODER-DSP-END]
 
   const tuneCv=$("#tuneCanvas"), tuneCtx2=tuneCv.getContext("2d");
   let tuneOverrides={}, tuneMidiLo=48, tuneMidiHi=72, tuneDragSeg=-1, tuneDragBaseNote=0, tuneHoverSeg=-1;
+  let tuneSegA={}, tuneSegB={}, tuneEdgeDrag=null;   // Laengen-Edits: a/b-Override pro Balken (ROBOT); tuneEdgeDrag = laufendes Rand-Ziehen
   const tuneRootSel=$("#tuneRoot"), tuneInfo=$("#tuneInfo"), tuneKeySrc=$("#tuneKeySrc");
   let tuneScaleVal="maj", tuneMode="raw", tuneRootTouched=false;   // raw | hard | soft | robot | vocoder: Grundzustand raw: kein Effekt
+  let tuneAutoGlide=0.196, tuneAutoAmount=0.55;                    // AUTO: Glide-Zeitkonstante (s) und Korrektur-Staerke (0..1), Default ~spOTon
   let tuneGrid=0;                            // ROBOT-Gitter: 0=aus (frei gesungen) | 8=1/8 | 16=1/16, rastert auf Material-BPM
   let tuneView=null, tunePan=null;           // tuneView {t0,t1} = Zoom-Fenster der Tune-Ansicht (null = ganzes Material); tunePan = laufendes Shift-Schieben
+  let tunePeakBuf=null, tunePeakVal=1;       // Anzeige-Normierung der Silhouette auf den Take-Peak (fuellt + zentriert), stabil beim Zoomen
   const tvT0=()=>tuneView?tuneView.t0:0;
   const tvT1=()=>tuneView?tuneView.t1:(buffer?buffer.duration:(tuneF0?tuneF0.length*TUNE_HOP/tuneSr:0));
   const tvDur=()=>Math.max(1e-6, tvT1()-tvT0());
   const tuneXSamp=(xc,cw)=>(tvT0()+Math.max(0,Math.min(1,(xc-48)/(cw-48)))*tvDur())*tuneSr;   // Cursor-X -> Sample, fensterbewusst
+  const tuneTtoX=(t,cw)=>48+((t-tvT0())/tvDur())*(cw-48);                                      // Zeit -> Cursor-X, fensterbewusst (fuer Rand-Treffer)
   const TUNE_NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
   TUNE_NOTES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; tuneRootSel.appendChild(o); });
   const TUNE_HOP=1024, TUNE_FRAME=2048;
@@ -4668,7 +4820,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return mono;
   }
   function tuneAnalyze(){
-    tuneOverrides={}; tuneDragSeg=-1; tuneDragBaseNote=0; tuneGrid=0; tuneView=null; tunePan=null;
+    tuneOverrides={}; tuneDragSeg=-1; tuneDragBaseNote=0; tuneGrid=0; tuneView=null; tunePan=null; tuneSegA={}; tuneSegB={}; tuneEdgeDrag=null; warpAnchors=[]; warpCarCache=null; warpCarKey="";
     if (tuneBusy) return;
     tuneBusy=true; tuneSr=buffer.sampleRate; if (tuneBufRef!==buffer) tuneRootTouched=false; tuneBufRef=buffer;
     const mono=tuneMono(), nF=Math.max(0, Math.floor((mono.length-TUNE_FRAME)/TUNE_HOP)+1);
@@ -4697,6 +4849,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     // SOFT = das musikalische ehem. HARD: voller Zug, 90ms-Merge, 12ms-Rampen: Politur statt Effekt.
     if (tuneMode==="hard") return { strength:1, maxPull:12, minNote:0.035, ramp:0 };
     if (tuneMode==="soft") return { strength:1, maxPull:3, minNote:0.09,  ramp:0.012  };
+    if (tuneMode==="auto") return { strength:tuneAutoAmount, maxPull:12, minNote:0.09, ramp:0.012, glide:tuneAutoGlide };   // echter Retune-Glide
     return { strength:1, maxPull:7, minNote:0.09, ramp:0.012 };  // robot: weit ziehen, Glitch=Aesthetik
   }
   function tuneRobotGridSegs(stepSamp){
@@ -4730,7 +4883,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     return tuneNoteSegs((tuneMode==="robot"?(tuneF0Tight||tuneF0):tuneF0), tuneConf, tuneSr, TUNE_HOP, +tuneRootSel.value, ivs, tp.strength, tp.maxPull, tp.minNote);
   }
   function segsWithOverrides(){
-    return tuneSegsNow().map((sg,i)=>tuneOverrides[i]!=null?{...sg,note:tuneOverrides[i]}:sg);
+    const robot=(tuneMode==="robot");
+    return tuneSegsNow().map((sg,i)=>{
+      let s=sg;
+      if (robot && (tuneSegA[i]!=null || tuneSegB[i]!=null)){                       // Laenge: verschobene Raender
+        s={ ...s, a:(tuneSegA[i]!=null?tuneSegA[i]:s.a), b:(tuneSegB[i]!=null?tuneSegB[i]:s.b) };
+      }
+      if (tuneOverrides[i]!=null) s=(s===sg?{...s,note:tuneOverrides[i]}:(s.note=tuneOverrides[i],s));   // Tonhoehe
+      return s;
+    });
   }
   // ---------- HARD = wild, aber strikt in der gewaehlten Tonart (REV 5.01) ----------
   let tuneWildSeed=(Math.random()*1e9)|0;
@@ -4801,8 +4962,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const g=tuneCtx2;
     const PW=48;
     g.fillStyle="#0a0805"; g.fillRect(0,0,w,hh);
-    if (buffer){                                                // Material-Silhouette: Magenta-Glut der Station
+    if (buffer){                                                // Material-Silhouette: zentriert + auf Take-Peak normiert (fuellt die Hoehe)
       const ch=buffer.getChannelData(0), n=ch.length, mid=hh/2, rate=buffer.sampleRate;
+      if (tunePeakBuf!==buffer){ let pk=1e-6; const st=Math.max(1,Math.floor(n/4000)); for (let i=0;i<n;i+=st){ const a=Math.abs(ch[i]||0); if(a>pk) pk=a; } tunePeakVal=pk; tunePeakBuf=buffer; }
+      const norm=0.92/(tunePeakVal||1);
       const s0=Math.max(0,Math.floor(tvT0()*rate)), s1=Math.min(n,Math.ceil(tvT1()*rate));
       const span=Math.max(1,s1-s0), stepN=Math.max(1, Math.floor(span/(w-PW)));
       const sil=g.createLinearGradient(PW,0,PW,hh);
@@ -4810,9 +4973,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.fillStyle=sil;
       g.shadowColor="rgba(255,91,208,.5)"; g.shadowBlur=6;
       for (let x=PW;x<w;x++){
-        let mn=1, mx=-1;
-        for (let k2=0;k2<stepN;k2++){ const v=ch[s0+(x-PW)*stepN+k2]||0; if (v<mn) mn=v; if (v>mx) mx=v; }
-        if (mx>=mn) g.fillRect(x, mid+mn*mid*0.92, 1, Math.max(1,(mx-mn)*mid*0.92));
+        let mx=0;
+        for (let k2=0;k2<stepN;k2++){ const a=Math.abs(ch[s0+(x-PW)*stepN+k2]||0); if (a>mx) mx=a; }
+        const h2=mx*norm*mid;                                   // symmetrisch um die Mitte
+        g.fillRect(x, mid-h2, 1, Math.max(1, 2*h2));
       }
       g.shadowBlur=0;
     }
@@ -4879,6 +5043,10 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       g.shadowColor=drag?"rgba(255,255,255,.9)":ov?"rgba(255,224,130,.8)":hot?"rgba(255,176,86,.95)":"rgba(255,106,0,.6)";
       g.shadowBlur=drag?20:hov_?14:ov?10:hot?16:8;
       g.fillRect(x1,yy-(hot||drag||hov_?3:2),Math.max(2,x2-x1-1),hot||drag||hov_?6:4);
+      if (hov_ || (tuneEdgeDrag&&tuneEdgeDrag.i===sgi_)){          // Randgriffe: hier kann man die Laenge ziehen
+        g.fillStyle="#ffffff"; g.shadowColor="rgba(255,255,255,.85)"; g.shadowBlur=8;
+        g.fillRect(x1-1,yy-5,2,10); g.fillRect(x2-1,yy-5,2,10);
+      }
       g.shadowBlur=0;
       sgi_++;
     }
@@ -4960,17 +5128,18 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   }
   function syncTuneUi(){
     document.querySelectorAll(".tune-chip").forEach((b)=>b.classList.toggle("active", b.dataset.sc===tuneScaleVal));
-    [["tileHard","hard"],["tileSoft","soft"],["tileRobot","robot"],["tileVoc","vocoder"]].forEach(([id,m])=>$("#"+id).classList.toggle("active", tuneMode===m));
+    [["tileHard","hard"],["tileSoft","soft"],["tileAuto","auto"],["tileRobot","robot"],["tileVoc","vocoder"]].forEach(([id,m])=>$("#"+id).classList.toggle("active", tuneMode===m));
     $("#tuneRandom").classList.toggle("is-dim", tuneMode!=="hard");   // RANDOMIZE nur in HARD aktiv
     $("#tuneGridGrp").classList.toggle("is-hidden", tuneMode!=="robot");   // GRID nur in ROBOT sichtbar
+    if ($("#tuneAutoGrp")) $("#tuneAutoGrp").classList.toggle("is-hidden", tuneMode!=="auto");   // SPEED/AMOUNT nur in AUTO sichtbar
     document.querySelectorAll(".tgrid").forEach((b)=>b.classList.toggle("active", (+b.dataset.grid)===tuneGrid));
     syncScaleChips();
   }
-  document.querySelectorAll(".tune-chip").forEach((b)=>{
+  document.querySelectorAll(".tune-chip[data-sc]").forEach((b)=>{
     b.addEventListener("click", ()=>{ tuneScaleVal=b.dataset.sc; syncTuneUi(); drawTune(); tuneAutoReplay(); });
   });
   document.querySelectorAll(".tgrid").forEach((b)=>{
-    b.addEventListener("click", ()=>{ tuneGrid=+b.dataset.grid; tuneOverrides={}; syncTuneUi(); drawTune(); if (tuneMode==="robot") tuneAutoReplay(); });
+    b.addEventListener("click", ()=>{ tuneGrid=+b.dataset.grid; tuneOverrides={}; tuneSegA={}; tuneSegB={}; syncTuneUi(); drawTune(); if (tuneMode==="robot") tuneAutoReplay(); });
   });
   function tuneTapTile(mode){
     tuneMode=mode; tuneLastTap=true; syncTuneUi(); drawTune();
@@ -5004,6 +5173,15 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const cw=tuneCv.clientWidth, ch=tuneCv.clientHeight;
     const tSamp=tuneXSamp(xc, cw);
     const segs_=segsWithOverrides();
+    const EDGE_PX=7;
+    for (let i=0;i<segs_.length;i++){                            // erst Raender: Laenge ziehen
+      const sg=segs_[i];
+      const yy=ch-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch;
+      if (Math.abs(yc-yy)>26) continue;
+      const x1=tuneTtoX(sg.a/tuneSr, cw), x2=tuneTtoX(sg.b/tuneSr, cw);
+      if (Math.abs(xc-x2)<=EDGE_PX){ tuneEdgeDrag={ i, side:"R", base:tuneSegsNow() }; tuneCv.style.cursor="ew-resize"; tuneCv.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+      if (Math.abs(xc-x1)<=EDGE_PX){ tuneEdgeDrag={ i, side:"L", base:tuneSegsNow() }; tuneCv.style.cursor="ew-resize"; tuneCv.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+    }
     for (let i=0;i<segs_.length;i++){
       const sg=segs_[i];
       const yy=ch-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch;
@@ -5019,6 +5197,26 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       let t0=Math.max(0, Math.min(full-len, tunePan.t0-dt));
       tuneView={ t0, t1:t0+len }; drawTune(); return;
     }
+    if (tuneEdgeDrag){                                         // Laenge: Rand verschieben, Nachbar gibt nach
+      const r=tuneCv.getBoundingClientRect(), cw=tuneCv.clientWidth;
+      const p=Math.round(tuneXSamp(e.clientX-r.left, cw));
+      const base=tuneEdgeDrag.base, i=tuneEdgeDrag.i, MIN=Math.round(0.02*tuneSr);
+      const total=buffer?buffer.length:base[base.length-1].b;
+      if (tuneEdgeDrag.side==="R"){
+        const myA=(tuneSegA[i]!=null?tuneSegA[i]:base[i].a), hasN=i+1<base.length;
+        const hi=hasN?(base[i+1].b-MIN):total;
+        const np=Math.max(myA+MIN, Math.min(hi, p));
+        tuneSegB[i]=np;
+        if (hasN) tuneSegA[i+1]=Math.max(base[i+1].a, np);       // Nachbar-Start nur schieben wenn ueberschritten
+      } else {
+        const myB=(tuneSegB[i]!=null?tuneSegB[i]:base[i].b), hasP=i-1>=0;
+        const lo=hasP?(base[i-1].a+MIN):0;
+        const np=Math.min(myB-MIN, Math.max(lo, p));
+        tuneSegA[i]=np;
+        if (hasP) tuneSegB[i-1]=Math.min(base[i-1].b, np);        // Vorgaenger-Ende nur schieben wenn unterschritten
+      }
+      drawTune(null); return;
+    }
     if (tuneMode!=="robot"){ if(tuneHoverSeg>=0){ tuneHoverSeg=-1; tuneCv.style.cursor="default"; } return; }
     if (tuneDragSeg<0){
       if (!tuneF0||!buffer){ return; }
@@ -5027,13 +5225,19 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
       const cw_=tuneCv.clientWidth, ch_=tuneCv.clientHeight;
       const tS_=tuneXSamp(xc_, cw_);
       const segsH_=(tuneMode!=="vocoder" && tuneMode!=="raw")?segsWithOverrides():[];
-      let found_=-1;
+      let found_=-1, edge_=false;
       for(let i=0;i<segsH_.length;i++){
         const sg=segsH_[i];
         const yy=ch_-((sg.note-tuneMidiLo)/(tuneMidiHi-tuneMidiLo))*ch_;
-        if(tS_>=sg.a&&tS_<sg.b&&Math.abs(yc_-yy)<=22){ found_=i; break; }
+        if(Math.abs(yc_-yy)<=26){
+          const x1=tuneTtoX(sg.a/tuneSr,cw_), x2=tuneTtoX(sg.b/tuneSr,cw_);
+          if(Math.abs(xc_-x1)<=7||Math.abs(xc_-x2)<=7){ edge_=true; found_=i; break; }
+        }
+        if(found_<0 && tS_>=sg.a&&tS_<sg.b&&Math.abs(yc_-yy)<=22){ found_=i; }
       }
-      if(found_!==tuneHoverSeg){ tuneHoverSeg=found_; tuneCv.style.cursor=found_>=0?"grab":"default"; drawTune(null); }
+      const cur_=edge_?"ew-resize":(found_>=0?"grab":"default");
+      if(found_!==tuneHoverSeg){ tuneHoverSeg=found_; drawTune(null); }
+      if(tuneCv.style.cursor!==cur_) tuneCv.style.cursor=cur_;
       return;
     }
     const r=tuneCv.getBoundingClientRect();
@@ -5042,8 +5246,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     tuneOverrides[tuneDragSeg]=snapMidi(m, +tuneRootSel.value, TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom);  // auf Note der Tonart rasten
     drawTune(null);
   });
-  tuneCv.addEventListener("pointerup",()=>{ tuneDragSeg=-1; tunePan=null; tuneCv.style.cursor="default"; });
-  tuneCv.addEventListener("pointercancel",()=>{ tuneDragSeg=-1; tunePan=null; tuneCv.style.cursor="default"; });
+  tuneCv.addEventListener("pointerup",()=>{ if(tuneEdgeDrag){ tuneEdgeDrag=null; tuneCv.style.cursor="default"; tuneAutoReplay(); } tuneDragSeg=-1; tunePan=null; tuneCv.style.cursor="default"; });
+  tuneCv.addEventListener("pointercancel",()=>{ tuneEdgeDrag=null; tuneDragSeg=-1; tunePan=null; tuneCv.style.cursor="default"; });
   tuneCv.addEventListener("pointerleave",()=>{ if(tuneDragSeg<0&&tuneHoverSeg>=0){ tuneHoverSeg=-1; tuneCv.style.cursor="default"; drawTune(null); } });
   tuneCv.addEventListener("wheel",(e)=>{                       // Zoom am Cursor (wie der Editor); Shift+Drag schiebt
     if (!buffer) return;
@@ -5058,12 +5262,19 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     tuneView={ t0, t1:t0+len }; drawTune();
   }, { passive:false });
   $("#tileSoft").addEventListener("click", ()=>tuneTapTile("soft"));
+  $("#tileAuto").addEventListener("click", ()=>tuneTapTile("auto"));
   $("#tileRobot").addEventListener("click", ()=>tuneTapTile("robot"));
   $("#tileVoc").addEventListener("click", ()=>tuneTapTile("vocoder"));
+  if ($("#tuneSpeed")) $("#tuneSpeed").addEventListener("input", ()=>{ const v=+$("#tuneSpeed").value; tuneAutoGlide=(0.400 - v/100*0.370); $("#tuneSpeedVal").textContent=v+"%"; if(tuneMode==="auto") tuneAutoReplay(); });
+  if ($("#tuneAmt")) $("#tuneAmt").addEventListener("input", ()=>{ const v=+$("#tuneAmt").value; tuneAutoAmount=v/100; $("#tuneAmtVal").textContent=v+"%"; if(tuneMode==="auto") tuneAutoReplay(); });
   $("#tuneRandom").addEventListener("click", ()=>{ if(!buffer) return; if(tuneMode!=="hard"){ tuneInfo.textContent="ONLY FOR THE HARD ONES"; return; } tuneWildSeed=(Math.random()*1e9)|0; tuneTapTile("hard"); });
   tuneRootSel.addEventListener("change", ()=>{ tuneRootTouched=true; tuneKeySrc.textContent="MANUAL"; drawTune(); tuneAutoReplay(); });
   const VOC_CHORDS={ maj:[0,4,7,12], min:[0,3,7,12], chrom:[0,7,12] };   // chrom = Power-Akkord
   let vocFollow=true, vocReg=-12, vocCarrierType="chord";                                // Default: der Melodie folgen, eine Oktave tief
+  let vocClarity=0, vocDry=0;                                                            // CLARITY = Konsonanten der Stimme oben drauf; DRY = rohe Stimme einblenden (beide 0 = jetziger Klang)
+  let vocOffsetMs=0;                                                                     // globaler Carrier-Versatz in ms (nur TRACK): + = Carrier spaeter, - = frueher
+  let warpAnchors=[];                                                                    // Anker-Warp {out,src} in Samples (nur TRACK): lokale Zeit-Ausrichtung des Carriers
+  let warpCarCache=null, warpCarKey="";                                                  // natuerlicher Carrier fuer die Warp-Anzeige (Cache)
   function syncVocUi(){
     document.querySelectorAll(".vc-mode").forEach((b)=>b.classList.toggle("active", (b.dataset.vm==="follow")===vocFollow));
     document.querySelectorAll(".vc-reg").forEach((b)=>b.classList.toggle("active", +b.dataset.vr===vocReg));
@@ -5071,6 +5282,9 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     const _cbtn=document.getElementById("carrierBtn");
     if(_cbtn){ const _lbl={chord:"CHORD",mono:"MONO",noise:"NOISE",track:carrierBuffer?"TRACK ✓":"TRACK ↑"}[vocCarrierType]||"CHORD"; _cbtn.textContent=_lbl+" ▾"; }
     const _trkOpt=document.querySelector("#carrierPopup [data-vc='track']"); if(_trkOpt) _trkOpt.firstChild.textContent=carrierBuffer?"TRACK ✓":"TRACK ↑";
+    const offRow=document.getElementById("vcOffRow"), offIn=document.getElementById("vcOffset");
+    if(offRow&&offIn){ const on=(vocCarrierType==="track"); offRow.classList.toggle("is-off", !on); offIn.disabled=!on; }   // OFFSET nur bei File-Carrier
+    const warpRow=document.getElementById("vcWarpRow"); if(warpRow) warpRow.classList.toggle("is-off", vocCarrierType!=="track");   // WARP nur bei File-Carrier
     syncScaleChips();
   }
   document.querySelectorAll(".vc-mode").forEach((b)=>b.addEventListener("click", ()=>{
@@ -5081,12 +5295,39 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     vocReg=+b.dataset.vr; syncVocUi();
     if (tuneMode==="vocoder") tunePlayPreview();
   }));
+  let vocFxTimer=null;
+  function vocFxReplay(){                                        // Regler-Bewegung entprellt neu rendern, kein Ruckeln beim Ziehen
+    if (tuneMode!=="vocoder") return;
+    if (vocFxTimer) clearTimeout(vocFxTimer);
+    vocFxTimer=setTimeout(()=>{ if (tuneMode==="vocoder") tunePlayPreview(); }, 130);
+  }
+  const _vcClar=$("#vcClarity"), _vcDry=$("#vcDry");
+  function syncMixUi(){
+    const cV=document.getElementById("vcClarVal"), dV=document.getElementById("vcDryVal");
+    if(cV) cV.textContent=Math.round(vocClarity*100);
+    if(dV) dV.textContent=Math.round(vocDry*100);
+    const oV=document.getElementById("vcOffVal"); if(oV) oV.textContent=Math.round(vocOffsetMs)+" ms";
+    const btn=document.getElementById("vcMixBtn");
+    if(btn) btn.classList.toggle("is-on", vocClarity>0.001||vocDry>0.001||Math.abs(vocOffsetMs)>0.5||warpAnchors.length>0);
+  }
+  if (_vcClar) _vcClar.addEventListener("input", ()=>{ vocClarity=(Number(_vcClar.value)||0)/100; syncMixUi(); vocFxReplay(); });
+  if (_vcDry)  _vcDry.addEventListener("input",  ()=>{ vocDry=(Number(_vcDry.value)||0)/100; syncMixUi(); vocFxReplay(); });
+  const _vcOff=$("#vcOffset");
+  if (_vcOff) _vcOff.addEventListener("input", ()=>{ vocOffsetMs=Number(_vcOff.value)||0; syncMixUi(); vocFxReplay(); });
+  const _mixBtn=document.getElementById("vcMixBtn"), _mixPop=document.getElementById("vcMixPopup");
+  if(_mixBtn) _mixBtn.addEventListener("click",(e)=>{ e.stopPropagation(); if(_mixPop) _mixPop.style.display=_mixPop.style.display==="none"?"block":"none"; });
+  if(_mixPop) _mixPop.addEventListener("click",(e)=>e.stopPropagation());   // Klick im Popup schliesst es nicht (Slider ziehen)
+  document.addEventListener("click",()=>{ if(_mixPop) _mixPop.style.display="none"; });
+  syncMixUi();
   document.querySelectorAll(".vc-carrier").forEach((b)=>b.addEventListener("click", ()=>{
     const wasActive_=vocCarrierType===b.dataset.vc;
     vocCarrierType=b.dataset.vc; syncVocUi();
     document.getElementById("carrierPopup").style.display="none";
-    if(b.dataset.vc==="track"&&(!carrierBuffer||wasActive_)) document.getElementById("carrierFileInput").click();
-    else if(tuneMode==="vocoder") tunePlayPreview();
+    if(b.dataset.vc==="track"){
+      const fi_=document.getElementById("carrierFileInput");
+      fi_.value="";                                              // zuruecksetzen: auch dieselbe oder eine neue Datei ist erneut waehlbar
+      fi_.click();                                               // immer Auswahl anbieten, auch zum Ersetzen eines geladenen Carriers
+    } else if(tuneMode==="vocoder") tunePlayPreview();
   }));
   document.getElementById("carrierBtn").addEventListener("click",(e)=>{
     e.stopPropagation();
@@ -5104,7 +5345,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   });
   document.getElementById("carrierFileInput").addEventListener("change",async(e)=>{
     const f_=e.target.files[0]; if(!f_) return;
-    try{ const ab_=await f_.arrayBuffer(); carrierBuffer=await ctxGet().decodeAudioData(ab_); syncVocUi();
+    try{ const ab_=await f_.arrayBuffer(); carrierBuffer=await ctxGet().decodeAudioData(ab_); warpAnchors=[]; warpCarCache=null; warpCarKey=""; syncVocUi();
       setStatus("CARRIER LOADED // "+f_.name.replace(/\.[^.]+$/,"").toUpperCase().slice(0,28));
       if(tuneMode==="vocoder") tunePlayPreview();
     } catch(e_){ setStatus("CARRIER LOAD FAILED // CHECK FORMAT"); }
@@ -5121,6 +5362,8 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         car=vocoderCarrierNoise(buffer.length);
       } else if (vocCarrierType==="track"){
         car=vocoderCarrierFromBuffer(buffer.length,tuneSr);
+        if (vocOffsetMs!==0) car=carrierShift(car, Math.round(vocOffsetMs/1000*tuneSr));   // globaler Versatz nur bei File-Carrier
+        if (warpAnchors.length) car=carrierWarp(car, warpAnchors, buffer.length);          // lokales Anker-Warp
       } else if (vocCarrierType==="mono"){
         if (vocFollow&&tuneF0){ const segs=tuneNoteSegs((tuneF0Tight||tuneF0),tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,[0],vocReg,((+tuneRootSel.value+6)%12)-6); }
         if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,[0]);
@@ -5129,32 +5372,41 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         if (vocFollow&&tuneF0){ const segs=tuneNoteSegs((tuneF0Tight||tuneF0),tuneConf,tuneSr,TUNE_HOP,+tuneRootSel.value,TUNE_SCALES[tuneScaleVal]||TUNE_SCALES.chrom,1,12); if(segs.length) car=vocoderCarrierTrack(buffer.length,tuneSr,segs,ivs,vocReg,((+tuneRootSel.value+6)%12)-6); }
         if (!car) car=vocoderCarrier(buffer.length,tuneSr,rootM_,ivs);
       }
-      return vocoderRender(chs, tuneSr, car);
+      return await vocoderRender(chs, tuneSr, car, onProgress);
     }
     let segs=segsWithOverrides();
     if (tuneMode==="hard") segs=tuneWild(segs);                 // HARD: wild in der Tonart
     const tp=tuneParams();
-    return await psolaRender(chs, tuneSr, (tuneMode==="robot"?(tuneF0Tight||tuneF0):tuneF0), TUNE_HOP, segs, tp.strength, tp.maxPull, tp.ramp, onProgress);
+    return await psolaRender(chs, tuneSr, (tuneMode==="robot"?(tuneF0Tight||tuneF0):tuneF0), TUNE_HOP, segs, tp.strength, tp.maxPull, tp.ramp, onProgress, tp.glide||0);
   }
+  const renderOv=$("#renderOverlay"), renderPctEl=$("#renderPct"), renderBarEl=$("#renderBarFill"), renderSubEl=$("#renderSub"), renderTitleEl=$("#renderTitle");
+  function showRenderOv(title, sub){ if(!renderOv) return; renderTitleEl.textContent=title||"RENDERING"; if(sub!=null) renderSubEl.textContent=sub; renderPctEl.textContent="0%"; renderBarEl.style.width="0%"; renderOv.classList.add("show"); }
+  function setRenderOv(p){ if(!renderOv) return; const v=Math.max(0,Math.min(100,Math.round(p*100))); renderPctEl.textContent=v+"%"; renderBarEl.style.width=v+"%"; }
+  function hideRenderOv(){ if(renderOv) renderOv.classList.remove("show"); }
   $("#tuneApply").addEventListener("click", ()=>{
     if (!buffer || tuneBusy || tuneRenderBusy || (!tuneF0 && tuneMode!=="vocoder")) return;
     tuneInfo.textContent="RENDERING \u2026";
+    showRenderOv(tuneMode==="vocoder"?"VOCODING":"TUNING", "BURNING IN \u00B7 EDITOR, CHOPPER, FINALIZER FOLLOW");
     tuneRenderBusy=true;
     setTimeout(async ()=>{
       try {
         pushEditUndo("TUNE");
         const t0=performance.now();
-        const chs=await tuneRender(p=>{ tuneInfo.textContent="RENDERING // "+Math.round(p*100)+"%"; });
+        const chs=await tuneRender(p=>{ tuneInfo.textContent="RENDERING // "+Math.round(p*100)+"%"; setRenderOv(p); });
+        setRenderOv(1);
         const secs=((performance.now()-t0)/1000).toFixed(1);
+        const _sc=String(tuneScaleVal||"maj").toUpperCase(), _md=String(tuneMode||"").toUpperCase(), _rt=TUNE_NOTES[((+tuneRootSel.value)%12+12)%12]||"C";
+        const _lbl=(tuneMode==="vocoder"?"VOCODED // ":"TUNED // ")+_md+" \u00B7 "+_rt+(tuneMode==="robot"?"":" "+_sc);
         const nb=cloneBuffer(buffer);
         for (let c=0;c<nb.numberOfChannels;c++) nb.getChannelData(c).set(chs[c]);
         tuneLeave();
-        applyEdit(nb, (tuneMode==="vocoder"?"VOCODED // ":"TUNED // ")+tuneMode.toUpperCase()+" \u00B7 "+TUNE_NOTES[+tuneRootSel.value]+(tuneMode==="robot"?"":" "+tuneScaleVal.toUpperCase()), false, null);
+        applyEdit(nb, _lbl, false, null);
         commit(nb, bufferSource, bufferFitBpm);
+        hideRenderOv();                                            // committet -> Material bereit fuer Editor/Chopper/Finalizer
         tuneMode="raw"; tuneLastTap=false; syncTuneUi();           // Material ist gebrannt -> Grundzustand, kein Doppel-Effekt
-        tuneBufRef=null; enterTuneStation();                       // frische Analyse: die gelbe Linie wird zur cyanen
+        tuneBufRef=null; enterTuneStation();                       // leise Nachanalyse in der Station
         setStatus("TUNE RENDERED // "+secs+" S");
-      } finally { tuneRenderBusy=false; }
+      } catch(e){ hideRenderOv(); setStatus("RENDER ERROR // "+(e&&e.message?e.message:e)); } finally { tuneRenderBusy=false; }
     }, 30);
   });
   // ===================== /TUNE =====================
@@ -5201,9 +5453,84 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   window.addEventListener("resize", ()=>{ if (overlayActive&&overlayActive.redraw){ try{overlayActive.redraw();}catch(e){} } });
   edMax.addEventListener("click", ()=>{ if (buffer) openWaveOverlay($(".edit-wrap"), "EDITOR // DETAIL VIEW", ()=>drawEditWave(), document.querySelector(".island-editor .edit-tools")); });
   tuneMax.addEventListener("click", ()=>{ if (buffer) openWaveOverlay($(".tune-wrap"), "TUNE // DETAIL VIEW", ()=>drawTune()); });
-  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo");
+  // ---------- WARP: Carrier-Anker-Ausrichtung (nur Vocoder + TRACK) ----------
+  const warpCv=$("#warpCanvas"), warpCtx=warpCv?warpCv.getContext("2d"):null;
+  let warpDrag=-1, warpHover=-1;
+  const warpPW=10, warpRP=6;
+  function warpCarGet(){
+    const n=buffer?buffer.length:0;
+    const key=(carrierBuffer?carrierBuffer.length:0)+"|"+vocOffsetMs+"|"+n;
+    if (warpCarKey===key && warpCarCache) return warpCarCache;
+    let c=vocoderCarrierFromBuffer(n, tuneSr);
+    if (vocOffsetMs!==0) c=carrierShift(c, Math.round(vocOffsetMs/1000*tuneSr));
+    warpCarCache=c; warpCarKey=key; return c;
+  }
+  function warpXOf(out,w,n){ return warpPW + (out/n)*(w-warpPW-warpRP); }
+  function warpXToOut(x,w,n){ return Math.max(0, Math.min(n, ((x-warpPW)/(w-warpPW-warpRP))*n)); }
+  function warpHit(x,w,n){ for(let i=0;i<warpAnchors.length;i++){ if(Math.abs(warpXOf(warpAnchors[i].out,w,n)-x)<=7) return i; } return -1; }
+  function drawWarp(){
+    if (!warpCtx||!buffer) return;
+    const dpr=window.devicePixelRatio||1, w=warpCv.clientWidth, h=warpCv.clientHeight;
+    if(!w||!h) return;
+    warpCv.width=w*dpr; warpCv.height=h*dpr; warpCtx.setTransform(dpr,0,0,dpr,0,0);
+    const g=warpCtx, n=buffer.length, midY=h/2, innerW=w-warpPW-warpRP;
+    g.fillStyle="#000"; g.fillRect(0,0,w,h);
+    g.strokeStyle="rgba(255,106,0,.3)"; g.lineWidth=1; g.beginPath(); g.moveTo(0,midY); g.lineTo(w,midY); g.stroke();
+    // Stimme oben
+    const ch=buffer.getChannelData(0);
+    if (tunePeakBuf!==buffer){ let pk=1e-6; const st=Math.max(1,Math.floor(n/4000)); for(let i=0;i<n;i+=st){const a=Math.abs(ch[i]||0); if(a>pk)pk=a;} tunePeakVal=pk; tunePeakBuf=buffer; }
+    const vNorm=(midY*0.42)/(tunePeakVal||1), vMid=midY*0.55, stepN=Math.max(1,Math.floor(n/innerW));
+    g.fillStyle="rgba(189,250,255,.5)";
+    for (let x=warpPW;x<w-warpRP;x++){ let mx=0; const base=Math.floor((x-warpPW)/innerW*n); for(let k=0;k<stepN;k++){const a=Math.abs(ch[base+k]||0); if(a>mx)mx=a;} const a2=mx*vNorm; g.fillRect(x, vMid-a2, 1, Math.max(1,2*a2)); }
+    // Carrier unten, ueber die Anker-Karte verzerrt
+    const carNat=warpCarGet(), pts=warpNodes(warpAnchors, n);
+    let cpk=1e-6; { const st=Math.max(1,Math.floor(carNat.length/4000)); for(let i=0;i<carNat.length;i+=st){const a=Math.abs(carNat[i]||0); if(a>cpk)cpk=a;} }
+    const cNorm=(midY*0.42)/cpk, cMid=midY+midY*0.55;
+    g.fillStyle="rgba(255,106,0,.6)";
+    for (let x=warpPW;x<w-warpRP;x++){ const out=warpXToOut(x+0.5,w,n), si=Math.floor(warpMapEval(pts,out)); let mx=0; for(let k=0;k<stepN;k++){const a=Math.abs(carNat[si+k]||0); if(a>mx)mx=a;} const a2=mx*cNorm; g.fillRect(x, cMid-a2, 1, Math.max(1,2*a2)); }
+    // Beschriftung
+    g.font="10px 'Space Mono',monospace"; g.fillStyle="rgba(189,250,255,.55)"; g.fillText("VOICE", warpPW+2, 13); g.fillStyle="rgba(255,154,77,.75)"; g.fillText("CARRIER", warpPW+2, midY+14);
+    // Anker
+    for (let i=0;i<warpAnchors.length;i++){ const ax=warpXOf(warpAnchors[i].out,w,n), on=(i===warpDrag||i===warpHover);
+      g.strokeStyle=on?"#fff":"rgba(255,106,0,.9)"; g.lineWidth=on?2:1.5; g.beginPath(); g.moveTo(ax,0); g.lineTo(ax,h); g.stroke();
+      g.fillStyle=on?"#fff":"#ff9a4d"; g.beginPath(); g.arc(ax,midY,on?6:4,0,7); g.fill();
+    }
+    g.font="10px 'Space Mono',monospace"; g.fillStyle="rgba(189,250,255,.35)"; g.textAlign="right"; g.fillText("CLICK = ADD \u00B7 DRAG = ALIGN \u00B7 DBLCLICK = DELETE", w-warpRP-2, h-7); g.textAlign="left";
+  }
+  if (warpCv){
+    warpCv.addEventListener("pointerdown",(e)=>{
+      if (!buffer) return;
+      const r=warpCv.getBoundingClientRect(), w=warpCv.clientWidth, n=buffer.length, x=e.clientX-r.left;
+      let hit=warpHit(x,w,n);
+      if (hit<0){ const out=Math.round(warpXToOut(x,w,n)), src=Math.round(warpMapEval(warpNodes(warpAnchors,n),out));
+        warpAnchors.push({out,src}); warpAnchors.sort((a,b)=>a.out-b.out); hit=warpAnchors.findIndex(a=>a.out===out); }
+      warpDrag=hit; try{warpCv.setPointerCapture(e.pointerId);}catch(_){} drawWarp();
+    });
+    warpCv.addEventListener("pointermove",(e)=>{
+      if (!buffer) return;
+      const r=warpCv.getBoundingClientRect(), w=warpCv.clientWidth, n=buffer.length, x=e.clientX-r.left;
+      if (warpDrag>=0){ const min=Math.round(0.02*tuneSr);
+        const lo=(warpDrag>0?warpAnchors[warpDrag-1].out:0)+min, hi=(warpDrag<warpAnchors.length-1?warpAnchors[warpDrag+1].out:n)-min;
+        warpAnchors[warpDrag].out=Math.round(Math.max(lo,Math.min(hi, warpXToOut(x,w,n)))); drawWarp(); return; }
+      const hov=warpHit(x,w,n); if(hov!==warpHover){ warpHover=hov; warpCv.style.cursor=hov>=0?"ew-resize":"crosshair"; drawWarp(); }
+    });
+    warpCv.addEventListener("pointerup",()=>{ if(warpDrag>=0){ warpDrag=-1; drawWarp(); if(tuneMode==="vocoder") tunePlayPreview(); } });
+    warpCv.addEventListener("pointercancel",()=>{ warpDrag=-1; });
+    warpCv.addEventListener("dblclick",(e)=>{
+      if (!buffer) return;
+      const r=warpCv.getBoundingClientRect(), w=warpCv.clientWidth, n=buffer.length, hit=warpHit(e.clientX-r.left,w,n);
+      if (hit>=0){ warpAnchors.splice(hit,1); warpHover=-1; drawWarp(); if(tuneMode==="vocoder") tunePlayPreview(); }
+    });
+  }
+  if ($("#vcWarpBtn")) $("#vcWarpBtn").addEventListener("click",(e)=>{
+    e.stopPropagation();
+    if (vocCarrierType!=="track" || !buffer) return;
+    if (_mixPop) _mixPop.style.display="none";
+    openWaveOverlay($(".warp-wrap"), "WARP // CARRIER ALIGN", ()=>drawWarp());
+  });
+  const edTrim=$("#edTrim"), edCut=$("#edCut"), edFadeIn=$("#edFadeIn"), edFadeOut=$("#edFadeOut"), edNorm=$("#edNorm"), edUndo=$("#edUndo"), edRedo=$("#edRedo");
   const ectx=editCanvas.getContext("2d");
-  let editSel=null, editUndoStack=[];                 // Mehrstufen-Undo mit Speicher-Budget
+  let editSel=null, editUndoStack=[], editRedoStack=[];                 // Mehrstufen-Undo/Redo mit Speicher-Budget
   let editView=null;                                   // {t0,t1} Zoom-Fenster, null = ganzes Material
   let editPeakBuf=null, editPeakVal=1;                 // Anzeige-Normalisierung (selbstheilender Cache)
   const evT0=()=>editView?editView.t0:0;
@@ -5320,6 +5647,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     document.querySelectorAll(".loop-grp .lb").forEach((b)=>b.disabled=!hasBuf);
     $("#loopSet").disabled=!(loopMode && editSel && hasBuf);
     edUndo.disabled=!editUndoStack.length;
+    if (edRedo) edRedo.disabled=!editRedoStack.length;
   }
   let editDrag=null, panDrag=null, anchorDrag=false, edgeDrag=null, loopDrag=false, fadePreview=0, fadeCurve="lin";
   let barSnap=false, barAnchor=0;                                // Takt-Raster: an / Downbeat-Anker (s)
@@ -5534,6 +5862,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   const EDIT_UNDO_MAX=10, EDIT_UNDO_BYTES=80*1024*1024;
   function pushEditUndo(msg){
     const bytes=buffer.length*buffer.numberOfChannels*4;
+    editRedoStack.length=0;                              // neue Aktion: Redo-Zweig verfaellt
     editUndoStack.push({ buf:cloneBuffer(buffer), msg, bytes, bpm:bufferFitBpm });
     let total=editUndoStack.reduce((a,e)=>a+e.bytes, 0);
     while (editUndoStack.length>EDIT_UNDO_MAX || (total>EDIT_UNDO_BYTES && editUndoStack.length>1)){
@@ -5666,7 +5995,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
   edGainM.addEventListener("click", ()=>applyGain(-2));
   // ---------- Etappe E1: Offline-Render-Geruest (EQ / De-Esser) ----------
   function deEssSpec(amount){
-    return { split:5500, threshold:-15-30*amount, ratio:6, attack:0.002, release:0.06 };
+    return { freq:4500, emph:18, threshold:-3-9*amount, ratio:6, attack:0.001, release:0.05, knee:3 };
   }
   async function renderThroughChain(buf, buildFx){
     const off=new OfflineAudioContext(buf.numberOfChannels, buf.length, buf.sampleRate);
@@ -5854,21 +6183,14 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
         tail.connect(b); tail=b;
       }
       const sp=deEssSpec(dAmt);
-      const hi=mk("highpass", sp.split, 0.5);
-      const inv=off.createGain(); inv.gain.value=-1;
+      // De-Esser: serieller Ducking-Aufbau, identisch zur Vorschau. In Reihe, keine Parallelmischung, kein wandernder Kamm.
+      const dePre=mk("highshelf", sp.freq, 0.707, dAmt>0.01?sp.emph:0);
       const comp=off.createDynamicsCompressor();
       comp.threshold.value=dAmt>0.01?sp.threshold:0; comp.ratio.value=dAmt>0.01?sp.ratio:1;
-      comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=6;
-      const sum=off.createGain();
-      // De-Esser = volles Signal + Wirk*(komprimierte - rohe Höhen); bei De-Ess 0 -> Wirk 0 -> Original
-      const dryFull=off.createGain(); dryFull.gain.value=1;
-      tail.connect(dryFull); dryFull.connect(sum);
-      const deDiff=off.createGain();
-      tail.connect(hi); hi.connect(comp); comp.connect(deDiff);
-      hi.connect(inv); inv.connect(deDiff);
-      const deWet=off.createGain(); deWet.gain.value = dAmt>0.01 ? 1 : 0;
-      deDiff.connect(deWet); deWet.connect(sum);
-      return sum;
+      comp.attack.value=sp.attack; comp.release.value=sp.release; comp.knee.value=sp.knee;
+      const deDe=mk("highshelf", sp.freq, 0.707, dAmt>0.01?-sp.emph:0);
+      tail.connect(dePre); dePre.connect(comp); comp.connect(deDe);
+      return deDe;
     });
     eqLow.value=0; eqMud.value=0; eqPres.value=50; eqAir.value=0; $("#edDeEss").value=0;
     for (let i=0;i<8;i++) eq8Gains[i]=0;
@@ -5951,14 +6273,24 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
     }
     applyEdit(nb, "NORMALIZED // PEAK -0.3 DB", false);
   });
-  edUndo.addEventListener("click", ()=>{
-    if (!editUndoStack.length) return;
+  function editUndo(){
+    if (!editUndoStack.length){ setStatus("UNDO // NOTHING TO UNDO"); return; }
     const u=editUndoStack.pop();
+    editRedoStack.push({ buf:cloneBuffer(buffer), msg:u.msg, bytes:buffer.length*buffer.numberOfChannels*4, bpm:bufferFitBpm });   // aktueller Stand fuer Redo
     if (u.bpm>=30 && u.bpm<=300 && Math.round(P.chop.bpm)!==u.bpm){  // Material kommt im damaligen Tempo zurueck
       P.chop.bpm=u.bpm; syncChopBtns();                              // -> Grid folgt (eine Uhr, keine Mischtempi)
     }
     applyEdit(u.buf, "EDIT UNDONE // "+u.msg+(editUndoStack.length?" // "+editUndoStack.length+" MORE":""), true);
-  });
+  }
+  function editRedo(){
+    if (!editRedoStack.length){ setStatus("REDO // NOTHING TO REDO"); return; }
+    const r=editRedoStack.pop();
+    editUndoStack.push({ buf:cloneBuffer(buffer), msg:r.msg, bytes:buffer.length*buffer.numberOfChannels*4, bpm:bufferFitBpm });   // aktueller Stand fuer erneutes Undo
+    if (r.bpm>=30 && r.bpm<=300 && Math.round(P.chop.bpm)!==r.bpm){ P.chop.bpm=r.bpm; syncChopBtns(); }
+    applyEdit(r.buf, "EDIT REDONE // "+r.msg+(editRedoStack.length?" // "+editRedoStack.length+" MORE":""), true);
+  }
+  edUndo.addEventListener("click", editUndo);
+  if (edRedo) edRedo.addEventListener("click", editRedo);
   window.addEventListener("resize", ()=>{ if (deckEl.classList.contains("st-editor")){ drawEditWave(); drawEqGraph(); } });
 
   // EXPORT // WAV: Auswahl LOOP (taktgenaue Summe) oder SAMPLE (materialeng)
