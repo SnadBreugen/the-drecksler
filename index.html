@@ -614,25 +614,24 @@
     <button id="wipFeedbackBtn" class="wip-fb-btn">// SEND FEEDBACK</button>
     <div class="wip-list">
       <div class="wip-credit">CREDIT // NASWALT</div>
-      <div class="wip-intro">his reports, where they stand:</div>
+      <div class="wip-intro">his reports + ideas, where they stand:</div>
       <ul class="wip-status">
         <li><span class="st-fix">FIXED</span> recording volume jumps around</li>
         <li><span class="st-fix">REBUILT</span> de-esser phasing / chorus &middot; please retest</li>
         <li><span class="st-fix">FIXED</span> metronome dies after a few beats</li>
-        <li><span class="st-lim">KNOWN LIMIT</span> octave misread on nasal voices &middot; pitch tracker, still on it</li>
-        <li><span class="st-fix">FIXED</span> too small &middot; maximize / detail view</li>
+        <li><span class="st-fix">FIXED</span> too small &middot; maximize / detail view + tune zoom</li>
         <li><span class="st-fix">FIXED</span> tune editor in octaves &middot; full scale dragging now</li>
         <li><span class="st-new">NEW</span> soft retune too fast &middot; new AUTO mode with real glide</li>
+        <li><span class="st-new">NEW</span> his idea: vocoder MIX 1 / MIX 2</li>
+        <li><span class="st-new">NEW</span> his idea: circular carrier OFFSET</li>
       </ul>
-      <div class="wip-credit" style="margin-top:14px">// ALSO SHIPPED SINCE</div>
+      <div class="wip-credit" style="margin-top:14px">// ALSO SHIPPED</div>
       <ul class="wip-status">
         <li>vocoder apply now carries into editor, chopper, finalizer + export</li>
-        <li>AUTO: natural retune glide, SPEED + AMOUNT</li>
         <li>WARP: line the carrier up to your syllables</li>
-        <li>vocoder MIX 1 / MIX 2 + circular carrier OFFSET</li>
         <li>render progress popup on apply</li>
         <li>undo / redo everywhere (Ctrl+Z / Ctrl+Shift+Z)</li>
-        <li>ROBOT step grid, tune zoom, detail-view polish</li>
+        <li>ROBOT step grid, detail-view polish</li>
       </ul>
     </div>
   </div>
@@ -926,7 +925,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.29</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.31</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1524,7 +1523,7 @@ var THE_SIGNAL_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 (() => {
   "use strict";
 
-  const REV="5.29";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.31";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
