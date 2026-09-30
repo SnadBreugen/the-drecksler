@@ -962,10 +962,11 @@
       <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for transmit and for library carriers">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Export as WAV: pick LOOP (bar-exact, the full chopper + finisher sum, seamless) or SAMPLE (tight to the material, exactly as long as you hear, for one-shots and cut pieces)">EXPORT // WAV</button>
       <button id="atBtn" disabled title="Render the result and send it straight into your Audiotool sample library">TRANSMIT TO AUDIOTOOL</button>
+      <button id="tlBtn" disabled title="Render the result and place it straight onto your Audiotool project timeline: one audio track under the stagebox, on its own channel, at the project tempo. Needs UPLINK.">EXPORT &rarr; TIMELINE</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.44</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1563,7 +1564,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.44";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.46";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -1662,7 +1663,7 @@ var THE_SIGNAL_MP3="";
   const scatterBtn=$("#scatterBtn"), clearChopBtn=$("#clearChopBtn"), metroBtn=$("#metroBtn");
   const edMax=$("#edMax");
   const tuneMax=$("#tuneMax");
-  const wavBtn=$("#wavBtn"), atBtn=$("#atBtn"), chopApply=$("#chopApply"), finApply=$("#finApply");
+  const wavBtn=$("#wavBtn"), atBtn=$("#atBtn"), tlBtn=$("#tlBtn"), chopApply=$("#chopApply"), finApply=$("#finApply");
   const tc=$("#tc"), inMeterFill=$("#inMeterFill"), outMeterFill=$("#outMeterFill"), recDot=$("#recDot");
   const hint=$("#hint"), banner=$("#banner"), statusText=$("#statusText");
   const canvas=$("#wave"), ctx=canvas.getContext("2d"), waveWrap=$("#waveWrap");
@@ -1730,7 +1731,7 @@ var THE_SIGNAL_MP3="";
   }
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
-    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, densBtn, harmBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply, edMax, tuneMax].forEach((b)=>(b.disabled=!on));
+    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, tlBtn, densBtn, harmBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply, edMax, tuneMax].forEach((b)=>(b.disabled=!on));
     if (typeof syncModeBtns==="function") syncModeBtns();
     if (typeof updateWinUi==="function") updateWinUi();
   }
@@ -3220,6 +3221,7 @@ var THE_SIGNAL_MP3="";
     const url=atUrlInput.value.trim();
     if (!/audiotool\.com/.test(url)){ setStatus("INVALID PROJECT LINK"); return; }
     atUrlPop.classList.add("hidden");
+    if (_tlExportMode){ _tlExportMode=false; tlExport(url); return; }   // EXPORT -> TIMELINE statt Import
     atOpenProject({ url }, _carrierPickMode); _carrierPickMode=false;
   }
   const atSleep=(ms)=>new Promise(r=>setTimeout(r,ms));
@@ -4019,13 +4021,14 @@ var THE_SIGNAL_MP3="";
   const AT_REDIRECT="https://snadbreugen.github.io/the-drecksler/";
   const AT_SCOPE="sample:read sample:write project:read project:write";
   const uplinkBtn=$("#uplinkBtn");
-  let atSession=null, atSdkPromise=null, _carrierPickMode=false;
+  let atSession=null, atSdkPromise=null, _carrierPickMode=false, _tlExportMode=false;
   async function loadAtSdk(){
     if(!atSdkPromise){
       // SDK lokal gebuendelt (esbuild, browser-target) -> kein esm.sh-process-Polyfill,
       // `typeof process` bleibt nativ (im Browser undefined) -> Browser-Wasm-Loader greift,
-      // wasm wird autark von Audiotools CDN geholt. Auf 0.0.17 eingefroren: immun gegen
-      // esm.sh-Rebuilds. Datei liegt neben index.html im Repo.
+      // wasm wird autark von Audiotools CDN geholt. Lokal gepinntes Bundle (aus Brachinski,
+      // 0.0.18+, kann insertSample fuer den Timeline-Export): immun gegen esm.sh-Rebuilds.
+      // Datei liegt neben index.html im Repo.
       atSdkPromise=import("./nexus.bundle.js");
     }
     const m=await atSdkPromise; return m.default||m;
@@ -6647,6 +6650,143 @@ var THE_SIGNAL_MP3="";
   document.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeTxPop(); });
   document.addEventListener("pointerdown",(e)=>{ if (!txPop.classList.contains("hidden") && !txPop.contains(e.target) && e.target!==atBtn && !atBtn.contains(e.target)) closeTxPop(); });
   txSend.addEventListener("click", ()=>{ closeTxPop(); sendToAudiotool(); });
+
+  // ---- TIMELINE EXPORT :: taken from BRACHINSKI REV1022, verified against NEXUS SDK 0.0.18 ----
+  // puts rendered audio into an audiotool project: one track per entry, each with its own player below the stagebox,
+  // its own stagebox channel at 0 dB, and a region that plays the sample unprocessed (timestretch mode 1, no fades)
+  // needs nexus.bundle.js 0.0.18 or newer :: t.insertSample does not exist before that
+  function makeTimelineExport(opts){
+    const atlog=(opts&&opts.log)||((m)=>console.log("[timeline] "+m));             // your status line, or the console
+    const MACH_GAP=720;                                                          // desktop units below the stagebox :: the DAW only pushes devices apart when you drag one
+    const MACH_STEP=600;                                                         // sideways, when that spot is already taken by an earlier export
+    const TICKS_16=960;                                                           // audiotool counts 3840 ticks to a quarter note :: a sixteenth is 960
+    function atTimeout(p,ms,lbl){ return Promise.race([Promise.resolve(p), new Promise((_,rej)=>setTimeout(()=>rej(new Error(lbl+" timed out ("+(ms/1000)+"s)")),ms))]); }
+    async function atUpload(c,blob,dn,set,kind){                                  // one upload with three tries :: machiniste one-shots and timeline loops share it
+      for(let a=1;a<=3;a++){ try{
+        const file=new File([blob], dn+".wav", {type:"audio/wav"});
+        const up=await atTimeout(c.samples.upload({ file, displayName:dn, kind:kind||"one-shot", tags:["brachinski",set], preventTabClose:true }),25000,"upload"); if(up instanceof Error) throw up;
+        const onServer=await atTimeout(up.uploaded,30000,"server-receive"); if(onServer instanceof Error) throw onServer;
+        const meta=await atTimeout(up.ready,30000,"server-process"); if(meta instanceof Error) throw meta;
+        return up.name;
+      }catch(e){ atlog(dn+" try "+a+"/3 failed :: "+(e.message||e)); if(a===3) throw new Error(dn+" gave up after 3 tries :: "+(e.message||e)); await new Promise(r=>setTimeout(r,1500)); atlog("retry "+dn+" ..."); } }
+    }
+    async function atVerify(c,name,expectSec){                                   // ask audiotool whether an upload really is there :: DONE only when it is
+      try{ const m=await atTimeout(c.samples.get(name),20000,"check");
+        if(!m||m instanceof Error)return { ok:false, why:"not found"+((m&&m.message)?" ("+m.message+")":"") };
+        const d=m.durationSeconds;
+        if(expectSec!=null&&typeof d==="number"&&Math.abs(d-expectSec)>0.25)return { ok:false, why:d.toFixed(2)+" s on the server, "+expectSec.toFixed(2)+" s rendered" };
+        return { ok:true, d };
+      }catch(e){ return { ok:false, why:(e&&e.message)||String(e) }; }
+    }
+    async function atVerifyAll(c,names,shown,secs){                              // every upload, one by one :: a list of what is missing
+      const bad=[]; atlog("checking "+names.length+" upload(s) in your library ...");
+      for(let k=0;k<names.length;k++){ const r=await atVerify(c,names[k],secs?secs[k]:null); if(!r.ok)bad.push(shown[k]+" :: "+r.why); }
+      return bad;
+    }
+    function nxList(t,doc,type){                                                  // read entities inside a transaction, or from the document if the transaction cannot list
+      try{ if(t&&t.entities){ const q=type?t.entities.ofTypes(type):t.entities; if(q&&typeof q.get==="function")return q.get()||[]; } }catch(e){}
+      try{ if(doc&&doc.queryEntities){ const q=type?doc.queryEntities.ofTypes(type):doc.queryEntities; if(q&&typeof q.get==="function")return q.get()||[]; } }catch(e){}
+      return [];
+    }
+    function nxPos(en){ const f=en&&en.fields; if(!f||!f.positionX||!f.positionY)return null;
+      const x=f.positionX.value, y=f.positionY.value; return (typeof x==="number"&&typeof y==="number")?{x,y}:null; }
+    function nxGet(t,doc,loc){ const id=loc&&(loc.entityId||(loc.value&&loc.value.entityId)); if(!id)return null;   // the entity a location points at
+      try{ if(t&&t.entities&&t.entities.getEntity){ const e=t.entities.getEntity(id); if(e)return e; } }catch(e){}
+      try{ if(doc&&doc.queryEntities&&doc.queryEntities.getEntity)return doc.queryEntities.getEntity(id)||null; }catch(e){}
+      return null; }
+    function machinisteSpot(t,doc,extra){                                               // right under the stagebox, the one place everybody can find
+      const mm=nxList(t,doc,"mixerMaster").map(nxPos).filter(Boolean)[0]||{x:0,y:0};
+      const taken=nxList(t,doc,null).map(nxPos).filter(Boolean).concat(extra||[]);
+      const spot={x:Math.round(mm.x),y:Math.round(mm.y+MACH_GAP)};                // int32 on the wire
+      for(let i=0;i<24&&taken.some(q=>Math.abs(q.x-spot.x)<50&&Math.abs(q.y-spot.y)<50);i++)spot.x+=MACH_STEP;   // a second export sits beside the first, not on it
+      return spot;
+    }
+    function nxProjectTempo(t,doc){ const c=nxList(t,doc,"config")[0]; const v=c&&c.fields&&c.fields.tempoBpm&&c.fields.tempoBpm.value; return (typeof v==="number"&&v>0)?v:null; }
+    function nxHasTempoChanges(t,doc){ return nxList(t,doc,"tempoAutomationTrack").length>0; }
+    function buildTimelineTx(t,doc,o){                                            // every track the timeline export writes, in one transaction :: kept apart so it runs against the real SDK
+      if(typeof t.insertSample!=="function")throw new Error("this NEXUS bundle cannot place samples :: put the new nexus.bundle.js next to the page");
+      const placed=[];
+      o.tracks.forEach(tr=>{
+        const spot=machinisteSpot(t,doc,placed);                                   // a row of players under the stagebox, none on top of another
+        const reg=t.insertSample({ name:tr.sampleName, durationSeconds:tr.seconds, bpm:o.bpm },   // the SDK's own way :: track, player, cable, channel and the playback curve that makes the region sound
+          { sample:{ bpm:o.bpm }, region:{ positionTicks:o.positionTicks||0, durationTicks:tr.ticks||o.loopTicks }, loop:o.loop!==false });
+        const rf=reg.fields.region&&reg.fields.region.fields; if(rf&&rf.displayName)t.update(rf.displayName,tr.name);
+        if(reg.fields.timestretchMode)t.update(reg.fields.timestretchMode,1);        // play it as rendered :: mode 2 processes even at ratio 1.0 and jumps at every loop point
+        if(reg.fields.fadeInDurationTicks)t.update(reg.fields.fadeInDurationTicks,0); // no fades :: the render already loops seamlessly, a fade only nibbles the first hit
+        if(reg.fields.fadeOutDurationTicks)t.update(reg.fields.fadeOutDurationTicks,0);
+        const track=nxGet(t,doc,reg.fields.track.value), dev=track?nxGet(t,doc,track.fields.player.value):null;
+        if(dev){ t.update(dev.fields.displayName,tr.name); t.update(dev.fields.positionX,spot.x); t.update(dev.fields.positionY,spot.y); t.update(dev.fields.gain,1);   // 0 dB :: the render already has the level
+          const out=JSON.stringify(dev.fields.audioOutput.location);
+          const cab=nxList(t,doc,"desktopAudioCable").find(c=>JSON.stringify(c.fields.fromSocket.value)===out);
+          const ch=cab?nxGet(t,doc,cab.fields.toSocket.value):null;
+          if(ch){ const dp=ch.fields.displayParameters&&ch.fields.displayParameters.fields; if(dp&&dp.displayName)t.update(dp.displayName,tr.name); if(ch.fields.preGain)t.update(ch.fields.preGain,1); } }
+        placed.push({x:spot.x,y:spot.y});
+      });
+      return { placed };
+    }
+    function encodeWavStereo(L, R, sr){
+      const len=Math.min(L.length,R.length), ab=new ArrayBuffer(44+len*4), dv=new DataView(ab);
+      const w=(o,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(o+i,s.charCodeAt(i)); };
+      w(0,"RIFF"); dv.setUint32(4,36+len*4,true); w(8,"WAVE"); w(12,"fmt ");
+      dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,2,true);
+      dv.setUint32(24,sr,true); dv.setUint32(28,sr*4,true); dv.setUint16(32,4,true); dv.setUint16(34,16,true);
+      w(36,"data"); dv.setUint32(40,len*4,true);
+      let o=44; for(let i=0;i<len;i++){ let l=Math.max(-1,Math.min(1,L[i])), r=Math.max(-1,Math.min(1,R[i])); dv.setInt16(o,l<0?l*0x8000:l*0x7fff,true); dv.setInt16(o+2,r<0?r*0x8000:r*0x7fff,true); o+=4; }
+      return new Blob([ab],{type:"audio/wav"});
+    }
+    async function openProject(at,projectUrl){                                  // open the project, and read its tempo :: render at that tempo, then place
+      if(!projectUrl)throw new Error("no project link :: paste the link of your audiotool project first");
+      const doc=await at.open(projectUrl); if(doc.start)await doc.start();
+      const bpm=nxProjectTempo(null,doc);
+      if(nxHasTempoChanges(null,doc))atlog("note :: the project changes tempo \u00b7 the tracks follow its opening tempo, "+bpm+" BPM");
+      return { doc, bpm };
+    }
+    async function placeOnTimeline(at,doc,tracks,o){                           // tracks: [{ name, L, R, sr }] :: o: { bpm, set, loop, kind, positionTicks }
+      const c=at.client||at, set=(o&&o.set)||"export", loop=!(o&&o.loop===false), bpm=o.bpm;
+      const items=tracks.map(tr=>({ name:tr.name, blob:encodeWavStereo(tr.L,tr.R||tr.L,tr.sr), seconds:tr.L.length/tr.sr }));
+      const up=[];
+      for(let k=0;k<items.length;k++){ atlog("uploading "+items[k].name+" ("+(k+1)+"/"+items.length+")"); up.push(await atUpload(c,items[k].blob,items[k].name,set,(o&&o.kind)||(loop?"loop":"one-shot"))); }
+      const bad=await atVerifyAll(c,up,items.map(i=>i.name),items.map(i=>i.seconds));   // DONE only when audiotool really has every sample
+      if(bad.length)throw new Error(bad.length+" upload(s) not in your library \u00b7 "+bad.join(" \u00b7 ")+" \u00b7 nothing placed");
+      const ticks=s=>Math.max(1,Math.round(s*bpm/60*3840));                    // 3840 ticks to a quarter note
+      const res=await doc.modify(t=>buildTimelineTx(t,doc,{ bpm, loop, positionTicks:(o&&o.positionTicks)||0,
+        tracks:items.map((it,k)=>({ name:it.name, sampleName:up[k], seconds:it.seconds, ticks:ticks(it.seconds) })) }));
+      atlog("DONE :: "+items.length+" track(s) in the timeline at "+bpm+" BPM, each on its own channel, every sample checked \u00b7 reload the desktop (F5)");
+      return res;
+    }
+    return { openProject, placeOnTimeline, encodeWavStereo, buildTimelineTx };  // buildTimelineTx is exposed for offline tests
+  }
+
+  // ---------- EXPORT -> TIMELINE (Brachinski-Modul, verdrahtet auf den Drecksler) ----------
+  async function tlExport(url){
+    if (!buffer) return;
+    const at=atSession || await atConnect(true);
+    if (!at) return;                        // Redirect zum Login: danach erneut druecken
+    try {
+      setStatus("RENDERING // TIMELINE");
+      const rendered=await renderProcessed();               // wie TRANSMIT: das aktuelle Ergebnis
+      const sr=rendered.sampleRate;
+      const L=rendered.getChannelData(0);
+      const R=rendered.numberOfChannels>1?rendered.getChannelData(1):L;
+      const name="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+      const tl=makeTimelineExport({ log:(m)=>setStatus("TIMELINE // "+m) });
+      const { doc, bpm }=await tl.openProject(at, url);
+      try {
+        await tl.placeOnTimeline(at, doc, [{ name, L, R, sr }],
+          { bpm:(bpm && bpm>0)?bpm:Math.round(P.chop.bpm), set:"drecksler", loop:true, kind:"loop" });
+      } finally { try { if (doc && doc.stop) await doc.stop(); } catch(e){} }
+    } catch(e){
+      console.error("[TIMELINE]", e);
+      setStatus("TIMELINE EXPORT FAILED // "+((e&&e.message)||"SEE CONSOLE (F12)"));
+    }
+  }
+  if ($("#tlBtn")) $("#tlBtn").addEventListener("click", async ()=>{
+    if (!buffer) return;
+    const at=atSession || await atConnect(true);
+    if (!at) return;                        // Redirect zum Login: danach erneut druecken
+    _tlExportMode=true; atUrlInput.value="";
+    setTimeout(()=>{ placePop(atUrlPop, $("#tlBtn")); atUrlInput.focus(); }, 0);
+  });
 
   async function sendToAudiotool(){
     if (!buffer) return;
