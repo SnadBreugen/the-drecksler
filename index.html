@@ -966,7 +966,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.47</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.48</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1564,7 +1564,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.47";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.48";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -6775,6 +6775,15 @@ var THE_SIGNAL_MP3="";
       const name="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
       const tl=makeTimelineExport({ log:(m)=>setStatus("TIMELINE // "+m) });
       const { doc, bpm }=await tl.openProject(at, url);
+      // Faehigkeits-Check VOR dem Upload: kann der geladene NEXUS-Bundle ueberhaupt Samples auf die Timeline setzen?
+      // Ohne insertSample (Bundle < 0.0.18) landet sonst nur der Upload in der Library und die Spur bleibt aus.
+      let canPlace=false;
+      try { await doc.modify((t)=>{ canPlace=(typeof t.insertSample==="function"); }); } catch(e){ console.warn("[TIMELINE] probe:", e); }
+      if (!canPlace){
+        console.error("[TIMELINE] deployed nexus.bundle.js has no insertSample :: put the new 0.0.18+ bundle next to index.html");
+        setStatus("TIMELINE // OLD NEXUS BUNDLE \u00B7 REPLACE nexus.bundle.js WITH THE NEW ONE");
+        return;                          // nichts hochladen, keine halbe Sache
+      }
       await tl.placeOnTimeline(at, doc, [{ name, L, R, sr }],
         { bpm:(bpm && bpm>0)?bpm:Math.round(P.chop.bpm), set:"drecksler", loop:true, kind:"loop" });
       // Dokument bleibt offen (wie in Brachinski): doc.stop() wuerde den Sync zum Server abschneiden,
