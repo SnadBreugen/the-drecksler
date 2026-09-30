@@ -966,7 +966,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.46</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.47</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1564,7 +1564,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.46";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.47";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3987,9 +3987,13 @@ var THE_SIGNAL_MP3="";
       for (const seg of markSegs) playSeg(off, n, seg, seg.trig, null);
       rendered=await off.startRendering();
     } else if (P.chop.on && P.chop.mode!=="mark" && arrangement.some((x)=>x!=null)){
-      const sd=stepDur(), tab=sliceTable(), ts=totalSteps(), loopLen=Math.ceil(loopDur()*sr);
+      const sd=stepDur(), tab=sliceTable(), ts=totalSteps(), wb=winBase();
+      let lastFilled=-1; for (let i=ts-1;i>=0;i--){ if (arrangement[i]){ lastFilled=i; break; } }
+      const matSteps=Math.max(1, Math.min(ts, tab.length-wb));            // Schritte, die das Material im Fenster deckt
+      const renderSteps=Math.min(ts, Math.max(matSteps, lastFilled+1));   // getrimmt -> Loop folgt dem Material (kein stiller Rest); volles Material -> ganzes Fenster (gewollte Luecken bleiben)
+      const loopLen=Math.max(1, Math.ceil(renderSteps*sd*sr));
       const off=new OfflineAudioContext(outCh, loopLen, sr); const n=buildChain(off, fin);
-      for (let step=0; step<ts; step++){
+      for (let step=0; step<renderSteps; step++){
         const ch=arrangement[step]; if (!ch || !tab.length) continue;
         playChop(off, n, ch, step*sd, sd, tab, null);
       }
@@ -6771,10 +6775,10 @@ var THE_SIGNAL_MP3="";
       const name="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
       const tl=makeTimelineExport({ log:(m)=>setStatus("TIMELINE // "+m) });
       const { doc, bpm }=await tl.openProject(at, url);
-      try {
-        await tl.placeOnTimeline(at, doc, [{ name, L, R, sr }],
-          { bpm:(bpm && bpm>0)?bpm:Math.round(P.chop.bpm), set:"drecksler", loop:true, kind:"loop" });
-      } finally { try { if (doc && doc.stop) await doc.stop(); } catch(e){} }
+      await tl.placeOnTimeline(at, doc, [{ name, L, R, sr }],
+        { bpm:(bpm && bpm>0)?bpm:Math.round(P.chop.bpm), set:"drecksler", loop:true, kind:"loop" });
+      // Dokument bleibt offen (wie in Brachinski): doc.stop() wuerde den Sync zum Server abschneiden,
+      // dann bleibt das Sample nur in der Library und die Region kommt nicht auf die Timeline.
     } catch(e){
       console.error("[TIMELINE]", e);
       setStatus("TIMELINE EXPORT FAILED // "+((e&&e.message)||"SEE CONSOLE (F12)"));
