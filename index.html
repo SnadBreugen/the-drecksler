@@ -965,7 +965,7 @@
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.49</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.50</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1540,7 +1540,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.49";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.50";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -5995,7 +5995,7 @@ var THE_SIGNAL_MP3="";
       if (Math.abs(mx-ax)<7){ edgeDrag={ fixed:editSel.b }; editCanvas.style.cursor="ew-resize"; editCanvas.setPointerCapture(e.pointerId); return; }
       if (Math.abs(mx-bx)<7){ edgeDrag={ fixed:editSel.a }; editCanvas.style.cursor="ew-resize"; editCanvas.setPointerCapture(e.pointerId); return; }
     }
-    editDrag={ a:evtT(e), x:e.clientX }; editSel=null; drawEditWave();
+    editDrag={ a:evtT(e), x:e.clientX };   // Auswahl bleibt: Klick allein setzt keinen Loop
     editCanvas.setPointerCapture(e.pointerId);
   });
   editCanvas.addEventListener("pointermove",(e)=>{
@@ -6041,6 +6041,7 @@ var THE_SIGNAL_MP3="";
       return;
     }
     if (!editDrag) return;
+    if (Math.abs(e.clientX-editDrag.x)<4) return;   // Loop/Auswahl erst ab echtem Ziehen
     const t=evtT(e);
     let a=Math.min(editDrag.a,t), b=Math.max(editDrag.a,t);
     if (barSnap && buffer){                              // ganze Takte: angefasste Takte komplett
@@ -6062,9 +6063,8 @@ var THE_SIGNAL_MP3="";
       const t=evtT(e), tab=sliceTable();
       const sl=tab.find((x)=>t>=x.t0 && t<x.t0+x.dur);
       if (sl){
-        editSel={ a:sl.t0, b:Math.min(buffer.duration, sl.t0+sl.dur) };
-        editDrag=null; drawEditWave();
-        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S"+(e.altKey?"":" : ALT+CLICK = HEAR"));
+        editDrag=null;                                    // reiner Klick setzt keine Auswahl/Loop mehr
+        setStatus("SLICE "+(tab.indexOf(sl)+1)+"/"+tab.length+" // "+sl.dur.toFixed(2)+"S : ALT+CLICK = HEAR : DRAG = SELECT");
         if (e.altKey) auditionSlice(sl);
         return;
       }
