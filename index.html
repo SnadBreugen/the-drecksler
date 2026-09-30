@@ -961,12 +961,11 @@
       <button id="sampleBack" class="back-btn" disabled title="Step back to the previous committed version of the sample (undoes the last APPLY from any station)">UNDO COMMIT</button>
       <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for transmit and for library carriers">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Export as WAV: pick LOOP (bar-exact, the full chopper + finisher sum, seamless) or SAMPLE (tight to the material, exactly as long as you hear, for one-shots and cut pieces)">EXPORT // WAV</button>
-      <button id="atBtn" disabled title="Render the result and send it straight into your Audiotool sample library">TRANSMIT TO AUDIOTOOL</button>
       <button id="tlBtn" disabled title="Render the result and place it straight onto your Audiotool project timeline: one audio track under the stagebox, on its own channel, at the project tempo. Needs UPLINK.">EXPORT &rarr; TIMELINE</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.48</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.49</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1039,29 +1038,6 @@
   <div class="list-pop-body" id="listPopBody"></div>
 </div>
 
-<div class="note-pop tx-pop hidden" id="txPop">
-  <p class="tx-title">TRANSMIT // METADATA</p>
-  <label class="tx-l">TITLE</label>
-  <input type="text" id="txName" maxlength="80" spellcheck="false" title="Sample title in your Audiotool library">
-  <label class="tx-l">KIND</label>
-  <div class="tx-kind">
-    <button id="txLoop" class="active" title="Loop: project BPM is sent along">LOOP</button><button id="txShot" title="One-shot: no tempo">ONE-SHOT</button>
-  </div>
-  <label class="tx-l" id="txBpmL">BPM</label>
-  <input type="text" id="txBpm" maxlength="6" inputmode="numeric" spellcheck="false" title="Tempo of the loop">
-  <label class="tx-l">VISIBILITY</label>
-  <div class="tx-kind">
-    <button id="txHidden" class="active" title="Unlisted: only you, hidden from community search">HIDDEN</button><button id="txPublic" title="Public: visible to everyone in search and listings">PUBLIC</button>
-  </div>
-  <label class="tx-l">DESCRIPTION <span class="tx-opt">OPTIONAL</span></label>
-  <input type="text" id="txDesc" maxlength="200" spellcheck="false" title="Optional description">
-  <label class="tx-l">TAGS <span class="tx-opt">COMMA-SEPARATED</span></label>
-  <input type="text" id="txTags" maxlength="120" spellcheck="false" value="drecksler" title="Comma-separated tags">
-  <div class="tx-row">
-    <button id="txCancel" title="Close without sending">CANCEL</button>
-    <button id="txSend" class="primary" title="Render and upload to Audiotool">TRANSMIT</button>
-  </div>
-</div>
 
 <div class="note-pop tx-pop hidden" id="expPop">
   <p class="tx-title">EXPORT // WAV</p>
@@ -1564,7 +1540,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.48";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.49";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -1663,7 +1639,7 @@ var THE_SIGNAL_MP3="";
   const scatterBtn=$("#scatterBtn"), clearChopBtn=$("#clearChopBtn"), metroBtn=$("#metroBtn");
   const edMax=$("#edMax");
   const tuneMax=$("#tuneMax");
-  const wavBtn=$("#wavBtn"), atBtn=$("#atBtn"), tlBtn=$("#tlBtn"), chopApply=$("#chopApply"), finApply=$("#finApply");
+  const wavBtn=$("#wavBtn"), tlBtn=$("#tlBtn"), chopApply=$("#chopApply"), finApply=$("#finApply");
   const tc=$("#tc"), inMeterFill=$("#inMeterFill"), outMeterFill=$("#outMeterFill"), recDot=$("#recDot");
   const hint=$("#hint"), banner=$("#banner"), statusText=$("#statusText");
   const canvas=$("#wave"), ctx=canvas.getContext("2d"), waveWrap=$("#waveWrap");
@@ -1731,7 +1707,7 @@ var THE_SIGNAL_MP3="";
   }
   function setEditingEnabled(on){
     editBtns.forEach((b)=>(b.disabled=!on));
-    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, atBtn, tlBtn, densBtn, harmBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply, edMax, tuneMax].forEach((b)=>(b.disabled=!on));
+    [playBtn, stopPlayBtn, edPlayBtn, edStopBtn, wavBtn, tlBtn, densBtn, harmBtn, scatterBtn, resetBtn, clearChopBtn, chopApply, finApply, edMax, tuneMax].forEach((b)=>(b.disabled=!on));
     if (typeof syncModeBtns==="function") syncModeBtns();
     if (typeof updateWinUi==="function") updateWinUi();
   }
@@ -6619,41 +6595,8 @@ var THE_SIGNAL_MP3="";
   expCancel.addEventListener("click", closeExpPop);
   document.addEventListener("pointerdown",(e)=>{ if (!expPop.classList.contains("hidden") && !expPop.contains(e.target) && e.target!==wavBtn && !wavBtn.contains(e.target)) closeExpPop(); });
   document.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeExpPop(); });
-  // ---------- Transmit-Popup ----------
-  const txPop=$("#txPop"), txName=$("#txName"), txDesc=$("#txDesc"), txTags=$("#txTags"), txBpm=$("#txBpm"), txBpmL=$("#txBpmL");
-  const txLoop=$("#txLoop"), txShot=$("#txShot"), txSend=$("#txSend"), txCancel=$("#txCancel");
-  const txHidden=$("#txHidden"), txPublic=$("#txPublic");
-  let txKind="loop", txVis="unlisted";
-  function setTxKind(k){
-    txKind=k; txLoop.classList.toggle("active",k==="loop"); txShot.classList.toggle("active",k==="one-shot");
-    const loop=k==="loop";
-    txBpm.disabled=!loop;
-    txBpm.style.opacity=txBpmL.style.opacity=loop?"1":".35";
-    txBpm.title=loop?"Tempo of the loop":"One-shot: no tempo";
-  }
   notePop.querySelectorAll("[data-n]").forEach((b)=>{ b.title="Set root note to "+b.textContent.trim(); });
   notePop.querySelectorAll("[data-o]").forEach((b)=>{ b.title="Octave "+b.dataset.o; });
-  txLoop.addEventListener("click",()=>setTxKind("loop"));
-  txShot.addEventListener("click",()=>setTxKind("one-shot"));
-  function setTxVis(v){ txVis=v; txHidden.classList.toggle("active",v==="unlisted"); txPublic.classList.toggle("active",v==="public"); }
-  txHidden.addEventListener("click",()=>setTxVis("unlisted"));
-  txPublic.addEventListener("click",()=>setTxVis("public"));
-  function openTxPop(){
-    txName.value="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
-    txBpm.value=String(Math.round(P.chop.bpm));
-    if (!txTags.value.trim()) txTags.value="drecksler";
-    setTxKind("loop"); setTxVis("unlisted");
-    txPop.classList.remove("hidden");
-    const r=atBtn.getBoundingClientRect(), pw=txPop.offsetWidth, ph=txPop.offsetHeight;
-    txPop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
-    txPop.style.top=Math.max(8, r.top-ph-10)+"px";
-    txName.focus(); txName.select();
-  }
-  function closeTxPop(){ txPop.classList.add("hidden"); }
-  txCancel.addEventListener("click", closeTxPop);
-  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeTxPop(); });
-  document.addEventListener("pointerdown",(e)=>{ if (!txPop.classList.contains("hidden") && !txPop.contains(e.target) && e.target!==atBtn && !atBtn.contains(e.target)) closeTxPop(); });
-  txSend.addEventListener("click", ()=>{ closeTxPop(); sendToAudiotool(); });
 
   // ---- TIMELINE EXPORT :: taken from BRACHINSKI REV1022, verified against NEXUS SDK 0.0.18 ----
   // puts rendered audio into an audiotool project: one track per entry, each with its own player below the stagebox,
@@ -6801,52 +6744,6 @@ var THE_SIGNAL_MP3="";
     setTimeout(()=>{ placePop(atUrlPop, $("#tlBtn")); atUrlInput.focus(); }, 0);
   });
 
-  async function sendToAudiotool(){
-    if (!buffer) return;
-    if (!atSession){
-      const at=await atConnect(true);   // bei Redirect laedt die Seite neu: danach TRANSMIT erneut druecken
-      if (!at) return;
-    }
-    try {
-      setStatus("RENDERING // TRANSMIT");
-      const rendered=await renderProcessed();
-      const wavBlob=encodeWav(rendered);
-      const name=(txName.value.trim()||"DRECKSLER_"+Date.now());
-      const file=new File([wavBlob], name+".wav", { type:"audio/wav" });
-      const c=atSession.client||atSession;
-      if (!(c.samples && c.samples.upload)){
-        try { console.error("[UPLINK] samples-API nicht gefunden. keys:", Object.keys(c)); } catch{}
-        setStatus("TRANSMIT FAILED // SAMPLES API"); return;
-      }
-      setStatus("TRANSMITTING // "+Math.round(wavBlob.size/1024)+" KB");
-      const tags=txTags.value.split(",").map((t)=>t.trim().toLowerCase()).filter(Boolean);
-      const opts={
-        file, displayName:name,
-        kind:txKind,
-        description: txDesc.value.trim(),
-        tags: tags.length?tags:["drecksler"],
-        visibility: txVis,
-        preventTabClose: true,
-      };
-      if (txKind==="loop"){
-        const v=Math.round(parseFloat(txBpm.value.replace(",", ".")));
-        opts.bpm=(isFinite(v)&&v>=30&&v<=300)?v:Math.round(P.chop.bpm);
-      }
-      const up=await c.samples.upload(opts);
-      if (up instanceof Error) throw up;
-      const onServer=await up.uploaded;
-      if (onServer instanceof Error) throw onServer;
-      setStatus("TRANSMIT // PROCESSING ON SERVER");
-      const meta=await up.ready;
-      if (meta instanceof Error) throw meta;
-      console.log("[UPLINK] sample ready:", meta);
-      setStatus("TRANSMIT COMPLETE // "+name.toUpperCase());
-    } catch(e){
-      console.error("[UPLINK] transmit:", e);
-      setStatus("TRANSMIT FAILED // SEE CONSOLE (F12)");
-    }
-  }
-  atBtn.addEventListener("click", ()=>{ if (!buffer) return; if (txPop.classList.contains("hidden")) openTxPop(); else closeTxPop(); });
 
   (()=>{
     const panel=document.getElementById("feedbackPanel"), fbStatus=document.getElementById("fbStatus");
@@ -6873,7 +6770,7 @@ var THE_SIGNAL_MP3="";
   document.addEventListener("pointerdown",(e)=>{
     const t=e.target;
     if (t && t.closest && t.closest("button, input, select, label, canvas, .note-pop, .fx-panel, .feat-panel, .status, .meter, a")) return;
-    closeNotePop(); closeTxPop(); hidePop();
+    closeNotePop(); hidePop();
     if (editSel){ editSel=null; if (deckEl.classList.contains("st-editor")) drawEditWave(); }
     if (selectedStep!=null || selectedSteps.size){ selectedStep=null; selectedSteps.clear(); updateFxPanel(); drawGrid(); }
     if (P.chop.mode==="mark" && (markSel>=0 || markPreview)){   // Chassis-Klick raeumt auch Claim + Stueck-Auswahl
