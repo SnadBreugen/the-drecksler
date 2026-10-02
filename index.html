@@ -959,13 +959,13 @@
 
     <footer class="stage deck-foot" data-tag="OUTPUT">
       <button id="sampleBack" class="back-btn" disabled title="Step back to the previous committed version of the sample (undoes the last APPLY from any station)">UNDO COMMIT</button>
-      <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for transmit and for library carriers">UPLINK</button>
+      <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for the timeline export and library carriers">UPLINK</button>
       <button class="primary" id="wavBtn" disabled title="Export as WAV: pick LOOP (bar-exact, the full chopper + finisher sum, seamless) or SAMPLE (tight to the material, exactly as long as you hear, for one-shots and cut pieces)">EXPORT // WAV</button>
       <button id="tlBtn" disabled title="Render the result and place it straight onto your Audiotool project timeline: one audio track under the stagebox, on its own channel, at the project tempo. Needs UPLINK.">EXPORT &rarr; TIMELINE</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.50</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.52</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1540,7 +1540,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.50";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.52";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3979,8 +3979,7 @@ var THE_SIGNAL_MP3="";
       const src=off.createBufferSource(); src.buffer=buffer; src.connect(n.input); src.start();
       rendered=await off.startRendering();
     }
-    normalizeBuffer(rendered);
-    return rendered;
+    return rendered;   // 1:1: kein Normalisieren, Export klingt wie die Vorschau (roh und mit Finisher)
   }
 
   // ---------- WAV encode ----------
@@ -6568,7 +6567,7 @@ var THE_SIGNAL_MP3="";
     const _fp=(FINISHERS[fin]||FINISHERS.RAW); const outCh=(_fp.width>0||_fp.crackle>0||_fp.chorus)?2:1;
     const off=new OfflineAudioContext(outCh, buffer.length, sr); const n=buildChain(off, fin);
     const src=off.createBufferSource(); src.buffer=buffer; src.connect(n.input); src.start();
-    const rendered=await off.startRendering(); normalizeBuffer(rendered); return rendered;
+    const rendered=await off.startRendering(); return rendered;   // 1:1: kein Normalisieren
   }
   function downloadWav(rendered, name){
     const url=URL.createObjectURL(encodeWav(rendered));
@@ -6802,7 +6801,7 @@ var THE_SIGNAL_MP3="";
       [["p","$ "],["k","record"],["t",": arm "],["v","\u25CF"],["t",", count-in, record till you hit REC again"]],
       [["p","$ "],["k","upload"],["t",": drop or "],["v","IMPORT WAV"],["t",", intake asks BPM + "],["v","LOOP|ONESHOT"]],
       [["p","$ "],["k","import"],["t",": "],["v","AUDIOTOOL TIMELINE"],["t"," via uplink"]],
-      [["c","# click the wave, hear that slice"]],
+      [["c","# drag to select \u00B7 ALT+click to hear a slice"]],
       [["c","# top strip: drag, slip the content"]],
       [["p","$ "],["k","LOOP"],["t",": pick bars, click the wave \u00B7 "],["v","SET"],["t"," makes it the material"]],
       [["p","$ "],["k","shape"],["t",": drag the "],["v","ice-blue"],["t"," EQ points"]],
@@ -6837,7 +6836,7 @@ var THE_SIGNAL_MP3="";
       [["p","$ "],["k","preset"],["t",": "],["v","RAW POLISH THICK WIDE FAT CRUSH LOFI PHONE VOID CHORUS"]],
       [["c","# colors the whole loop, mono-safe"]],
       [["p","$ "],["k","result wave"],["t"," = exactly what exports"]],
-      [["p","$ "],["k","EXPORT"],["t"," // "],["v","WAV"],["t"," or "],["v","TRANSMIT"]],
+      [["p","$ "],["k","EXPORT"],["t"," // "],["v","WAV"],["t"," or "],["v","EXPORT \u2192 TIMELINE"]],
       [["c","// the signal continues"]],
     ],
   };
