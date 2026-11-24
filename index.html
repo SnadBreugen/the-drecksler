@@ -960,13 +960,12 @@
     <footer class="stage deck-foot" data-tag="OUTPUT">
       <button id="sampleBack" class="back-btn" disabled title="Step back to the previous committed version of the sample (undoes the last APPLY from any station)">UNDO COMMIT</button>
       <button id="uplinkBtn" title="Connect to your Audiotool account (opens login): needed for the timeline export and library carriers">UPLINK</button>
-      <input type="text" id="expName" spellcheck="false" autocomplete="off" maxlength="80" title="Name for the export: type your own filename here. It is used for the WAV file and as the timeline track name, so you can tell a drum break from a synth. Leave empty for the automatic DRECKSLER name." style="font-family:'Space Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--ink); background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; width:190px; outline:none;">
       <button class="primary" id="wavBtn" disabled title="Export as WAV: pick LOOP (bar-exact, the full chopper + finisher sum, seamless) or SAMPLE (tight to the material, exactly as long as you hear, for one-shots and cut pieces)">EXPORT // WAV</button>
       <button id="tlBtn" disabled title="Render the result and place it straight onto your Audiotool project timeline: one audio track under the stagebox, on its own channel, at the project tempo. Needs UPLINK.">EXPORT &rarr; TIMELINE</button>
       <div class="meter foot-meter"><i id="outMeterFill"></i></div>
     </footer>
   </div>
-  <div class="chassis-foot"><span class="chassis-rev">REV 5.53</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
+  <div class="chassis-foot"><span class="chassis-rev">REV 5.54</span><span class="chassis-slogan">THE SIGNAL CONTINUES</span></div>
   <div id="waveOverlay">
     <div class="ov-head">
       <span class="ov-title" id="ovTitle">DETAIL</span>
@@ -1024,9 +1023,13 @@
 </div>
 
 <div class="note-pop tx-pop hidden" id="atUrlPop">
-  <p class="tx-title">IMPORT // PROJECT LINK</p>
+  <p class="tx-title" id="atUrlTitle">IMPORT // PROJECT LINK</p>
   <label class="tx-l">PASTE THE PROJECT URL FROM AUDIOTOOL.COM</label>
   <input type="text" id="atUrlInput" spellcheck="false" title="Project link, e.g. https://www.audiotool.com/studio?project=...">
+  <div id="tlNameRow" style="display:none; flex-direction:column; gap:6px;">
+    <label class="tx-l">NAME</label>
+    <input type="text" id="tlName" spellcheck="false" autocomplete="off" maxlength="80" title="Name for the sample and the track on the timeline. Leave empty for the automatic DRECKSLER name.">
+  </div>
   <div class="tx-row">
     <button id="atUrlCancel" title="Close without opening">CANCEL</button>
     <button id="atUrlOpen" class="primary" title="Open the project and list its timeline samples">OPEN</button>
@@ -1042,6 +1045,8 @@
 
 <div class="note-pop tx-pop hidden" id="expPop">
   <p class="tx-title">EXPORT // WAV</p>
+  <label class="tx-l">NAME</label>
+  <input type="text" id="wavName" spellcheck="false" autocomplete="off" maxlength="80" title="Name for the file. Leave empty for the automatic DRECKSLER name.">
   <label class="tx-l">FORMAT</label>
   <div class="tx-kind">
     <button id="expLoop" title="LOOP: bar-exact, the full chopper + finisher sum, padded to whole bars so it runs seamless in a track">LOOP</button><button id="expSample" title="SAMPLE: tight to the material, exactly as long as what you see and hear, no bar grid and no trailing silence: for one-shots and cut pieces">SAMPLE</button>
@@ -1541,7 +1546,7 @@ var THE_SIGNAL_MP3="";
 (() => {
   "use strict";
 
-  const REV="5.53";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
+  const REV="5.54";                          // Bei jeder Uebergabe hochzaehlen: sichtbar unten links + Konsole
   try { console.log("%cTHE DRECKSLER // REV "+REV, "color:#ff6a00;background:#1a0709;padding:2px 8px;"); } catch{}
 
   function fitBrandTag(){
@@ -3041,6 +3046,13 @@ var THE_SIGNAL_MP3="";
   // ---------- Import ----------
   const srcPop=$("#srcPop"), listPop=$("#listPop"), listPopTitle=$("#listPopTitle"), listPopBody=$("#listPopBody"), listPopSearch=$("#listPopSearch");
   const atUrlPop=$("#atUrlPop"), atUrlInput=$("#atUrlInput");
+  const atUrlTitle=$("#atUrlTitle"), tlNameRow=$("#tlNameRow"), tlNameInput=$("#tlName");
+  // Namensfeld nur im Timeline-Export zeigen: beim reinen Import bleibt der Dialog wie vorher
+  function setAtUrlMode(isTl){
+    if (atUrlTitle) atUrlTitle.textContent = isTl ? "EXPORT → TIMELINE" : "IMPORT // PROJECT LINK";
+    if (tlNameRow) tlNameRow.style.display = isTl ? "flex" : "none";
+    if (isTl && tlNameInput) tlNameInput.placeholder="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10);
+  }
   function placePop(pop, anchor){
     pop.classList.remove("hidden");
     const r=anchor.getBoundingClientRect(), pw=pop.offsetWidth, ph=pop.offsetHeight;
@@ -3191,7 +3203,7 @@ var THE_SIGNAL_MP3="";
   async function atImportFlow(){
     const at=atSession || await atConnect(true);
     if (!at) return;
-    atUrlInput.value="";
+    atUrlInput.value=""; setAtUrlMode(false);
     setTimeout(()=>{ placePop(atUrlPop, importBtn); atUrlInput.focus(); }, 0);
   }
   function atOpenFromInput(){
@@ -5378,7 +5390,7 @@ var THE_SIGNAL_MP3="";
     vocCarrierType="track"; syncVocUi();
     document.getElementById("carrierPopup").style.display="none";
     if(!atSession){ await atConnect(true); if(!atSession) return; }
-    _carrierPickMode=true;
+    _carrierPickMode=true; setAtUrlMode(false);
     // setTimeout(0): Öffnung nach dem pointerdown-Bubbling: sonst schließt sich das Popup sofort
     setTimeout(()=>{ atUrlPop.classList.remove("hidden"); atUrlInput.value=""; atUrlInput.focus(); }, 0);
   });
@@ -6556,7 +6568,7 @@ var THE_SIGNAL_MP3="";
   // EXPORT // WAV: Auswahl LOOP (taktgenaue Summe) oder SAMPLE (materialeng)
   const expPop=$("#expPop"), expLoop=$("#expLoop"), expSample=$("#expSample"), expCancel=$("#expCancel");
   function openExpPop(){
-    refreshExpPh();
+    if (wavName) wavName.placeholder="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+today();
     expPop.classList.remove("hidden");
     const r=wavBtn.getBoundingClientRect(), pw=expPop.offsetWidth, ph=expPop.offsetHeight;
     expPop.style.left=Math.max(8, Math.min(window.innerWidth-pw-8, r.left))+"px";
@@ -6576,13 +6588,10 @@ var THE_SIGNAL_MP3="";
     const a=document.createElement("a"); a.href=url; a.download=name+".wav"; a.click(); URL.revokeObjectURL(url);
   }
   const today=()=>new Date().toISOString().slice(0,10);
-  // Dateiname frei waehlbar: was im LABEL-Feld steht, ist der Name (WAV und Timeline-Spur). Leer = automatischer DRECKSLER-Name.
-  const expName=$("#expName");
+  // Name frei waehlbar, direkt im Export-Dialog: was im NAME-Feld steht, ist der Name. Leer = automatischer DRECKSLER-Name.
+  const wavName=$("#wavName");
   function cleanName(s){ return String(s||"").replace(/[\/\\?%*:|"<>\x00-\x1f]/g,"").replace(/\s+/g," ").trim().slice(0,80).trim(); }
-  function exportName(def){ const v=cleanName(expName && expName.value); return v || def; }
-  function refreshExpPh(){ if (expName) expName.placeholder="DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+today(); }
-  if (expName) expName.addEventListener("focus", refreshExpPh);
-  refreshExpPh();
+  function pickName(inp, def){ const v=cleanName(inp && inp.value); return v || def; }
   wavBtn.addEventListener("click", ()=>{
     if (!buffer) return;
     if (bufferSource==="audiotool"){ setStatus("EXPORT DENIED // LIBRARY ASSET"); return; }
@@ -6591,13 +6600,13 @@ var THE_SIGNAL_MP3="";
   expLoop.addEventListener("click", async ()=>{
     closeExpPop(); setStatus("RENDERING // LOOP");
     const rendered=await renderProcessed();
-    downloadWav(rendered, exportName("DRECKSLER_LOOP_"+Math.round(P.chop.bpm)+"BPM_"+today()));
+    downloadWav(rendered, pickName(wavName, "DRECKSLER_LOOP_"+Math.round(P.chop.bpm)+"BPM_"+today()));
     setStatus("EXPORT COMPLETE // LOOP // "+rendered.duration.toFixed(1)+"S");
   });
   expSample.addEventListener("click", async ()=>{
     closeExpPop(); setStatus("RENDERING // SAMPLE");
     const rendered=await renderSampleTight();
-    downloadWav(rendered, exportName("DRECKSLER_SAMPLE_"+today()));
+    downloadWav(rendered, pickName(wavName, "DRECKSLER_SAMPLE_"+today()));
     setStatus("EXPORT COMPLETE // SAMPLE // "+rendered.duration.toFixed(1)+"S");
   });
   expCancel.addEventListener("click", closeExpPop);
@@ -6723,7 +6732,7 @@ var THE_SIGNAL_MP3="";
       const sr=rendered.sampleRate;
       const L=rendered.getChannelData(0);
       const R=rendered.numberOfChannels>1?rendered.getChannelData(1):L;
-      const name=exportName("DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10));
+      const name=pickName(tlNameInput, "DRECKSLER_"+Math.round(P.chop.bpm)+"BPM_"+new Date().toISOString().slice(0,10));
       const tl=makeTimelineExport({ log:(m)=>setStatus("TIMELINE // "+m) });
       const { doc, bpm }=await tl.openProject(at, url);
       // Faehigkeits-Check VOR dem Upload: kann der geladene NEXUS-Bundle ueberhaupt Samples auf die Timeline setzen?
@@ -6748,7 +6757,7 @@ var THE_SIGNAL_MP3="";
     if (!buffer) return;
     const at=atSession || await atConnect(true);
     if (!at) return;                        // Redirect zum Login: danach erneut druecken
-    _tlExportMode=true; atUrlInput.value=""; refreshExpPh();
+    _tlExportMode=true; atUrlInput.value=""; setAtUrlMode(true);
     setTimeout(()=>{ placePop(atUrlPop, $("#tlBtn")); atUrlInput.focus(); }, 0);
   });
 
